@@ -146,7 +146,7 @@ all_expirations.sort(key=lambda x: x["days_until"])
 print(f"\n✓ Writing tracker to: {TRACKER_FILE}")
 TRACKER_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-with open(TRACKER_FILE, 'w', newline='') as f:
+with open(TRACKER_FILE, 'w', newline='', encoding='utf-8') as f:
     if all_expirations:
         writer = csv.DictWriter(f, fieldnames=all_expirations[0].keys())
         writer.writeheader()
@@ -187,7 +187,7 @@ report += f"\n---\n\n"
 report += f"**Next scan:** Run `python {Path(__file__).name}` monthly or when adding new documents\n"
 report += f"**CSV tracker:** [[expiration-tracker]]\n"
 
-with open(REPORT_FILE, 'w') as f:
+with open(REPORT_FILE, 'w', encoding='utf-8') as f:
     f.write(report)
 
 print("\n" + "="*80)
