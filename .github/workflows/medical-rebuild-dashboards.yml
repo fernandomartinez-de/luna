@@ -1,0 +1,38 @@
+name: Medical - Rebuild Dashboards
+
+on:
+  schedule:
+    - cron: '0 10 * * 1'  # Weekly on Monday at 10 AM UTC (after ingest)
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r health/medical/requirements.txt
+
+      - name: Build dashboards
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: |
+          cd health/medical
+          python build_dashboards.py
+
+      - name: Commit updated dashboards
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add health/medical/*.html
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update medical dashboards"
+          git push
