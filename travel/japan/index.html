@@ -1,0 +1,2505 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Viaje Japón · Familia Martínez · Nov 2026</title>
+<meta name="description" content="Nuestro viaje familiar a Japón en noviembre 2026." />
+
+<!-- iOS home screen + tab styling -->
+<meta name="theme-color" content="#FBF8F1" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Viaje Japón" />
+<meta name="format-detection" content="telephone=no" />
+<link rel="apple-touch-icon" href="assets/img/hero-family.jpg?v=3" />
+<link rel="icon" type="image/jpeg" href="assets/img/hero-family.jpg?v=3" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;600;700;900&family=Noto+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          paper: { 50: '#FBF8F1', 100: '#F5F1E8', 200: '#EDE7D8', 300: '#DDD4BE' },
+          ink:   { 900: '#1B1815', 700: '#3C352E', 500: '#6E655A', 400: '#8C8377' },
+          sumi:  '#1B1815',
+          vermilion: { 400: '#D96A4F', 500: '#C7472C', 600: '#A63A22', 700: '#7E2D1B' },
+          matcha: '#3F5D3B',
+          indigo_jp: '#2A3856',
+        },
+        fontFamily: {
+          serif: ['"Noto Serif JP"', 'Georgia', 'serif'],
+          sans:  ['"Noto Sans"', 'system-ui', 'sans-serif'],
+          jp:    ['"Noto Sans JP"', 'sans-serif'],
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  :root { color-scheme: light; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  html, body {
+    background-color: #FBF8F1;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+  * { -webkit-touch-callout: none; }
+  input, textarea, select, button, a { -webkit-tap-highlight-color: rgba(199, 71, 44, 0.14); touch-action: manipulation; }
+  img { -webkit-user-drag: none; }
+
+  /* Bump input font-size on small screens so iOS Safari doesn't auto-zoom on focus.
+     Design intent (14px) preserved on tablets and up. */
+  @media (max-width: 640px) {
+    input[type="text"], input[type="url"], input[type="number"], textarea, select {
+      font-size: 16px !important;
+    }
+  }
+
+  /* background-attachment: fixed janks / flickers on iOS. Fall back to normal
+     scrolling on touch-only devices so the paper mood stays but scrolling is smooth. */
+  @media (hover: none) and (pointer: coarse) {
+    body { background-attachment: scroll; }
+  }
+
+  /* Safe-area padding for iPhones with notches / home indicators. */
+  nav {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Momentum scrolling on the horizontal day-pill strip. */
+  .day-pill-scroll { -webkit-overflow-scrolling: touch; }
+
+  /* Map index list (below the map), grouped by city */
+  #mapIndex ol { list-style: none; padding: 0; margin: 0; }
+  .map-index-group + .map-index-group { margin-top: 28px; }
+  .map-index-city {
+    font-family: 'Noto Serif JP', Georgia, serif;
+    font-size: 22px;
+    color: #1B1815;
+    margin: 0 0 12px 0;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .map-index-city::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 999px;
+    background: #C7472C;
+    align-self: center;
+    flex-shrink: 0;
+  }
+  .map-index-count {
+    font-family: 'Noto Sans', system-ui, sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #8C8377;
+    font-weight: 400;
+  }
+  .map-index-row {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 12px;
+    align-items: start;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.4);
+    border: 1px solid rgba(27,24,21,0.10);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 200ms, background 200ms, transform 200ms;
+    text-align: left;
+    color: inherit;
+    width: 100%;
+  }
+  .map-index-row:hover { border-color: #C7472C; transform: translateY(-1px); background: rgba(255,255,255,0.7); }
+  .map-index-row.is-muted { opacity: 0.5; cursor: default; }
+  .map-index-row.is-muted:hover { border-color: rgba(27,24,21,0.10); transform: none; background: rgba(255,255,255,0.4); }
+  .map-index-num {
+    width: 30px; height: 30px;
+    display: grid; place-items: center;
+    background: #C7472C; color: #FBF8F1;
+    border-radius: 999px;
+    font-family: 'Noto Serif JP', serif;
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 1;
+  }
+  .map-index-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .map-index-title { font-size: 14px; color: #1B1815; line-height: 1.3; }
+  .map-index-meta { font-size: 11px; color: #6E655A; line-height: 1.4; }
+
+  body {
+    color: #1B1815;
+    font-family: 'Noto Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    background:
+      /* soft sunset wash from top-right, peach/coral warmth like the pagoda sky */
+      radial-gradient(1200px 800px at 90% 0%, rgba(255, 178, 140, 0.28), transparent 55%),
+      /* pale rose wash from bottom-left, cherry-blossom pink */
+      radial-gradient(900px 700px at 5% 100%, rgba(255, 205, 220, 0.30), transparent 60%),
+      /* a whisper of blue from bottom-right, like Fuji at dusk */
+      radial-gradient(700px 600px at 100% 90%, rgba(150, 180, 210, 0.18), transparent 60%),
+      /* base paper cream */
+      #FBF8F1;
+    background-attachment: fixed;
+  }
+  /* Faint cherry-blossom silhouette pattern layered over the washes */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.08;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'><g fill='%23C7472C'><path d='M40 30c3-6 9-6 9 0 6-3 9 3 6 6 6 3 3 9-3 6 3 6-3 9-6 3-3 6-9 3-6-3-6 3-9-3-3-6-6-3-3-9 3-6z'/><path d='M130 90c2-4 6-4 6 0 4-2 6 2 4 4 4 2 2 6-2 4 2 4-2 6-4 2-2 4-6 2-4-2-4 2-6-2-2-4-4-2-2-6 2-4z' opacity='.75'/><path d='M75 140c2-4 6-4 6 0 4-2 6 2 4 4 4 2 2 6-2 4 2 4-2 6-4 2-2 4-6 2-4-2-4 2-6-2-2-4-4-2-2-6 2-4z' opacity='.6'/></g></svg>");
+    background-repeat: repeat;
+    background-size: 180px 180px;
+  }
+  /* Faint Fuji silhouette floating in the middle-back, very subtle */
+  body::after {
+    content: '';
+    position: fixed;
+    left: 50%;
+    bottom: 8%;
+    transform: translateX(-50%);
+    width: min(1200px, 90vw);
+    height: 220px;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.06;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 220' preserveAspectRatio='xMidYMid meet'><path d='M0 220 L420 220 L560 90 L595 140 L640 60 L690 130 L775 220 L1200 220 Z' fill='%231B1815'/><path d='M540 105 L560 90 L580 105 L590 100 L580 115 L595 140 L575 120 L565 130 L560 122 L555 132 L545 122 L540 128 L525 118 L520 108 Z' fill='%23FBF8F1'/></svg>");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body { background-attachment: scroll; }
+  }
+  .font-display { font-family: 'Noto Serif JP', Georgia, serif; font-weight: 500; letter-spacing: -0.01em; }
+  .rule { border-color: rgba(27, 24, 21, 0.14); }
+  .hair { border-top: 1px solid rgba(27, 24, 21, 0.14); }
+  .paper-texture {
+    background-image:
+      radial-gradient(rgba(27,24,21,0.025) 1px, transparent 1px),
+      radial-gradient(rgba(27,24,21,0.02) 1px, transparent 1px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 1px 2px;
+  }
+  .accent-underline {
+    background-image: linear-gradient(transparent 62%, rgba(199, 71, 44, 0.22) 62%, rgba(199, 71, 44, 0.22) 92%, transparent 92%);
+    background-repeat: no-repeat; background-size: 100% 100%; padding-inline: 0.15em;
+  }
+  .day-pill { transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .day-pill:hover { transform: translateY(-1px); }
+  .day-pill.is-active { background: #1B1815; color: #FBF8F1; border-color: #1B1815; }
+  .day-pill.is-active .pill-city { color: rgba(251, 248, 241, 0.7); }
+  .day-pill.is-active .pill-date { color: #FBF8F1; }
+  .fade-in { animation: fadeIn 520ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .kanji-mark { font-family: 'Noto Serif JP', serif; font-weight: 900; color: rgba(199, 71, 44, 0.15); line-height: 1; pointer-events: none; }
+
+  input, textarea, select { font-family: inherit; color: #1B1815; }
+  input:focus, textarea:focus, select:focus { outline: none; box-shadow: 0 0 0 2px rgba(199, 71, 44, 0.35); border-color: rgba(199, 71, 44, 0.6); }
+  ::placeholder { color: rgba(27, 24, 21, 0.35); }
+
+  #map { height: 460px; border-radius: 6px; overflow: hidden; background: #F5F1E8; }
+  /* Google Maps: soften the base tiles so they blend with the paper palette */
+  .gm-style { filter: saturate(0.75) contrast(0.95) brightness(1.02); font-family: inherit !important; }
+  .gm-style-iw { font-family: inherit !important; }
+  .gm-style-iw-c { padding: 12px !important; border-radius: 4px !important; box-shadow: 0 8px 32px rgba(27,24,21,0.12) !important; }
+  .gm-style-iw-d { overflow: auto !important; max-height: 260px !important; }
+
+  .thumb-btn.voted { background: #C7472C; color: #FBF8F1; border-color: #C7472C; }
+  .voters-line { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; padding-left: 8px; }
+  .vote-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10.5px;
+    padding: 2px 9px;
+    background: rgba(199, 71, 44, 0.10);
+    color: #7E2D1B;
+    border: 1px solid rgba(199, 71, 44, 0.22);
+    border-radius: 999px;
+    line-height: 1.4;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+  .vote-chip::before {
+    content: '';
+    display: inline-block;
+    width: 5px; height: 5px;
+    border-radius: 999px;
+    background: #C7472C;
+  }
+  .checkbox-item.done .item-label { text-decoration: line-through; color: #8C8377; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: rgba(27,24,21,0.05); font-size: 11px; letter-spacing: 0.02em; }
+  .btn-primary { background: #1B1815; color: #FBF8F1; transition: background 200ms; }
+  .btn-primary:hover { background: #C7472C; }
+  .btn-ghost { background: transparent; color: #1B1815; border: 1px solid rgba(27,24,21,0.14); transition: background 200ms; }
+  .btn-ghost:hover { background: #F5F1E8; }
+
+  .time-chip { font-family: 'Noto Serif JP', serif; font-size: 12px; letter-spacing: 0.06em; color: #6E655A; text-transform: uppercase; }
+  .time-chip::before { content: ''; display: inline-block; width: 6px; height: 6px; background: #C7472C; border-radius: 999px; margin-right: 8px; vertical-align: middle; }
+
+  /* Activity row */
+  .activity-row {
+    display: grid;
+    grid-template-columns: auto 1fr 1.4fr auto;
+    gap: 10px;
+    align-items: start;
+    padding: 12px;
+    border: 1px solid rgba(27,24,21,0.14);
+    border-left: 3px solid transparent;
+    background: #FBF8F1;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 200ms, background 200ms, transform 200ms;
+  }
+  .activity-row:hover { background: #F5F1E8; }
+  .activity-row.is-selected {
+    border-left-color: #C7472C;
+    background: #F5F1E8;
+    box-shadow: 0 8px 24px -12px rgba(199,71,44,0.25);
+  }
+  .activity-row.is-editing {
+    border-left-color: #C7472C;
+    background: #FBF8F1;
+    box-shadow: 0 12px 32px -14px rgba(199,71,44,0.30);
+  }
+  .row-title, .row-desc {
+    background: transparent;
+    border: 1px dashed transparent;
+    border-radius: 4px;
+    padding: 6px 8px;
+    width: 100%;
+    font-size: 14px;
+    line-height: 1.4;
+    resize: none;
+  }
+  .row-title { font-weight: 500; }
+  .row-desc { color: #6E655A; font-size: 13px; min-height: 34px; }
+  .activity-row.is-editing .row-title,
+  .activity-row.is-editing .row-desc { border-color: rgba(27,24,21,0.18); background: #FBF8F1; }
+  .activity-row.is-editing .row-title:focus,
+  .activity-row.is-editing .row-desc:focus { border-color: rgba(199,71,44,0.5); border-style: solid; }
+
+  .row-actions {
+    display: flex; gap: 6px; align-items: center;
+  }
+  .row-meta {
+    grid-column: 1 / -1;
+    font-size: 11px;
+    color: #8C8377;
+    padding: 6px 4px 0;
+    margin-top: 4px;
+    border-top: 1px dashed rgba(27,24,21,0.08);
+    line-height: 1.35;
+  }
+  .row-meta strong { color: #6E655A; font-weight: 500; }
+  .icon-btn {
+    width: 32px; height: 32px;
+    display: grid; place-items: center;
+    border-radius: 6px;
+    color: #6E655A;
+    background: transparent;
+    border: 1px solid rgba(27,24,21,0.10);
+    transition: background 200ms, color 200ms;
+  }
+  .icon-btn:hover { background: #F5F1E8; color: #1B1815; }
+  .icon-btn.danger:hover { background: rgba(199,71,44,0.12); color: #C7472C; border-color: rgba(199,71,44,0.28); }
+
+  .side-input {
+    background: #FBF8F1;
+    border: 1px solid rgba(27,24,21,0.14);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 14px;
+    width: 100%;
+  }
+  .side-input.num { padding-left: 24px; }
+  .side-read { font-size: 14px; padding: 4px 0; }
+
+  /* Google Places autocomplete dropdown */
+  .pac-wrap { position: relative; }
+  .pac-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    z-index: 30;
+    background: #FBF8F1;
+    border: 1px solid rgba(27,24,21,0.14);
+    border-radius: 6px;
+    box-shadow: 0 12px 32px -12px rgba(27,24,21,0.25);
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .pac-list.hidden { display: none; }
+  .pac-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(27,24,21,0.08);
+    transition: background 120ms;
+  }
+  .pac-item:last-child { border-bottom: none; }
+  .pac-item:hover, .pac-item.active { background: rgba(199,71,44,0.10); }
+  .pac-main { font-size: 13.5px; color: #1B1815; line-height: 1.3; }
+  .pac-secondary { font-size: 11px; color: #6E655A; margin-top: 2px; }
+  .pac-footer {
+    padding: 6px 10px;
+    font-size: 10px;
+    color: #8C8377;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: right;
+    background: rgba(27,24,21,0.03);
+    border-top: 1px solid rgba(27,24,21,0.08);
+  }
+
+  /* Day header inputs */
+  .day-title-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed rgba(27,24,21,0.25);
+    padding: 4px 0;
+    width: 100%;
+    font-family: 'Noto Serif JP', Georgia, serif;
+    letter-spacing: -0.01em;
+    font-weight: 500;
+  }
+  .day-title-input:focus { border-bottom-color: #C7472C; border-bottom-style: solid; box-shadow: none; }
+  .day-focus-input {
+    background: transparent;
+    border: 1px dashed rgba(27,24,21,0.25);
+    border-radius: 4px;
+    padding: 8px 10px;
+    width: 100%;
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.6;
+    color: #3C352E;
+    min-height: 84px;
+  }
+  .day-focus-input:focus { border-color: #C7472C; border-style: solid; box-shadow: 0 0 0 2px rgba(199,71,44,0.15); }
+
+  /* Trip at glance inputs */
+  .glance-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed rgba(27,24,21,0.25);
+    padding: 4px 0;
+    width: 100%;
+  }
+  .glance-input:focus { border-bottom-color: #C7472C; border-bottom-style: solid; box-shadow: none; }
+  .glance-input.title { font-family: 'Noto Serif JP', Georgia, serif; font-weight: 500; letter-spacing: -0.01em; font-size: 1.5rem; }
+
+  @media (max-width: 640px) {
+    .activity-row { grid-template-columns: auto 1fr auto; }
+    .activity-row .row-desc-cell { grid-column: 1 / -1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fade-in { animation: none; }
+    .day-pill { transition: none; }
+    .activity-row { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- =================== NAV =================== -->
+<nav class="sticky top-0 z-40 backdrop-blur bg-paper-50/85 border-b rule">
+  <div class="max-w-6xl mx-auto flex items-center justify-between px-5 py-3">
+    <a href="#top" class="flex items-baseline gap-2">
+      <span class="font-display text-lg tracking-tight">Familia Martínez</span>
+      <span class="text-ink-400 text-lg">·</span>
+      <span class="font-jp text-vermilion-500 text-lg">日本</span>
+    </a>
+    <div class="hidden md:flex items-center gap-6 text-sm">
+      <a href="#itinerary" class="hover:text-vermilion-500 transition-colors">Itinerario</a>
+      <a href="#map-section" class="hover:text-vermilion-500 transition-colors">Mapa</a>
+      <a href="#budget" class="hover:text-vermilion-500 transition-colors">Presupuesto</a>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="userBadge" class="hidden md:inline text-xs text-ink-500"></span>
+      <button id="whoAmI" class="text-xs border rule px-3 py-1.5 rounded-full hover:bg-paper-100 transition">Poner nombre</button>
+    </div>
+  </div>
+</nav>
+
+<!-- =================== HERO =================== -->
+<section id="top" class="max-w-6xl mx-auto px-5 pt-10 md:pt-16 pb-10 md:pb-20 relative">
+  <div class="grid md:grid-cols-12 gap-8 md:gap-12 items-center">
+    <div class="md:col-span-7 relative">
+      <div class="kanji-mark absolute -top-6 -left-2 text-[180px] md:text-[240px] select-none">日本</div>
+      <p class="relative text-xs text-ink-500 tracking-widest uppercase mb-6">Familia Martínez · Noviembre 2026</p>
+      <h1 class="relative font-display text-5xl md:text-8xl lg:text-9xl leading-[0.95] tracking-tight">
+        VIAJE<br/>
+        <span class="accent-underline">JAPÓN</span>
+      </h1>
+      <p class="relative mt-6 max-w-[52ch] text-ink-700 leading-relaxed">
+        Dieciocho días, seis ciudades. Voten actividades, armen los días, cuadren los números.
+      </p>
+      <div class="relative mt-8">
+        <a href="#itinerary" class="inline-flex items-center gap-2 btn-primary px-5 py-3 rounded-full text-sm font-medium">
+          Abrir el itinerario
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="md:col-span-5">
+      <div class="relative">
+        <div class="aspect-square overflow-hidden rounded-sm bg-paper-200 shadow-[0_24px_60px_-24px_rgba(27,24,21,0.28)]">
+          <img src="assets/img/hero-family.jpg?v=3" alt="Familia Martínez en Japón" class="w-full h-full object-cover" loading="lazy" />
+        </div>
+        <div class="absolute -bottom-5 -left-5 md:-bottom-6 md:-left-8 bg-paper-50 border rule rounded-sm p-4 shadow-[0_12px_32px_-16px_rgba(27,24,21,0.24)] min-w-[180px]">
+          <p class="text-[11px] uppercase tracking-widest text-ink-500">Cuenta regresiva</p>
+          <p id="countdown" class="font-display text-3xl md:text-4xl mt-1 tracking-tight">-</p>
+          <p class="text-xs text-ink-500 mt-1">para el viaje</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== TRIP AT A GLANCE =================== -->
+<section id="tripGlanceSection" class="max-w-6xl mx-auto px-5 py-10 md:py-14 hair">
+  <div class="flex justify-end mb-4">
+    <div id="glanceControls" class="flex gap-2"></div>
+  </div>
+  <div id="tripGlance" class="grid md:grid-cols-4 gap-6 md:gap-10"></div>
+</section>
+
+<!-- =================== DAY TIMELINE =================== -->
+<section id="itinerary" class="max-w-6xl mx-auto px-5 py-12 md:py-20">
+  <div class="mb-8">
+    <h2 class="font-display text-3xl md:text-5xl tracking-tight">El itinerario</h2>
+    <p class="mt-3 text-ink-500 max-w-[52ch]">Da clic en un día, luego en el lápiz de cada actividad para editar título, descripción, ubicación, costo o imagen.</p>
+  </div>
+
+  <div class="day-pill-scroll overflow-x-auto -mx-5 px-5 pb-3">
+    <div id="dayPills" class="flex gap-2 min-w-max"></div>
+  </div>
+
+  <article id="dayView" class="mt-8 fade-in"></article>
+</section>
+
+<!-- =================== MAP =================== -->
+<section id="map-section" class="max-w-6xl mx-auto px-5 py-12 md:py-20 hair">
+  <div class="mb-6">
+    <h2 class="font-display text-3xl md:text-5xl tracking-tight">Mapa</h2>
+    <p class="mt-3 text-ink-500 max-w-[52ch]">Los pins aparecen conforme agregas actividades con ubicación. Cada pin tiene un número; encuéntralo abajo en el índice.</p>
+  </div>
+  <div id="map" class="border rule"></div>
+
+  <div id="mapIndex" class="mt-8"></div>
+</section>
+
+<!-- Inspiración section removed. Photos still power activity image fallbacks
+     via activityImage() using state.inspo. -->
+
+
+<!-- =================== BUDGET =================== -->
+<section id="budget" class="max-w-6xl mx-auto px-5 py-12 md:py-20 hair">
+  <div class="mb-8">
+    <h2 class="font-display text-3xl md:text-5xl tracking-tight">Presupuesto</h2>
+    <p class="mt-3 text-ink-500 max-w-[52ch]">Se calcula sumando el costo de cada actividad. Ajusta los números en el itinerario y aquí se refleja.</p>
+  </div>
+
+  <div class="grid md:grid-cols-3 gap-4 mb-8">
+    <div class="border rule rounded-md p-5">
+      <p class="text-[11px] uppercase tracking-widest text-ink-500">Total estimado</p>
+      <p id="budgetTotal" class="font-display text-3xl mt-2">-</p>
+      <p class="text-xs text-ink-500 mt-1">suma de todas las actividades</p>
+    </div>
+    <div class="border rule rounded-md p-5">
+      <p class="text-[11px] uppercase tracking-widest text-ink-500">Por día</p>
+      <p id="budgetPerDay" class="font-display text-3xl mt-2">-</p>
+      <p class="text-xs text-ink-500 mt-1">promedio</p>
+    </div>
+    <div class="border rule rounded-md p-5">
+      <p class="text-[11px] uppercase tracking-widest text-ink-500">Moneda</p>
+      <p class="font-display text-3xl mt-2">USD</p>
+      <p class="text-xs text-ink-500 mt-1">números de trabajo</p>
+    </div>
+  </div>
+
+  <div class="border rule rounded-md overflow-hidden">
+    <div class="grid grid-cols-[70px_1fr_120px_110px] bg-paper-100 text-[11px] uppercase tracking-widest text-ink-500 px-4 py-3">
+      <div>Día</div>
+      <div>Zona</div>
+      <div>Actividades</div>
+      <div class="text-right">Presupuesto</div>
+    </div>
+    <div id="budgetRows"></div>
+  </div>
+</section>
+
+<!-- Hidden file input for per-activity image upload -->
+<input type="file" id="hiddenImageInput" accept="image/*" class="hidden" />
+
+<script>
+/* =========================================================
+   DATA
+   ========================================================= */
+
+const TIMES = ['mañana', 'tarde', 'noche'];
+const TIME_LABEL = { 'mañana': 'Mañana', 'tarde': 'Tarde', 'noche': 'Noche' };
+
+// Google Places API (New) key. HTTP-referrer restricted at the Google Cloud
+// console to fernandomartinez-de.github.io + localhost, and API-restricted to
+// Places API (New) + Maps JS. It's safe to embed in client HTML.
+const GOOGLE_PLACES_KEY = 'AIza_REDACTED';
+
+// Supabase (family collaboration backend). The publishable key is safe to embed;
+// Row Level Security is what gates who can read/write. See japan/schema.sql.
+const SUPABASE_URL = 'https://hmeenrnlbdzqhbdbsxjf.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_n0GbcnDhojPMzKOVAGDp3Q_tSrLYnlX';
+let supa = null;
+try {
+  if (window.supabase && window.supabase.createClient) {
+    supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: { persistSession: false },
+    });
+  }
+} catch (e) { console.warn('Supabase init failed', e); }
+
+const TG_KEYS = ['fechas', 'ciudades', 'temporada', 'viajeros'];
+const TG_DEFAULTS = {
+  fechas:    { label: 'Fechas',    title: '13 - 30 nov 2026',    subtitle: '18 días, 17 noches' },
+  ciudades:  { label: 'Ciudades',  title: 'Seis paradas',          subtitle: 'Tokio, Nikko, Hakone, Kioto, Nara, Osaka' },
+  temporada: { label: 'Temporada', title: 'Otoño tardío',          subtitle: 'Hojas rojas (koyo, 紅葉) en su mejor momento' },
+  viajeros:  { label: 'Viajeros',  title: 'La familia',            subtitle: 'Cada quien pone su nombre arriba' },
+};
+
+const ITINERARY = [
+  { n: 1,  date: '2026-11-13', dow: 'Vie', city: 'Tokio',    area: 'Llegada',                  lat: 35.7719, lng: 140.3928,
+    focus: 'Llegamos a Narita, cena tranquila, a recuperar el sueño.',
+    activities: [] },
+  { n: 2,  date: '2026-11-14', dow: 'Sáb', city: 'Tokio',    area: 'Shibuya y Shinjuku',       lat: 35.6595, lng: 139.7004,
+    focus: 'El lado eléctrico de Tokio. Cruces, neón, izakayas.',
+    activities: [] },
+  { n: 3,  date: '2026-11-15', dow: 'Dom', city: 'Tokio',    area: 'Asakusa y Ueno',           lat: 35.7148, lng: 139.7967,
+    focus: 'El Tokio antiguo. Templos, mercados, una tarde sin prisa.',
+    activities: [] },
+  { n: 4,  date: '2026-11-16', dow: 'Lun', city: 'Tokio',    area: 'teamLab y Odaiba',         lat: 35.6197, lng: 139.7756,
+    focus: 'Arte inmersivo en la mañana, mar en la tarde.',
+    activities: [] },
+  { n: 5,  date: '2026-11-17', dow: 'Mar', city: 'Nikko',    area: 'Excursión desde Tokio',    lat: 36.7580, lng: 139.5986,
+    focus: 'Un día en la montaña. Cascadas, templos, hojas rojas.',
+    activities: [] },
+  { n: 6,  date: '2026-11-18', dow: 'Mié', city: 'Hakone',   area: 'Día de traslado',          lat: 35.2323, lng: 139.1069,
+    focus: 'Traslado sin prisa a Hakone. Onsen en la noche.',
+    activities: [] },
+  { n: 7,  date: '2026-11-19', dow: 'Jue', city: 'Hakone',   area: 'Día del Fuji',             lat: 35.2043, lng: 138.9902,
+    focus: 'El circuito de Hakone. Si sale el Fuji, lo perseguimos.',
+    activities: [] },
+  { n: 8,  date: '2026-11-20', dow: 'Vie', city: 'Kioto',    area: 'Día del Shinkansen',       lat: 35.0116, lng: 135.7681,
+    focus: 'Tren bala al oeste. Llegar a Kioto por la tarde.',
+    activities: [] },
+  { n: 9,  date: '2026-11-21', dow: 'Sáb', city: 'Kioto',    area: 'Fushimi y Higashiyama',    lat: 34.9671, lng: 135.7727,
+    focus: 'Las dos caminatas de Kioto que todos recuerdan.',
+    activities: [] },
+  { n: 10, date: '2026-11-22', dow: 'Dom', city: 'Kioto',    area: 'Arashiyama',               lat: 35.0094, lng: 135.6668,
+    focus: 'Kioto oeste. Bambú, río, monos y tofu.',
+    activities: [] },
+  { n: 11, date: '2026-11-23', dow: 'Lun', city: 'Kioto',    area: 'Templos dorados',          lat: 35.0394, lng: 135.7292,
+    focus: 'Kioto norte. Jardines zen y hoja de oro.',
+    activities: [] },
+  { n: 12, date: '2026-11-24', dow: 'Mar', city: 'Nara',     area: 'Excursión desde Kioto',    lat: 34.6851, lng: 135.8048,
+    focus: 'Venados, Buda gigante, pueblo tranquilo.',
+    activities: [] },
+  { n: 13, date: '2026-11-25', dow: 'Mié', city: 'Osaka',    area: 'Día de traslado',          lat: 34.6937, lng: 135.5023,
+    focus: 'Salto corto a Osaka. Base para el tramo final.',
+    activities: [] },
+  { n: 14, date: '2026-11-26', dow: 'Jue', city: 'Osaka',    area: 'Día de comer',             lat: 34.6687, lng: 135.5030,
+    focus: 'Osaka es la cocina de Japón. Nos toca comer.',
+    activities: [] },
+  { n: 15, date: '2026-11-27', dow: 'Vie', city: 'Miyajima', area: 'Excursión a Hiroshima',    lat: 34.2960, lng: 132.3197,
+    focus: 'Día largo. Torii sobre el mar y un momento para reflexionar.',
+    activities: [] },
+  { n: 16, date: '2026-11-28', dow: 'Sáb', city: 'Osaka',    area: 'Castillo y compras',       lat: 34.6873, lng: 135.5259,
+    focus: 'Osaka local. Castillo y los últimos souvenirs.',
+    activities: [] },
+  { n: 17, date: '2026-11-29', dow: 'Dom', city: 'Osaka',    area: 'Día libre',                lat: 34.6653, lng: 135.4322,
+    focus: 'Día en blanco. Universal, spa, o no hacer nada.',
+    activities: [] },
+  { n: 18, date: '2026-11-30', dow: 'Lun', city: 'Osaka',    area: 'Vuelo a casa',             lat: 34.4348, lng: 135.2445,
+    focus: 'Aeropuerto Kansai, último snack de conbini, a casa.',
+    activities: [] },
+];
+
+const PACKING_DEFAULT = {
+  'Documentos': ['Pasaportes (verifica vigencia, +6 meses)','Vouchers de JR Pass o carga en tarjeta IC','Itinerario impreso y direcciones de hoteles','Tarjeta del seguro de viaje'],
+  'Tecnología': ['Adaptador universal (Japón usa Tipo A)','Cargador portátil y cables','Plan de SIM o eSIM','Cámara y batería extra'],
+  'Ropa (otoño tardío)': ['Capas térmicas, chamarra plegable de pluma','Zapatos cómodos ya rodados','Un outfit más arreglado para kaiseki','Calcetines sin hoyos (se quitan zapatos seguido)'],
+  'Salud': ['Medicinas con recetas','Botiquín pequeño','Pastillas para el mareo (carreteras de montaña)','Termo reusable'],
+  'Detalles que importan': ['Bolsa con cierre chico para los templos','Pañuelo (los baños casi no tienen toallas)','Regalitos para anfitriones','Cuaderno para el diario del viaje'],
+};
+
+const DEFAULT_INSPO = [
+  { url: 'assets/img/inspo-01-6a13a9ca.jpg', caption: 'Japón, foto 1' },
+  { url: 'assets/img/inspo-02-320658f7.jpg', caption: 'Japón, foto 2' },
+  { url: 'assets/img/inspo-03-a67a549b.jpg', caption: 'Japón, foto 3' },
+  { url: 'assets/img/inspo-04-559e847f.jpg', caption: 'Japón, foto 4' },
+  { url: 'assets/img/inspo-05-974c205f.jpg', caption: 'Japón, foto 5' },
+  { url: 'assets/img/inspo-06-f66f4c96.jpg', caption: 'Japón, foto 6' },
+  { url: 'assets/img/inspo-07-366f200c.jpg', caption: 'Japón, foto 7' },
+  { url: 'assets/img/inspo-08-c5c784c1.jpg', caption: 'Japón, foto 8' },
+  { url: 'assets/img/inspo-09-5212a32a.jpg', caption: 'Japón, foto 9' },
+  { url: 'assets/img/inspo-10-59fce568.jpg', caption: 'Japón, foto 10' },
+  { url: 'assets/img/inspo-11-57b13703.jpg', caption: 'Japón, foto 11' },
+  { url: 'assets/img/inspo-12-61a70fed.jpg', caption: 'Japón, foto 12' },
+  { url: 'assets/img/inspo-13-da9bb830.jpg', caption: 'Japón, foto 13' },
+];
+
+/* =========================================================
+   STATE
+   ========================================================= */
+
+const STORAGE_KEY = 'martinez-japan-2026';
+const STATE_VERSION = 12;
+
+function defaultState() {
+  return {
+    _version: STATE_VERSION,
+    user: '',
+    selectedDay: 1,
+    selectedActivity: {},   // { [dayN]: activityId }
+    votes: {},              // { [activityId]: { count, voters:[] } }
+    activities: null,
+    inspo: null,
+    packing: null,
+    dayEdits: {},                  // { [dayN]: { title?, subtitle?, focus? } }
+    budgetExpanded: {},            // { [dayN]: bool }
+    tripGlanceEdits: {},           // { [key]: { label?, title?, subtitle? } }
+    editingGlance: false,
+    glanceSnapshot: null,
+    editingHeaderDay: null,        // dayN when editing the day header
+    editingActivityId: null,       // activityId when editing an activity
+    editingActivityDay: null,      // day of the activity being edited
+    editSnapshot: null,            // { kind: 'header'|'activity', data: ... }
+    geocache: {},                  // { [ubicacion text]: {lat, lng} | null }
+  };
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    return { ...defaultState(), ...JSON.parse(raw) };
+  } catch (e) { return defaultState(); }
+}
+function saveState() {
+  const persistable = { ...state, editingHeaderDay: null, editingActivityId: null, editingActivityDay: null, editSnapshot: null, editingGlance: false, glanceSnapshot: null };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
+}
+
+let state = loadState();
+
+// Migration
+if (state._version !== STATE_VERSION) {
+  // Clean slate on version bump: reset activities, inspo, votes, selection
+  state.activities = null;
+  state.inspo = null;
+  state.votes = {};
+  state.selectedActivity = {};
+  state.budgetExpanded = {};
+  if (!state.dayEdits) state.dayEdits = {};
+  state._version = STATE_VERSION;
+}
+if (!state.inspo) state.inspo = DEFAULT_INSPO.map(i => ({ ...i, author: 'family' }));
+if (!state.packing) {
+  state.packing = {};
+  Object.entries(PACKING_DEFAULT).forEach(([cat, items]) => {
+    state.packing[cat] = items.map(label => ({ label, done: false, doneBy: '' }));
+  });
+}
+if (!state.activities) {
+  state.activities = {};
+  ITINERARY.forEach(d => {
+    state.activities[d.n] = d.activities.map(a => ({
+      id: a.id, title: a.title, description: '', timeOfDay: a.timeOfDay, cost: a.cost, ubicacion: a.ubicacion, imageUrl: '',
+    }));
+  });
+}
+if (!state.selectedActivity) state.selectedActivity = {};
+if (!state.dayEdits) state.dayEdits = {};
+if (!state.geocache) state.geocache = {};
+if (!state.tripGlanceEdits) state.tripGlanceEdits = {};
+state.editingHeaderDay = null;
+state.editingActivityId = null;
+state.editingActivityDay = null;
+state.editSnapshot = null;
+saveState();
+
+/* =========================================================
+   SUPABASE SYNC LAYER
+   ---------------------------------------------------------
+   Local `state` remains the source of truth for the UI. On mount
+   we hydrate from Supabase (falling back to localStorage). Every
+   mutation writes to both localStorage (fast) and Supabase (shared).
+   Realtime pushes remote changes back into `state` and re-renders.
+   ========================================================= */
+
+// Track our own writes so we don't reprocess them from realtime echo.
+const _recentLocalMutations = new Set();
+function markLocal(key) {
+  _recentLocalMutations.add(key);
+  setTimeout(() => _recentLocalMutations.delete(key), 4000);
+}
+
+// Fire-and-forget helpers. All are no-ops when supa is null (offline mode).
+const supaSync = {
+  upsertActivity(a, dayN) {
+    if (!supa) return;
+    const row = {
+      id: a.id,
+      day_number: dayN,
+      title: a.title || '',
+      description: a.description || '',
+      time_of_day: TIMES.includes(a.timeOfDay) ? a.timeOfDay : 'tarde',
+      cost: Math.max(0, Number(a.cost) || 0),
+      ubicacion: a.ubicacion || '',
+      lat: a.lat != null ? Number(a.lat) : null,
+      lng: a.lng != null ? Number(a.lng) : null,
+      image_url: a.imageUrl || '',
+      created_by: a.createdBy || state.user || '',
+      updated_by: state.user || '',
+    };
+    markLocal('activity:' + a.id);
+    supa.from('japan_activities').upsert(row).then(({ error, data }) => {
+      if (error) { console.warn('upsertActivity failed', error); return; }
+      // Optimistically stamp the local activity with the fresh timestamp+user
+      // so the "editado por" line updates immediately without waiting for realtime echo.
+      a.updatedBy = state.user || '';
+      a.updatedAt = new Date().toISOString();
+      if (!a.createdBy) a.createdBy = a.updatedBy;
+      renderDayView();
+    });
+  },
+  deleteActivity(id) {
+    if (!supa) return;
+    markLocal('activity-del:' + id);
+    supa.from('japan_activities').delete().eq('id', id).then(({ error }) => {
+      if (error) console.warn('deleteActivity failed', error);
+    });
+  },
+  upsertDay(dayN, edits) {
+    if (!supa) return;
+    const row = {
+      day_number: dayN,
+      title: edits.title != null ? edits.title : '',
+      subtitle: edits.subtitle != null ? edits.subtitle : '',
+      focus: edits.focus != null ? edits.focus : '',
+    };
+    markLocal('day:' + dayN);
+    supa.from('japan_days').upsert(row).then(({ error }) => {
+      if (error) console.warn('upsertDay failed', error);
+    });
+  },
+  addVote(activityId, voterName) {
+    if (!supa || !voterName) return;
+    markLocal('vote+:' + activityId + '/' + voterName);
+    supa.from('japan_votes').upsert({ activity_id: activityId, voter_name: voterName }).then(({ error }) => {
+      if (error) console.warn('addVote failed', error);
+    });
+  },
+  removeVote(activityId, voterName) {
+    if (!supa || !voterName) return;
+    markLocal('vote-:' + activityId + '/' + voterName);
+    supa.from('japan_votes').delete().eq('activity_id', activityId).eq('voter_name', voterName).then(({ error }) => {
+      if (error) console.warn('removeVote failed', error);
+    });
+  },
+  upsertGlance(key, edits) {
+    if (!supa) return;
+    const row = {
+      key,
+      label: edits.label != null ? edits.label : '',
+      title: edits.title != null ? edits.title : '',
+      subtitle: edits.subtitle != null ? edits.subtitle : '',
+    };
+    markLocal('glance:' + key);
+    supa.from('japan_trip_glance').upsert(row).then(({ error }) => {
+      if (error) console.warn('upsertGlance failed', error);
+    });
+  },
+  addInspo(item) {
+    if (!supa) return;
+    // Insert; DB returns the new id, which we'll patch back via realtime.
+    supa.from('japan_inspo').insert({
+      url: item.url,
+      caption: item.caption || '',
+      author: item.author || 'family',
+      sort_order: item.sort_order != null ? item.sort_order : 0,
+    }).then(({ error }) => {
+      if (error) console.warn('addInspo failed', error);
+    });
+  },
+  deleteInspo(id) {
+    if (!supa || !id) return;
+    markLocal('inspo-del:' + id);
+    supa.from('japan_inspo').delete().eq('id', id).then(({ error }) => {
+      if (error) console.warn('deleteInspo failed', error);
+    });
+  },
+  upsertGeocache(ubicacion, lat, lng) {
+    if (!supa) return;
+    supa.from('japan_geocache').upsert({ ubicacion, lat, lng }).then(({ error }) => {
+      if (error) console.warn('upsertGeocache failed', error);
+    });
+  },
+};
+
+// Initial pull from Supabase. If successful, overwrites local state fields
+// with server state so all family members converge on the same view.
+async function hydrateFromSupabase() {
+  if (!supa) return;
+  try {
+    const [days, acts, votes, inspo, glance, geo] = await Promise.all([
+      supa.from('japan_days').select('*').order('day_number'),
+      supa.from('japan_activities').select('*'),
+      supa.from('japan_votes').select('*'),
+      supa.from('japan_inspo').select('*').order('sort_order'),
+      supa.from('japan_trip_glance').select('*'),
+      supa.from('japan_geocache').select('*'),
+    ]);
+
+    if (days.data) {
+      state.dayEdits = {};
+      days.data.forEach(d => {
+        state.dayEdits[d.day_number] = { title: d.title, subtitle: d.subtitle, focus: d.focus };
+      });
+    }
+    if (acts.data) {
+      state.activities = {};
+      ITINERARY.forEach(d => { state.activities[d.n] = []; });
+      acts.data.forEach(r => {
+        if (!state.activities[r.day_number]) state.activities[r.day_number] = [];
+        state.activities[r.day_number].push({
+          id: r.id, title: r.title, description: r.description,
+          timeOfDay: r.time_of_day, cost: r.cost, ubicacion: r.ubicacion,
+          lat: r.lat, lng: r.lng, imageUrl: r.image_url,
+          createdBy: r.created_by, updatedBy: r.updated_by, updatedAt: r.updated_at,
+        });
+      });
+    }
+    if (votes.data) {
+      state.votes = {};
+      votes.data.forEach(v => {
+        const cur = state.votes[v.activity_id] || { count: 0, voters: [] };
+        if (!cur.voters.includes(v.voter_name)) cur.voters.push(v.voter_name);
+        cur.count = cur.voters.length;
+        state.votes[v.activity_id] = cur;
+      });
+    }
+    if (inspo.data && inspo.data.length) {
+      state.inspo = inspo.data.map(r => ({ id: r.id, url: r.url, caption: r.caption, author: r.author, sort_order: r.sort_order }));
+    }
+    if (glance.data) {
+      state.tripGlanceEdits = {};
+      glance.data.forEach(g => {
+        state.tripGlanceEdits[g.key] = { label: g.label, title: g.title, subtitle: g.subtitle };
+      });
+    }
+    if (geo.data) {
+      geo.data.forEach(g => {
+        if (g.lat != null && g.lng != null) state.geocache[g.ubicacion] = { lat: g.lat, lng: g.lng };
+      });
+    }
+    saveState();
+    render();
+    renderMap();
+  } catch (e) {
+    console.warn('hydrateFromSupabase failed', e);
+  }
+}
+
+// Subscribe to Realtime broadcasts so remote edits patch our state.
+let _realtimeChannel = null;
+function subscribeRealtime() {
+  if (!supa || _realtimeChannel) return;
+  _realtimeChannel = supa
+    .channel('japan-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'japan_activities' }, (payload) => {
+      const key = 'activity:' + (payload.new?.id || payload.old?.id);
+      const delKey = 'activity-del:' + (payload.old?.id || '');
+      if (_recentLocalMutations.has(key) || _recentLocalMutations.has(delKey)) return;
+      applyActivityChange(payload);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'japan_votes' }, (payload) => {
+      const aid = payload.new?.activity_id || payload.old?.activity_id;
+      const name = payload.new?.voter_name || payload.old?.voter_name;
+      if (payload.eventType === 'INSERT' && _recentLocalMutations.has('vote+:' + aid + '/' + name)) return;
+      if (payload.eventType === 'DELETE' && _recentLocalMutations.has('vote-:' + aid + '/' + name)) return;
+      applyVoteChange(payload);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'japan_days' }, (payload) => {
+      const dayN = payload.new?.day_number || payload.old?.day_number;
+      if (_recentLocalMutations.has('day:' + dayN)) return;
+      applyDayChange(payload);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'japan_trip_glance' }, (payload) => {
+      const k = payload.new?.key || payload.old?.key;
+      if (_recentLocalMutations.has('glance:' + k)) return;
+      applyGlanceChange(payload);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'japan_inspo' }, (payload) => {
+      const id = payload.new?.id || payload.old?.id;
+      if (_recentLocalMutations.has('inspo-del:' + id)) return;
+      applyInspoChange(payload);
+    })
+    .subscribe();
+}
+
+function applyActivityChange(payload) {
+  const r = payload.new || payload.old;
+  if (!r) return;
+  if (payload.eventType === 'DELETE') {
+    const list = state.activities[r.day_number] || [];
+    const idx = list.findIndex(a => a.id === r.id);
+    if (idx >= 0) list.splice(idx, 1);
+    delete state.votes[r.id];
+  } else {
+    const list = state.activities[r.day_number] || (state.activities[r.day_number] = []);
+    const idx = list.findIndex(a => a.id === r.id);
+    const next = {
+      id: r.id, title: r.title, description: r.description,
+      timeOfDay: r.time_of_day, cost: r.cost, ubicacion: r.ubicacion,
+      lat: r.lat, lng: r.lng, imageUrl: r.image_url,
+      createdBy: r.created_by, updatedBy: r.updated_by, updatedAt: r.updated_at,
+    };
+    if (idx >= 0) list[idx] = next; else list.push(next);
+  }
+  saveState();
+  renderDayView();
+  renderBudget();
+  renderMap();
+}
+function applyVoteChange(payload) {
+  const r = payload.new || payload.old;
+  if (!r) return;
+  const v = state.votes[r.activity_id] || { count: 0, voters: [] };
+  if (payload.eventType === 'DELETE') {
+    v.voters = v.voters.filter(n => n !== r.voter_name);
+  } else if (!v.voters.includes(r.voter_name)) {
+    v.voters.push(r.voter_name);
+  }
+  v.count = v.voters.length;
+  state.votes[r.activity_id] = v;
+  saveState();
+  renderDayView();
+}
+function applyDayChange(payload) {
+  const r = payload.new || payload.old;
+  if (!r) return;
+  if (payload.eventType === 'DELETE') {
+    delete state.dayEdits[r.day_number];
+  } else {
+    state.dayEdits[r.day_number] = { title: r.title, subtitle: r.subtitle, focus: r.focus };
+  }
+  saveState();
+  renderDayView();
+  renderBudget();
+  renderMap();
+}
+function applyGlanceChange(payload) {
+  const r = payload.new || payload.old;
+  if (!r) return;
+  if (payload.eventType === 'DELETE') {
+    delete state.tripGlanceEdits[r.key];
+  } else {
+    state.tripGlanceEdits[r.key] = { label: r.label, title: r.title, subtitle: r.subtitle };
+  }
+  saveState();
+  renderTripGlance();
+}
+function applyInspoChange(payload) {
+  const r = payload.new || payload.old;
+  if (!r) return;
+  if (payload.eventType === 'DELETE') {
+    state.inspo = state.inspo.filter(i => i.id !== r.id);
+  } else {
+    const idx = state.inspo.findIndex(i => i.id === r.id);
+    const next = { id: r.id, url: r.url, caption: r.caption, author: r.author, sort_order: r.sort_order };
+    if (idx >= 0) state.inspo[idx] = next; else state.inspo.unshift(next);
+    state.inspo.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  }
+  saveState();
+  renderInspo();
+}
+
+/* =========================================================
+   USER
+   ========================================================= */
+
+function ensureUser() { if (!state.user) promptForName(); updateUserBadge(); }
+function promptForName() {
+  const n = prompt('Tu nombre (para que las votaciones queden a tu nombre):', state.user || '');
+  if (n && n.trim()) { state.user = n.trim(); saveState(); updateUserBadge(); render(); }
+}
+function updateUserBadge() {
+  const b = document.getElementById('userBadge');
+  const btn = document.getElementById('whoAmI');
+  if (state.user) { b.textContent = 'Eres ' + state.user; b.classList.remove('hidden'); btn.textContent = 'Cambiar nombre'; }
+  else { b.classList.add('hidden'); btn.textContent = 'Poner nombre'; }
+}
+document.getElementById('whoAmI').addEventListener('click', promptForName);
+
+/* =========================================================
+   COUNTDOWN
+   ========================================================= */
+
+function renderCountdown() {
+  const start = new Date('2026-11-13T00:00:00');
+  const now = new Date();
+  const diffDays = Math.ceil((start - now) / (1000 * 60 * 60 * 24));
+  const el = document.getElementById('countdown');
+  if (diffDays > 1) el.textContent = 'faltan ' + diffDays + ' días';
+  else if (diffDays === 1) el.textContent = 'falta 1 día';
+  else if (diffDays === 0) el.textContent = 'Hoy!';
+  else el.textContent = 'En curso';
+}
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
+function formatDate(iso) {
+  const [, m, d] = iso.split('-').map(Number);
+  const names = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return d + ' ' + names[m-1];
+}
+function escapeHTML(str) { if (str == null) return ''; return String(str).replace(/[&<>"']/g, s => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[s])); }
+function escapeAttr(str) { return escapeHTML(str); }
+function slugify(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+function dayCost(dayN) { return (state.activities[dayN] || []).reduce((s, a) => s + (Number(a.cost) || 0), 0); }
+function getSelectedActivity(dayN) {
+  const list = state.activities[dayN] || [];
+  const id = state.selectedActivity[dayN];
+  return list.find(a => a.id === id) || list[0] || null;
+}
+function makeId(dayN) { return 'd' + dayN + 'x' + Math.random().toString(36).slice(2, 8); }
+function dayTitle(d)    { return (state.dayEdits[d.n] && state.dayEdits[d.n].title    != null) ? state.dayEdits[d.n].title    : d.city; }
+function daySubtitle(d) { return (state.dayEdits[d.n] && state.dayEdits[d.n].subtitle != null) ? state.dayEdits[d.n].subtitle : d.area; }
+function dayFocus(d)    { return (state.dayEdits[d.n] && state.dayEdits[d.n].focus    != null) ? state.dayEdits[d.n].focus    : d.focus; }
+function activityImage(a, dayN) {
+  // 1) explicit override on the activity wins
+  if (a && a.imageUrl && String(a.imageUrl).trim()) return a.imageUrl;
+  // 2) deterministic pick from the Inspiración pool (which is loaded from the Japan folder)
+  const pool = (state && state.inspo && state.inspo.length) ? state.inspo : DEFAULT_INSPO;
+  if (pool && pool.length) {
+    let idx = 0;
+    if (a && a.id) {
+      let h = 0;
+      for (let i = 0; i < a.id.length; i++) h = (h * 31 + a.id.charCodeAt(i)) & 0xffffffff;
+      idx = Math.abs(h) % pool.length;
+    } else if (dayN) {
+      idx = (Number(dayN) - 1 + pool.length) % pool.length;
+    }
+    return pool[idx].url;
+  }
+  // 3) last-resort picsum fallback (only if inspo is empty)
+  const seed = slugify(((a && a.title) || '') + '-' + ((a && a.ubicacion) || '')) || 'japan-scene';
+  return `https://picsum.photos/seed/act-${seed}/800/1000`;
+}
+
+/* =========================================================
+   GOOGLE PLACES AUTOCOMPLETE (New API, REST)
+   Session tokens group autocomplete requests + a final details call
+   into one billable session, per Google's docs. We generate a fresh
+   token per selection cycle.
+   ========================================================= */
+
+function newPlacesSession() {
+  return (crypto && crypto.randomUUID) ? crypto.randomUUID() :
+    'sess-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+async function placesAutocomplete(input, sessionToken) {
+  if (!input || input.length < 3) return [];
+  try {
+    const res = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_PLACES_KEY,
+        'X-Goog-FieldMask': 'suggestions.placePrediction.placeId,suggestions.placePrediction.text,suggestions.placePrediction.structuredFormat',
+      },
+      body: JSON.stringify({
+        input,
+        includedRegionCodes: ['jp'],
+        sessionToken,
+      }),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.suggestions || []).map(s => {
+      const p = s.placePrediction || {};
+      return {
+        placeId: p.placeId,
+        text: (p.text && p.text.text) || '',
+        main: (p.structuredFormat && p.structuredFormat.mainText && p.structuredFormat.mainText.text) || (p.text && p.text.text) || '',
+        secondary: (p.structuredFormat && p.structuredFormat.secondaryText && p.structuredFormat.secondaryText.text) || '',
+      };
+    }).filter(x => x.placeId);
+  } catch (e) { return []; }
+}
+
+async function placeDetails(placeId, sessionToken) {
+  try {
+    const url = `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?sessionToken=${encodeURIComponent(sessionToken)}`;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-Goog-Api-Key': GOOGLE_PLACES_KEY,
+        'X-Goog-FieldMask': 'id,displayName,formattedAddress,location',
+      },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) { return null; }
+}
+
+/* =========================================================
+   IMAGE UPLOAD (resize to keep localStorage sane)
+   ========================================================= */
+
+function fileToDataURL(file, maxDim=1200, quality=0.82) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Resize the file client-side and return a Blob (used before upload to Storage).
+function fileToResizedBlob(file, maxDim=1200, quality=0.82) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('toBlob returned null')), 'image/jpeg', quality);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Upload a File (or Blob) to the japan-images Supabase Storage bucket.
+// Returns a public URL. Falls back to a client-side data URL if Supabase
+// Storage is unavailable (offline development).
+async function uploadImageToStorage(file, folder = 'activity') {
+  const blob = await fileToResizedBlob(file, 1200, 0.82);
+  if (!supa) {
+    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      reader.onerror = reject;
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
+  }
+  const id = (crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2);
+  const path = `${folder}/${id}.jpg`;
+  const { error } = await supa.storage.from('japan-images').upload(path, blob, {
+    contentType: 'image/jpeg',
+    upsert: false,
+    cacheControl: '31536000',
+  });
+  if (error) {
+    console.warn('Storage upload failed, using data URL fallback', error);
+    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      reader.onerror = reject;
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
+  }
+  const { data } = supa.storage.from('japan-images').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// Human-friendly relative time in Spanish.
+function relativeTime(iso) {
+  if (!iso) return '';
+  const then = new Date(iso).getTime();
+  if (!then) return '';
+  const diffSec = Math.max(0, Math.round((Date.now() - then) / 1000));
+  if (diffSec < 45)          return 'hace un momento';
+  if (diffSec < 90)          return 'hace 1 min';
+  const diffMin = Math.round(diffSec / 60);
+  if (diffMin < 60)          return `hace ${diffMin} min`;
+  const diffH = Math.round(diffMin / 60);
+  if (diffH < 24)            return `hace ${diffH} h`;
+  const diffD = Math.round(diffH / 24);
+  if (diffD < 7)             return `hace ${diffD} d`;
+  const diffW = Math.round(diffD / 7);
+  if (diffW < 5)             return `hace ${diffW} sem`;
+  const diffMo = Math.round(diffD / 30);
+  return `hace ${diffMo} mes${diffMo > 1 ? 'es' : ''}`;
+}
+
+let _uploadFor = null; // { aid, dayN } to identify where the upload lands
+document.getElementById('hiddenImageInput').addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = ''; // reset so same file can be picked again
+  if (!file || !_uploadFor) return;
+  const img = document.getElementById('actImg');
+  const prevSrc = img && img.src;
+  if (img) img.style.opacity = '0.55';
+  try {
+    // Upload to Supabase Storage (falls back to data URL if offline).
+    const publicUrl = await uploadImageToStorage(file, 'activity');
+    const { aid, dayN } = _uploadFor;
+    const a = (state.activities[dayN] || []).find(x => x.id === aid);
+    if (!a) return;
+    a.imageUrl = publicUrl;
+    saveState();
+    supaSync.upsertActivity(a, dayN);
+    if (img) { img.src = publicUrl; img.style.opacity = ''; }
+    // Re-render panel so the "Cambiar imagen" / Auto button state reflects the new URL
+    const d = ITINERARY.find(x => x.n === dayN);
+    if (d) {
+      document.getElementById('activityPanel').innerHTML = renderActivityPanel(d);
+      bindPanelEvents(d);
+    }
+  } catch (err) {
+    console.warn(err);
+    if (img && prevSrc) { img.src = prevSrc; img.style.opacity = ''; }
+    alert('No se pudo cargar la imagen. Intenta con otro archivo.');
+  }
+});
+
+/* =========================================================
+   TRIP AT GLANCE
+   ========================================================= */
+
+function tgField(key, field) {
+  const e = state.tripGlanceEdits && state.tripGlanceEdits[key];
+  if (e && e[field] != null) return e[field];
+  return TG_DEFAULTS[key][field];
+}
+function renderTripGlance() {
+  const editing = !!state.editingGlance;
+  const controls = document.getElementById('glanceControls');
+  if (!controls) return;
+  controls.innerHTML = editing
+    ? `<button id="cancelGlanceEdit" class="btn-ghost text-xs px-3 py-1.5 rounded-full">Cancelar</button>
+       <button id="saveGlanceEdit" class="btn-primary text-xs px-3 py-1.5 rounded-full">Guardar</button>`
+    : `<button id="startGlanceEdit" class="btn-ghost text-xs px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+         Editar
+       </button>`;
+
+  document.getElementById('tripGlance').innerHTML = TG_KEYS.map(key => {
+    const label = tgField(key, 'label');
+    const title = tgField(key, 'title');
+    const subtitle = tgField(key, 'subtitle');
+    return editing ? `
+      <div>
+        <input type="text" class="glance-input text-[11px] uppercase tracking-widest text-ink-500" data-glance="${key}" data-field="label" value="${escapeAttr(label)}" />
+        <input type="text" class="glance-input title mt-2" data-glance="${key}" data-field="title" value="${escapeAttr(title)}" />
+        <input type="text" class="glance-input text-sm text-ink-500 mt-2" data-glance="${key}" data-field="subtitle" value="${escapeAttr(subtitle)}" />
+      </div>
+    ` : `
+      <div>
+        <p class="text-[11px] uppercase tracking-widest text-ink-500">${escapeHTML(label)}</p>
+        <p class="font-display text-2xl mt-1">${escapeHTML(title)}</p>
+        <p class="text-sm text-ink-500 mt-1">${escapeHTML(subtitle)}</p>
+      </div>
+    `;
+  }).join('');
+
+  bindGlanceEvents();
+}
+function bindGlanceEvents() {
+  const start = document.getElementById('startGlanceEdit');
+  if (start) start.addEventListener('click', () => enterGlanceEdit());
+  const cancel = document.getElementById('cancelGlanceEdit');
+  if (cancel) cancel.addEventListener('click', () => cancelGlanceEdit());
+  const save = document.getElementById('saveGlanceEdit');
+  if (save) save.addEventListener('click', () => commitGlanceEdit());
+  document.querySelectorAll('[data-glance]').forEach(input => {
+    input.addEventListener('input', () => {
+      const key = input.dataset.glance;
+      const field = input.dataset.field;
+      if (!state.tripGlanceEdits[key]) state.tripGlanceEdits[key] = {};
+      state.tripGlanceEdits[key][field] = input.value;
+    });
+  });
+}
+function enterGlanceEdit() {
+  state.glanceSnapshot = JSON.parse(JSON.stringify(state.tripGlanceEdits || {}));
+  state.editingGlance = true;
+  renderTripGlance();
+}
+function cancelGlanceEdit() {
+  if (state.glanceSnapshot != null) state.tripGlanceEdits = state.glanceSnapshot;
+  state.glanceSnapshot = null;
+  state.editingGlance = false;
+  saveState();
+  renderTripGlance();
+}
+function commitGlanceEdit() {
+  state.glanceSnapshot = null;
+  state.editingGlance = false;
+  saveState();
+  Object.entries(state.tripGlanceEdits || {}).forEach(([k, v]) => supaSync.upsertGlance(k, v));
+  renderTripGlance();
+}
+
+/* =========================================================
+   DAY PILLS
+   ========================================================= */
+
+function renderPills() {
+  const container = document.getElementById('dayPills');
+  container.innerHTML = ITINERARY.map(d => `
+    <button class="day-pill border rule bg-paper-50 rounded-md px-3 py-2 text-left min-w-[110px] ${state.selectedDay === d.n ? 'is-active' : ''}" data-day="${d.n}">
+      <div class="pill-date font-display text-sm">${formatDate(d.date)}</div>
+      <div class="pill-city text-[11px] text-ink-500 mt-0.5">${d.dow} · ${d.city}</div>
+    </button>
+  `).join('');
+  container.querySelectorAll('.day-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // switching day exits any edit context (changes are already applied in state)
+      state.editingHeaderDay = null;
+      state.editingActivityId = null;
+      state.editingActivityDay = null;
+      state.editSnapshot = null;
+      state.selectedDay = Number(btn.dataset.day);
+      const first = (state.activities[state.selectedDay] || [])[0];
+      state.selectedActivity[state.selectedDay] = first ? first.id : null;
+      saveState();
+      renderPills();
+      renderDayView();
+      const v = document.getElementById('dayView');
+      v.classList.remove('fade-in'); void v.offsetWidth; v.classList.add('fade-in');
+    });
+  });
+}
+
+/* =========================================================
+   DAY VIEW
+   ========================================================= */
+
+function renderDayView() {
+  const d = ITINERARY.find(x => x.n === state.selectedDay);
+  if (!d) return;
+  if (!state.selectedActivity[d.n]) {
+    const first = (state.activities[d.n] || [])[0];
+    state.selectedActivity[d.n] = first ? first.id : null;
+  }
+  const editingHeader = state.editingHeaderDay === d.n;
+
+  document.getElementById('dayView').innerHTML = `
+    <div class="grid md:grid-cols-12 gap-8">
+      <div class="md:col-span-7">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div class="flex items-center gap-3 text-sm text-ink-500">
+            <span class="chip">Día ${d.n} de 18</span>
+            <span>${d.dow}, ${formatDate(d.date)} de 2026</span>
+          </div>
+          <div class="flex gap-2">
+            ${editingHeader
+              ? `<button id="cancelHeaderEdit" class="btn-ghost text-xs px-3 py-1.5 rounded-full">Cancelar</button>
+                 <button id="saveHeaderEdit" class="btn-primary text-xs px-3 py-1.5 rounded-full">Guardar título</button>`
+              : `<button id="startHeaderEdit" class="btn-ghost text-xs px-3 py-1.5 rounded-full inline-flex items-center gap-1" title="Editar título, subtítulo y descripción del día">
+                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                   Editar título del día
+                 </button>`}
+          </div>
+        </div>
+
+        ${editingHeader
+          ? `<input class="day-title-input text-3xl md:text-5xl mt-4" data-day-field="title"    value="${escapeAttr(dayTitle(d))}" />
+             <input class="day-title-input text-lg mt-2 text-ink-500"  data-day-field="subtitle" value="${escapeAttr(daySubtitle(d))}" />
+             <textarea class="day-focus-input mt-5 max-w-[58ch]" data-day-field="focus" rows="3">${escapeHTML(dayFocus(d))}</textarea>`
+          : `<h3 class="font-display text-3xl md:text-5xl mt-4 tracking-tight">${escapeHTML(dayTitle(d))}</h3>
+             <p class="text-ink-500 mt-1">${escapeHTML(daySubtitle(d))}</p>
+             <p class="mt-5 text-ink-700 leading-relaxed max-w-[58ch]">${escapeHTML(dayFocus(d))}</p>`}
+
+        <div class="mt-8">
+          <p class="text-[11px] uppercase tracking-widest text-ink-500 mb-4">Actividades</p>
+          <div id="activityGroups">${renderActivityGroups(d)}</div>
+        </div>
+      </div>
+
+      <div class="md:col-span-5">
+        <div id="actImgWrap" class="aspect-[4/5] overflow-hidden rounded-sm bg-paper-200 shadow-[0_18px_50px_-24px_rgba(27,24,21,0.28)]">
+          ${renderActivityImage(d)}
+        </div>
+        <div id="activityPanel" class="mt-4 border rule bg-paper-50 rounded-md p-4 fade-in">${renderActivityPanel(d)}</div>
+      </div>
+    </div>
+  `;
+
+  bindDayViewEvents(d);
+}
+
+function renderActivityImage(d) {
+  const a = getSelectedActivity(d.n);
+  const url = activityImage(a, d.n);
+  const alt = a ? (a.title || 'Actividad') : 'Sin actividad';
+  return `<img id="actImg" src="${escapeAttr(url)}" alt="${escapeAttr(alt)}" class="w-full h-full object-cover" loading="lazy" />`;
+}
+
+function renderActivityGroups(d) {
+  const activities = state.activities[d.n] || [];
+  const selectedId = state.selectedActivity[d.n];
+  const groups = { 'mañana': [], 'tarde': [], 'noche': [] };
+  activities.forEach(a => {
+    const t = TIMES.includes(a.timeOfDay) ? a.timeOfDay : 'tarde';
+    groups[t].push(a);
+  });
+  return TIMES.map(t => {
+    const items = groups[t];
+    return `
+      <div class="mb-6">
+        <p class="time-chip mb-3">${TIME_LABEL[t]}</p>
+        ${items.length === 0
+          ? `<div class="text-sm text-ink-500 italic pl-4 py-2 border-l-2 rule">Sin actividades en la ${TIME_LABEL[t]}.</div>`
+          : `<ul class="space-y-2">${items.map(a => renderActivityRow(a, a.id === selectedId)).join('')}</ul>`}
+        <button class="mt-2 btn-ghost text-[11px] px-3 py-1.5 rounded-full inline-flex items-center gap-1" data-add-to="${t}">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          Agregar en ${TIME_LABEL[t]}
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderActivityRow(a, isSelected) {
+  const v = state.votes[a.id] || { count: 0, voters: [] };
+  const voted = state.user && v.voters.includes(state.user);
+  const isEditing = state.editingActivityId === a.id;
+  const canEditOthers = state.editingActivityId == null; // block other rows' edit buttons while one is editing
+
+  const titleCell = isEditing
+    ? `<input type="text" class="row-title" data-field="title" value="${escapeAttr(a.title)}" placeholder="Actividad" />`
+    : `<div class="row-title" style="border:none;">${escapeHTML(a.title || 'Sin título')}</div>`;
+  const descCell = isEditing
+    ? `<textarea class="row-desc" data-field="description" rows="2" placeholder="Descripción, nota, o cualquier detalle...">${escapeHTML(a.description || '')}</textarea>`
+    : `<div class="row-desc" style="border:none;">${a.description ? escapeHTML(a.description) : '<span class="italic opacity-60">Sin descripción</span>'}</div>`;
+
+  const actionsCell = isEditing
+    ? `<div class="row-actions">
+         <button class="icon-btn danger" data-remove="${a.id}" title="Borrar actividad" aria-label="Borrar">
+           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="m19 6-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+         </button>
+         <button class="icon-btn" data-cancel-activity="${a.id}" title="Cancelar" aria-label="Cancelar">
+           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+         </button>
+         <button class="icon-btn" data-save-activity="${a.id}" title="Guardar" aria-label="Guardar" style="color:#C7472C; border-color: rgba(199,71,44,0.35);">
+           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+         </button>
+       </div>`
+    : `<div class="row-actions">
+         <button class="icon-btn" data-edit-activity="${a.id}" ${canEditOthers ? '' : 'disabled style="opacity:0.35;cursor:not-allowed;"'} title="Editar esta actividad" aria-label="Editar">
+           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+         </button>
+       </div>`;
+
+  return `
+    <li>
+      <div class="activity-row ${isSelected ? 'is-selected' : ''} ${isEditing ? 'is-editing' : ''}" data-aid="${a.id}">
+        <button class="thumb-btn shrink-0 border rule w-11 h-11 rounded-md flex flex-col items-center justify-center text-xs transition hover:border-vermilion-500 ${voted ? 'voted' : ''}" data-vote="${a.id}" aria-label="Vota">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span class="mt-0.5">${v.count}</span>
+        </button>
+        <div class="min-w-0">
+          ${titleCell}
+          ${v.voters.length
+            ? `<div class="voters-line">${v.voters.map(n => `<span class="vote-chip">${escapeHTML(n)}</span>`).join('')}</div>`
+            : ''}
+        </div>
+        <div class="row-desc-cell min-w-0">${descCell}</div>
+        ${actionsCell}
+        ${a.updatedBy && a.updatedAt
+          ? `<div class="row-meta">Editado por <strong>${escapeHTML(a.updatedBy)}</strong> · ${relativeTime(a.updatedAt)}</div>`
+          : ''}
+      </div>
+    </li>
+  `;
+}
+
+function renderActivityPanel(d) {
+  const a = getSelectedActivity(d.n);
+  if (!a) return `<p class="text-sm text-ink-500 italic">Sin actividades todavía. Agrega una desde alguno de los turnos (Mañana / Tarde / Noche).</p>`;
+  const isEditing = state.editingActivityId === a.id;
+
+  const turnoField = isEditing
+    ? `<select class="side-input mt-1.5" data-panel="timeOfDay" data-aid="${a.id}">
+         ${TIMES.map(x => `<option value="${x}" ${x===a.timeOfDay?'selected':''}>${TIME_LABEL[x]}</option>`).join('')}
+       </select>`
+    : `<p class="side-read mt-1">${TIME_LABEL[TIMES.includes(a.timeOfDay) ? a.timeOfDay : 'tarde']}</p>`;
+  const ubiField = isEditing
+    ? `<div class="pac-wrap mt-1.5">
+         <input type="text" class="side-input" data-panel="ubicacion" data-aid="${a.id}" value="${escapeAttr(a.ubicacion || '')}" placeholder="Busca en Google Maps..." autocomplete="off" />
+         <div class="pac-list hidden" data-pac-list></div>
+       </div>`
+    : `<p class="side-read mt-1">${a.ubicacion ? escapeHTML(a.ubicacion) : '<span class="italic text-ink-500">Sin ubicación</span>'}</p>`;
+  const costField = isEditing
+    ? `<div class="relative mt-1.5">
+         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500 text-sm">$</span>
+         <input type="number" min="0" step="1" class="side-input num" data-panel="cost" data-aid="${a.id}" value="${Number(a.cost) || 0}" />
+       </div>`
+    : `<p class="side-read mt-1 font-mono">$${Number(a.cost) || 0}</p>`;
+
+  let imgUrlLabel;
+  if (a.imageUrl && a.imageUrl.startsWith('data:')) imgUrlLabel = '(imagen cargada desde tu compu)';
+  else if (a.imageUrl && String(a.imageUrl).trim()) imgUrlLabel = a.imageUrl;
+  else imgUrlLabel = 'Automática';
+
+  const imgField = isEditing
+    ? `<div class="mt-1.5 flex gap-2">
+         <button class="btn-ghost text-xs px-3 py-2 rounded-md flex-1 inline-flex items-center justify-center gap-1" data-upload-img="${a.id}">
+           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+           ${a.imageUrl ? 'Cambiar imagen' : 'Subir imagen'}
+         </button>
+         ${a.imageUrl ? `<button class="btn-ghost text-xs px-3 py-2 rounded-md" data-clear-img="${a.id}" title="Regresar a imagen automática">Auto</button>` : ''}
+       </div>`
+    : `<p class="side-read mt-1 text-ink-500 text-[13px]">${a.imageUrl ? (a.imageUrl.startsWith('data:') ? 'Imagen cargada' : 'Imagen personalizada') : 'Automática'}</p>`;
+
+  return `
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <p class="text-[11px] uppercase tracking-widest text-ink-500">Actividad seleccionada</p>
+        <p class="font-display text-xl mt-1 leading-tight truncate">${escapeHTML(a.title || 'Sin título')}</p>
+      </div>
+      ${isEditing
+        ? `<span class="chip" style="background: rgba(199,71,44,0.12); color: #C7472C;">Editando</span>`
+        : `<button class="icon-btn shrink-0" data-edit-activity="${a.id}" title="Editar esta actividad" aria-label="Editar">
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+           </button>`}
+    </div>
+
+    <div class="mt-5 space-y-4">
+      <div>
+        <label class="text-[11px] uppercase tracking-widest text-ink-500">Turno del día</label>
+        ${turnoField}
+      </div>
+      <div>
+        <label class="text-[11px] uppercase tracking-widest text-ink-500">Ubicación</label>
+        ${ubiField}
+      </div>
+      <div>
+        <label class="text-[11px] uppercase tracking-widest text-ink-500">Presupuesto (USD / persona)</label>
+        ${costField}
+      </div>
+      <div>
+        <label class="text-[11px] uppercase tracking-widest text-ink-500">Imagen</label>
+        ${imgField}
+      </div>
+    </div>
+
+    <div class="mt-5 pt-4 border-t rule flex justify-between text-sm">
+      <span class="text-ink-500">Total de actividad</span>
+      <span class="font-mono">$${Number(a.cost) || 0} / persona</span>
+    </div>
+
+    ${isEditing
+      ? `<div class="mt-5 flex gap-2">
+           <button class="btn-ghost flex-1 px-4 py-2 rounded-md text-sm" data-cancel-activity="${a.id}">Cancelar</button>
+           <button class="btn-primary flex-1 px-4 py-2 rounded-md text-sm" data-save-activity="${a.id}">Guardar</button>
+         </div>`
+      : ''}
+  `;
+}
+
+/* =========================================================
+   EDIT MODE (header)
+   ========================================================= */
+
+function enterHeaderEdit(d) {
+  if (state.editingActivityId) return; // don't allow if activity is being edited
+  state.editSnapshot = { kind: 'header', data: JSON.parse(JSON.stringify(state.dayEdits[d.n] || {})) };
+  state.editingHeaderDay = d.n;
+  renderDayView();
+}
+function cancelHeaderEdit(d) {
+  if (state.editSnapshot && state.editSnapshot.kind === 'header') {
+    state.dayEdits[d.n] = state.editSnapshot.data;
+  }
+  state.editSnapshot = null;
+  state.editingHeaderDay = null;
+  saveState();
+  renderDayView();
+  renderMapPopups();
+  renderBudget();
+}
+function commitHeaderEdit(d) {
+  state.editSnapshot = null;
+  state.editingHeaderDay = null;
+  saveState();
+  supaSync.upsertDay(d.n, state.dayEdits[d.n] || {});
+  renderDayView();
+  renderMapPopups();
+  renderBudget();
+}
+
+/* =========================================================
+   EDIT MODE (activity)
+   ========================================================= */
+
+function enterActivityEdit(aid, dayN) {
+  if (state.editingHeaderDay) return; // don't allow if header is being edited
+  const a = (state.activities[dayN] || []).find(x => x.id === aid);
+  if (!a) return;
+  state.editSnapshot = { kind: 'activity', dayN, data: JSON.parse(JSON.stringify(a)) };
+  state.editingActivityId = aid;
+  state.editingActivityDay = dayN;
+  state.selectedActivity[dayN] = aid;
+  renderDayView();
+}
+function cancelActivityEdit() {
+  if (state.editSnapshot && state.editSnapshot.kind === 'activity') {
+    const dayN = state.editSnapshot.dayN;
+    const list = state.activities[dayN] || [];
+    const idx = list.findIndex(x => x.id === state.editSnapshot.data.id);
+    if (idx >= 0) list[idx] = state.editSnapshot.data;
+    else list.push(state.editSnapshot.data);
+  }
+  state.editSnapshot = null;
+  state.editingActivityId = null;
+  state.editingActivityDay = null;
+  saveState();
+  renderDayView();
+  renderBudget();
+  renderMapPopups();
+}
+function commitActivityEdit() {
+  const wasEditing = state.editingActivityId;
+  const dayN = state.editingActivityDay;
+  state.editSnapshot = null;
+  state.editingActivityId = null;
+  state.editingActivityDay = null;
+  saveState();
+  // Sync to Supabase
+  if (wasEditing && dayN) {
+    const a = (state.activities[dayN] || []).find(x => x.id === wasEditing);
+    if (a) supaSync.upsertActivity(a, dayN);
+  }
+  renderDayView();
+  renderBudget();
+  renderMapPopups();
+}
+function removeActivity(aid, dayN) {
+  const list = state.activities[dayN] || [];
+  const idx = list.findIndex(x => x.id === aid);
+  if (idx < 0) return;
+  list.splice(idx, 1);
+  delete state.votes[aid];
+  if (state.selectedActivity[dayN] === aid) {
+    const next = list[idx] || list[idx-1] || list[0];
+    state.selectedActivity[dayN] = next ? next.id : null;
+  }
+  state.editingActivityId = null;
+  state.editingActivityDay = null;
+  state.editSnapshot = null;
+  saveState();
+  supaSync.deleteActivity(aid);
+  renderDayView();
+  renderBudget();
+  renderMapPopups();
+}
+
+/* =========================================================
+   EVENTS
+   ========================================================= */
+
+function bindDayViewEvents(d) {
+  // Header edit toggle
+  const startH = document.getElementById('startHeaderEdit');
+  if (startH) startH.addEventListener('click', () => enterHeaderEdit(d));
+  const cancelH = document.getElementById('cancelHeaderEdit');
+  if (cancelH) cancelH.addEventListener('click', () => cancelHeaderEdit(d));
+  const saveH = document.getElementById('saveHeaderEdit');
+  if (saveH) saveH.addEventListener('click', () => commitHeaderEdit(d));
+
+  // Day-level input autosave (to state, cancel restores from snapshot)
+  document.querySelectorAll('[data-day-field]').forEach(input => {
+    input.addEventListener('input', () => {
+      const field = input.dataset.dayField;
+      if (!state.dayEdits[d.n]) state.dayEdits[d.n] = {};
+      state.dayEdits[d.n][field] = input.value;
+    });
+  });
+
+  bindRowEvents(d);
+  bindPanelEvents(d);
+
+  // Add activity: per-section buttons
+  document.querySelectorAll('[data-add-to]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (state.editingActivityId || state.editingHeaderDay) {
+        alert('Termina de editar antes de agregar otra actividad.');
+        return;
+      }
+      const timeOfDay = btn.dataset.addTo;
+      const id = makeId(d.n);
+      const list = state.activities[d.n] || (state.activities[d.n] = []);
+      const newAct = { id, title: '', description: '', timeOfDay, cost: 0, ubicacion: '', imageUrl: '' };
+      list.push(newAct);
+      state.editSnapshot = { kind: 'activity', dayN: d.n, data: null, isNew: true, newId: id };
+      state.editingActivityId = id;
+      state.editingActivityDay = d.n;
+      state.selectedActivity[d.n] = id;
+      renderDayView();
+      setTimeout(() => {
+        const row = document.querySelector(`.activity-row[data-aid="${id}"]`);
+        if (row) row.querySelector('.row-title').focus();
+      }, 40);
+    });
+  });
+}
+
+function bindRowEvents(d) {
+  document.querySelectorAll('.activity-row').forEach(row => {
+    row.addEventListener('click', e => {
+      // ignore clicks on action buttons and inputs
+      if (e.target.closest('[data-vote]')) return;
+      if (e.target.closest('button')) return;
+      const aid = row.dataset.aid;
+      // Don't switch selection while another activity is being edited
+      if (state.editingActivityId && state.editingActivityId !== aid) return;
+      if (state.selectedActivity[d.n] !== aid) {
+        state.selectedActivity[d.n] = aid;
+        document.querySelectorAll('.activity-row').forEach(r => r.classList.toggle('is-selected', r.dataset.aid === aid));
+        document.getElementById('activityPanel').innerHTML = renderActivityPanel(d);
+        document.getElementById('actImgWrap').innerHTML = renderActivityImage(d);
+        bindPanelEvents(d);
+      }
+    });
+    // Row inputs (only present in editing mode) autosave to state
+    row.querySelectorAll('[data-field]').forEach(input => {
+      input.addEventListener('input', () => {
+        const aid = row.dataset.aid;
+        const a = (state.activities[d.n] || []).find(x => x.id === aid);
+        if (!a) return;
+        a[input.dataset.field] = input.value;
+        if (aid === state.selectedActivity[d.n] && input.dataset.field === 'title') {
+          const pt = document.querySelector('#activityPanel .font-display');
+          if (pt) pt.textContent = input.value || 'Sin título';
+          const img = document.getElementById('actImg');
+          if (img && !a.imageUrl) img.src = activityImage(a);
+        }
+      });
+    });
+  });
+
+  document.querySelectorAll('[data-vote]').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); toggleVote(btn.dataset.vote); });
+  });
+  document.querySelectorAll('[data-edit-activity]').forEach(btn => {
+    if (btn.hasAttribute('disabled')) return;
+    btn.addEventListener('click', e => { e.stopPropagation(); enterActivityEdit(btn.dataset.editActivity, d.n); });
+  });
+  document.querySelectorAll('[data-cancel-activity]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      // If we canceled a NEW activity, remove it entirely
+      if (state.editSnapshot && state.editSnapshot.isNew) {
+        const list = state.activities[state.editSnapshot.dayN] || [];
+        const idx = list.findIndex(x => x.id === state.editSnapshot.newId);
+        if (idx >= 0) list.splice(idx, 1);
+        state.editSnapshot = null;
+        state.editingActivityId = null;
+        state.editingActivityDay = null;
+        // reset selection
+        const first = list[0];
+        state.selectedActivity[d.n] = first ? first.id : null;
+        saveState();
+        renderDayView();
+        renderBudget();
+        renderMapPopups();
+      } else {
+        cancelActivityEdit();
+      }
+    });
+  });
+  document.querySelectorAll('[data-save-activity]').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); commitActivityEdit(); });
+  });
+  document.querySelectorAll('[data-remove]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (!confirm('¿Borrar esta actividad?')) return;
+      removeActivity(btn.dataset.remove, d.n);
+    });
+  });
+}
+
+function bindPanelEvents(d) {
+  document.querySelectorAll('#activityPanel [data-panel]').forEach(input => {
+    const commit = () => {
+      const aid = input.dataset.aid;
+      const field = input.dataset.panel;
+      const a = (state.activities[d.n] || []).find(x => x.id === aid);
+      if (!a) return;
+      let val = input.value;
+      if (field === 'cost') val = Math.max(0, Number(val) || 0);
+      // For imageUrl: if user is typing plain http/https, take it; if they typed something that looks like our placeholder, skip
+      if (field === 'imageUrl' && val === '(imagen cargada)') return;
+      a[field] = val;
+      if (field === 'imageUrl' || field === 'ubicacion' || field === 'title') {
+        const img = document.getElementById('actImg');
+        if (img) img.src = activityImage(a);
+      }
+      if (field === 'timeOfDay') {
+        // full re-render so groups + per-section Agregar buttons rebind cleanly
+        renderDayView();
+        return;
+      }
+      if (field === 'cost') {
+        const totalSpan = document.querySelector('#activityPanel .font-mono');
+        if (totalSpan) totalSpan.textContent = '$' + (Number(a.cost) || 0) + ' / persona';
+      }
+    };
+    input.addEventListener('input', commit);
+    input.addEventListener('change', commit);
+  });
+
+  // Edit / cancel / save buttons inside the panel
+  document.querySelectorAll('#activityPanel [data-edit-activity]').forEach(btn => {
+    btn.addEventListener('click', () => enterActivityEdit(btn.dataset.editActivity, d.n));
+  });
+  document.querySelectorAll('#activityPanel [data-cancel-activity]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (state.editSnapshot && state.editSnapshot.isNew) {
+        const list = state.activities[state.editSnapshot.dayN] || [];
+        const idx = list.findIndex(x => x.id === state.editSnapshot.newId);
+        if (idx >= 0) list.splice(idx, 1);
+        state.editSnapshot = null;
+        state.editingActivityId = null;
+        state.editingActivityDay = null;
+        const first = list[0];
+        state.selectedActivity[d.n] = first ? first.id : null;
+        saveState();
+        renderDayView();
+        renderBudget();
+        renderMapPopups();
+      } else {
+        cancelActivityEdit();
+      }
+    });
+  });
+  document.querySelectorAll('#activityPanel [data-save-activity]').forEach(btn => {
+    btn.addEventListener('click', () => commitActivityEdit());
+  });
+
+  // Google Places autocomplete on the ubicación input
+  document.querySelectorAll('#activityPanel [data-panel="ubicacion"]').forEach(input => {
+    const wrap = input.parentElement;
+    const listEl = wrap.querySelector('[data-pac-list]');
+    if (!listEl) return;
+    let sessionToken = newPlacesSession();
+    let debounceTimer = null;
+    let items = [];
+    let activeIdx = -1;
+
+    const hideList = () => { listEl.classList.add('hidden'); items = []; activeIdx = -1; };
+    const renderItems = () => {
+      if (!items.length) { hideList(); return; }
+      listEl.innerHTML = items.map((s, i) => `
+        <div class="pac-item ${i===activeIdx?'active':''}" data-pid="${escapeAttr(s.placeId)}" data-text="${escapeAttr(s.text)}">
+          <div class="pac-main">${escapeHTML(s.main || s.text)}</div>
+          ${s.secondary ? `<div class="pac-secondary">${escapeHTML(s.secondary)}</div>` : ''}
+        </div>
+      `).join('') + '<div class="pac-footer">Powered by Google</div>';
+      listEl.classList.remove('hidden');
+    };
+    const applyChoice = async (placeId, displayText) => {
+      const aid = input.dataset.aid;
+      const a = (state.activities[d.n] || []).find(x => x.id === aid);
+      if (!a) { hideList(); return; }
+      a.ubicacion = displayText;
+      input.value = displayText;
+      // Fetch coordinates and cache them so the map skips the Nominatim step
+      const details = await placeDetails(placeId, sessionToken);
+      if (details && details.location) {
+        const coords = { lat: details.location.latitude, lng: details.location.longitude };
+        state.geocache[displayText] = coords;
+        a.lat = coords.lat;
+        a.lng = coords.lng;
+        supaSync.upsertGeocache(displayText, coords.lat, coords.lng);
+      }
+      sessionToken = newPlacesSession();
+      hideList();
+    };
+
+    // Prevent input blur when clicking inside the dropdown
+    listEl.addEventListener('mousedown', e => e.preventDefault());
+
+    input.addEventListener('input', () => {
+      const aid = input.dataset.aid;
+      const a = (state.activities[d.n] || []).find(x => x.id === aid);
+      if (a) a.ubicacion = input.value;
+      clearTimeout(debounceTimer);
+      const q = input.value.trim();
+      if (q.length < 3) { hideList(); return; }
+      debounceTimer = setTimeout(async () => {
+        const results = await placesAutocomplete(q, sessionToken);
+        items = results;
+        activeIdx = -1;
+        renderItems();
+      }, 280);
+    });
+
+    input.addEventListener('keydown', e => {
+      if (listEl.classList.contains('hidden') || !items.length) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(items.length - 1, activeIdx + 1); renderItems(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(0, activeIdx - 1); renderItems(); }
+      else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); applyChoice(items[activeIdx].placeId, items[activeIdx].text); }
+      else if (e.key === 'Escape') { hideList(); }
+    });
+
+    input.addEventListener('blur', () => { setTimeout(hideList, 180); });
+
+    listEl.addEventListener('click', e => {
+      const item = e.target.closest('.pac-item');
+      if (!item) return;
+      applyChoice(item.dataset.pid, item.dataset.text);
+    });
+  });
+
+  // Upload image
+  document.querySelectorAll('[data-upload-img]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _uploadFor = { aid: btn.dataset.uploadImg, dayN: d.n };
+      document.getElementById('hiddenImageInput').click();
+    });
+  });
+  // Clear image (back to auto)
+  document.querySelectorAll('[data-clear-img]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const aid = btn.dataset.clearImg;
+      const a = (state.activities[d.n] || []).find(x => x.id === aid);
+      if (!a) return;
+      a.imageUrl = '';
+      const urlInput = document.querySelector(`[data-panel="imageUrl"][data-aid="${aid}"]`);
+      if (urlInput) urlInput.value = '';
+      const img = document.getElementById('actImg');
+      if (img) img.src = activityImage(a);
+      // re-render panel to show/hide the Auto button
+      document.getElementById('activityPanel').innerHTML = renderActivityPanel(d);
+      bindPanelEvents(d);
+    });
+  });
+}
+
+function toggleVote(aid) {
+  if (!state.user) { promptForName(); if (!state.user) return; }
+  const v = state.votes[aid] || { count: 0, voters: [] };
+  const wasVoted = v.voters.includes(state.user);
+  if (wasVoted) v.voters = v.voters.filter(u => u !== state.user);
+  else v.voters.push(state.user);
+  v.count = v.voters.length;
+  state.votes[aid] = v;
+  saveState();
+  if (wasVoted) supaSync.removeVote(aid, state.user);
+  else supaSync.addVote(aid, state.user);
+  const btn = document.querySelector(`[data-vote="${aid}"]`);
+  if (btn) {
+    btn.classList.toggle('voted', v.voters.includes(state.user));
+    btn.querySelector('span').textContent = v.count;
+  }
+  const row = document.querySelector(`.activity-row[data-aid="${aid}"]`);
+  if (row) {
+    const existing = row.querySelector('.voters-line');
+    if (existing) existing.remove();
+    if (v.voters.length) {
+      const div = row.querySelector('.min-w-0');
+      const wrap = document.createElement('div');
+      wrap.className = 'voters-line';
+      wrap.innerHTML = v.voters.map(n => `<span class="vote-chip">${escapeHTML(n)}</span>`).join('');
+      div.appendChild(wrap);
+    }
+  }
+}
+
+/* =========================================================
+   MAP (Google Maps JS API, English labels)
+   Uses the same key as Places. Pins come from each activity's
+   ubicacion. If the activity has direct lat/lng (set by Google
+   Places autocomplete), use those; otherwise fall back to
+   Nominatim geocoding. Results cached in state.geocache.
+   ========================================================= */
+
+let map = null;
+let mapMarkers = {};
+let mapInfoWindow = null;
+let _mapRenderToken = 0;
+let _lastGeoTime = 0;
+let _googleMapsPromise = null;
+
+function loadGoogleMaps() {
+  if (window.google && window.google.maps) return Promise.resolve();
+  if (_googleMapsPromise) return _googleMapsPromise;
+  _googleMapsPromise = new Promise((resolve, reject) => {
+    const cb = '_gmReady_' + Math.random().toString(36).slice(2, 8);
+    window[cb] = () => { resolve(); try { delete window[cb]; } catch (e) {} };
+    const s = document.createElement('script');
+    s.async = true; s.defer = true;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_PLACES_KEY}&language=en&region=JP&callback=${cb}`;
+    s.onerror = () => reject(new Error('Google Maps JS failed to load'));
+    document.head.appendChild(s);
+  });
+  return _googleMapsPromise;
+}
+
+// Soft editorial style: desaturated palette, English labels, hide roadside POIs
+const MAP_STYLES = [
+  { elementType: 'geometry', stylers: [{ saturation: -55 }, { lightness: 6 }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#3C352E' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#FBF8F1' }] },
+  { featureType: 'poi', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit.station.bus', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#d9e2e6' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#6E655A' }] },
+];
+
+function markerIconForIndex(idx) {
+  const label = String(idx);
+  const fontSize = label.length >= 2 ? 10 : 12;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'>` +
+              `<circle cx='17' cy='17' r='14' fill='%23C7472C' stroke='%23FBF8F1' stroke-width='2.5'/>` +
+              `<text x='17' y='21.5' font-family='Noto Serif JP, serif' font-weight='600' font-size='${fontSize}' fill='%23FBF8F1' text-anchor='middle'>${label}</text>` +
+              `</svg>`;
+  return {
+    url: 'data:image/svg+xml;charset=UTF-8,' + svg.replace(/#/g, '%23'),
+    scaledSize: new google.maps.Size(34, 34),
+    anchor: new google.maps.Point(17, 17),
+  };
+}
+
+async function respectRateLimit() {
+  const now = Date.now();
+  const wait = Math.max(0, 1100 - (now - _lastGeoTime));
+  if (wait > 0) await new Promise(r => setTimeout(r, wait));
+  _lastGeoTime = Date.now();
+}
+
+async function geocode(text) {
+  const key = text.trim();
+  if (!key) return null;
+  if (key in state.geocache) return state.geocache[key]; // may be null (cache miss)
+  await respectRateLimit();
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(key + ', Japan')}`;
+    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    const data = await res.json();
+    if (data && data[0]) {
+      const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      state.geocache[key] = coords;
+      saveState();
+      supaSync.upsertGeocache(key, coords.lat, coords.lng);
+      return coords;
+    }
+  } catch (e) { /* silent */ }
+  state.geocache[key] = null;
+  saveState();
+  return null;
+}
+
+// Rich preview popup for a single activity pin.
+function popupHTMLForActivity(a, d, idx) {
+  const dow = d.dow;
+  const dateStr = formatDate(d.date);
+  const turno = TIME_LABEL[TIMES.includes(a.timeOfDay) ? a.timeOfDay : 'tarde'];
+  const costLine = Number(a.cost) > 0
+    ? `<div style="font-size:11.5px; color:#6E655A; margin-top:6px; font-family:'Noto Sans',sans-serif; font-variant-numeric:tabular-nums;">$${a.cost} / persona</div>`
+    : '';
+  const descLine = a.description
+    ? `<div style="font-size:12.5px; color:#3C352E; margin-top:6px; line-height:1.45;">${escapeHTML(a.description)}</div>`
+    : '';
+  const meta = a.updatedBy && a.updatedAt
+    ? `<div style="font-size:10px; color:#8C8377; margin-top:8px; padding-top:6px; border-top:1px dashed rgba(27,24,21,0.10);">Editado por <strong style="color:#6E655A; font-weight:500;">${escapeHTML(a.updatedBy)}</strong> · ${relativeTime(a.updatedAt)}</div>`
+    : '';
+  const idxBadge = idx
+    ? `<span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:999px; background:#C7472C; color:#FBF8F1; font-family:'Noto Serif JP',serif; font-weight:600; font-size:11px; margin-right:8px; vertical-align:middle;">${idx}</span>`
+    : '';
+  return `
+    <div style="min-width: 240px; max-width: 300px;">
+      <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#6E655A;">
+        Día ${d.n} · ${escapeHTML(dow)}, ${escapeHTML(dateStr)} · ${escapeHTML(turno)}
+      </div>
+      <div style="font-family:'Noto Serif JP',Georgia,serif; font-size:17px; color:#1B1815; margin-top:4px; letter-spacing:-0.01em; line-height:1.2;">
+        ${idxBadge}${escapeHTML(a.title || 'Sin título')}
+      </div>
+      ${descLine}
+      ${a.ubicacion
+        ? `<div style="margin-top:8px;"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.ubicacion + ' Japan')}" target="_blank" rel="noopener" style="color:#C7472C; font-size:11.5px; text-decoration:none;">${escapeHTML(a.ubicacion)} ↗</a></div>`
+        : ''}
+      ${costLine}
+      ${meta}
+    </div>
+  `;
+}
+
+async function renderMap() {
+  const token = ++_mapRenderToken;
+  try { await loadGoogleMaps(); } catch (e) { console.warn('Map failed to load', e); return; }
+  if (token !== _mapRenderToken) return;
+
+  const mapEl = document.getElementById('map');
+  if (!mapEl) return;
+
+  if (!map) {
+    map = new google.maps.Map(mapEl, {
+      center: { lat: 36.5, lng: 138.0 },
+      zoom: 5,
+      streetViewControl: false,
+      mapTypeControl: false,
+      fullscreenControl: false,
+      gestureHandling: 'cooperative',
+      styles: MAP_STYLES,
+    });
+    mapInfoWindow = new google.maps.InfoWindow({ maxWidth: 320 });
+  }
+
+  // Clear all existing markers
+  Object.values(mapMarkers).forEach(m => m.setMap(null));
+  mapMarkers = {};
+
+  // Collect one entry per activity (not per unique ubicación) sorted in
+  // chronological order (day, then turno). Each entry gets a global 1..N index
+  // that becomes both the pin label and the row number in the index list.
+  const timeOrder = { 'mañana': 0, 'tarde': 1, 'noche': 2 };
+  const rows = [];
+  for (const d of ITINERARY) {
+    const acts = (state.activities[d.n] || []).slice();
+    acts.sort((x, y) => (timeOrder[x.timeOfDay] ?? 1) - (timeOrder[y.timeOfDay] ?? 1));
+    for (const a of acts) {
+      if (!a.ubicacion || !String(a.ubicacion).trim()) continue;
+      rows.push({ a, d, idx: rows.length + 1 });
+    }
+  }
+
+  // Render the index list next to the map regardless of whether we have coords yet.
+  renderMapIndex(rows);
+
+  if (rows.length === 0) {
+    map.setCenter({ lat: 36.5, lng: 138.0 });
+    map.setZoom(5);
+    return;
+  }
+
+  const bounds = new google.maps.LatLngBounds();
+  const stackCount = new Map(); // "lat,lng" (rounded) -> count, for jitter offsets
+  for (const { a, d, idx } of rows) {
+    if (token !== _mapRenderToken) return;
+    // Prefer stored lat/lng (Google Places selection). Fallback: Nominatim geocode.
+    let coords = null;
+    if (a.lat != null && a.lng != null) {
+      coords = { lat: Number(a.lat), lng: Number(a.lng) };
+    } else {
+      coords = await geocode(a.ubicacion);
+    }
+    if (token !== _mapRenderToken) return;
+    if (!coords) continue;
+    // Nudge pins that would land on the same coordinates (e.g. two meals at
+    // Dotonbori) in a small spiral so each is visible + clickable.
+    const key = coords.lat.toFixed(4) + ',' + coords.lng.toFixed(4);
+    const n = stackCount.get(key) || 0;
+    stackCount.set(key, n + 1);
+    if (n > 0) {
+      const angle = n * (Math.PI / 3);
+      const radius = 0.00035 * Math.ceil(n / 6);
+      coords = { lat: coords.lat + Math.sin(angle) * radius, lng: coords.lng + Math.cos(angle) * radius };
+    }
+    const marker = new google.maps.Marker({
+      position: coords,
+      map,
+      title: '#' + idx + ' · ' + (a.title || a.ubicacion || '') + ' · Día ' + d.n,
+      icon: markerIconForIndex(idx),
+    });
+    marker.addListener('click', () => openPinPopup(marker, a, d, idx));
+    mapMarkers[a.id] = marker;
+    bounds.extend(coords);
+  }
+  if (!bounds.isEmpty()) map.fitBounds(bounds, 60);
+
+  // Re-render the index now that we know which rows have real coords (so
+  // rows without coords appear muted and non-clickable).
+  renderMapIndex(rows);
+}
+
+function openPinPopup(marker, a, d, idx) {
+  mapInfoWindow.setContent(popupHTMLForActivity(a, d, idx));
+  mapInfoWindow.open({ anchor: marker, map });
+  state.editingHeaderDay = null;
+  state.editingActivityId = null;
+  state.editingActivityDay = null;
+  state.editSnapshot = null;
+  state.selectedDay = d.n;
+  state.selectedActivity[d.n] = a.id;
+  saveState(); renderPills(); renderDayView();
+}
+
+function renderMapIndexRowHTML({ a, d, idx }) {
+  const hasCoords = !!mapMarkers[a.id];
+  return `
+    <li>
+      <button class="map-index-row w-full text-left ${hasCoords ? '' : 'is-muted'}" data-idx="${idx}" data-aid="${escapeAttr(a.id)}">
+        <span class="map-index-num">${idx}</span>
+        <span class="map-index-body">
+          <span class="map-index-title">${escapeHTML(a.title || a.ubicacion || 'Sin título')}</span>
+          <span class="map-index-meta">Día ${d.n} · ${escapeHTML(d.dow)} ${escapeHTML(formatDate(d.date))} · ${escapeHTML(TIME_LABEL[TIMES.includes(a.timeOfDay) ? a.timeOfDay : 'tarde'])}${a.ubicacion ? ' · ' + escapeHTML(a.ubicacion) : ''}</span>
+        </span>
+      </button>
+    </li>
+  `;
+}
+
+function renderMapIndex(rows) {
+  const el = document.getElementById('mapIndex');
+  if (!el) return;
+  if (!rows || rows.length === 0) {
+    el.innerHTML = '';
+    return;
+  }
+  // Group by city (dayTitle) preserving order-of-first-appearance and global pin numbering.
+  const groups = [];
+  const groupByCity = new Map();
+  for (const row of rows) {
+    const city = (dayTitle(row.d) || 'Sin ciudad').trim();
+    if (!groupByCity.has(city)) {
+      const g = { city, items: [] };
+      groupByCity.set(city, g);
+      groups.push(g);
+    }
+    groupByCity.get(city).items.push(row);
+  }
+
+  el.innerHTML = `
+    <p class="text-[11px] uppercase tracking-widest text-ink-500 mb-4">Índice del mapa</p>
+    ${groups.map(g => `
+      <section class="map-index-group">
+        <h3 class="map-index-city">${escapeHTML(g.city)} <span class="map-index-count">${g.items.length}</span></h3>
+        <ol class="grid md:grid-cols-2 gap-2">
+          ${g.items.map(renderMapIndexRowHTML).join('')}
+        </ol>
+      </section>
+    `).join('')}
+  `;
+
+  el.querySelectorAll('[data-aid]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const aid = btn.dataset.aid;
+      const marker = mapMarkers[aid];
+      if (!marker || !map) return;
+      map.panTo(marker.getPosition());
+      if (map.getZoom() < 12) map.setZoom(13);
+      const row = rows.find(r => r.a.id === aid);
+      if (row) openPinPopup(marker, row.a, row.d, row.idx);
+      document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+}
+
+// Legacy shim so older call sites still trigger a full re-render
+function renderMapPopups() { renderMap(); }
+
+/* =========================================================
+   INSPO
+   ========================================================= */
+
+function renderInspo() {
+  const grid = document.getElementById('inspoGrid');
+  if (!grid) return; // Inspiración section removed from UI; state.inspo still populated for activity fallbacks.
+  grid.innerHTML = state.inspo.map((item, i) => `
+    <figure class="group relative overflow-hidden rounded-sm bg-paper-200 aspect-[3/4]">
+      <img src="${item.url}" alt="${escapeAttr(item.caption)}" class="w-full h-full object-cover transition duration-500 group-hover:scale-[1.03]" loading="lazy" />
+      <figcaption class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-sumi/70 to-transparent text-paper-50 text-xs px-3 py-2">
+        ${escapeHTML(item.caption)}${item.author && item.author !== 'family' ? ' · ' + escapeHTML(item.author) : ''}
+      </figcaption>
+      <button class="absolute top-2 right-2 text-[11px] bg-paper-50/85 backdrop-blur px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition" data-inspo-remove="${i}">Quitar</button>
+    </figure>
+  `).join('');
+  grid.querySelectorAll('[data-inspo-remove]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = Number(btn.dataset.inspoRemove);
+      const removed = state.inspo[i];
+      state.inspo.splice(i, 1);
+      if (removed && removed.id) supaSync.deleteInspo(removed.id);
+      saveState(); renderInspo();
+    });
+  });
+}
+// Inspiración section removed from UI. Its upload handlers are gone.
+// state.inspo remains populated (13 seeded photos + any historical uploads)
+// so activityImage(a) can pick from it as a per-activity backdrop fallback.
+
+/* =========================================================
+   BUDGET
+   ========================================================= */
+
+function renderBudget() {
+  if (!state.budgetExpanded) state.budgetExpanded = {};
+  const total = ITINERARY.reduce((s, d) => s + dayCost(d.n), 0);
+  const perDay = Math.round(total / ITINERARY.length);
+  document.getElementById('budgetTotal').textContent = '$' + total.toLocaleString('en-US') + ' /persona';
+  document.getElementById('budgetPerDay').textContent = '$' + perDay + ' /persona';
+  document.getElementById('budgetRows').innerHTML = ITINERARY.map(d => {
+    const activities = state.activities[d.n] || [];
+    const hasActs = activities.length > 0;
+    const isOpen = hasActs && !!state.budgetExpanded[d.n];
+    const groupedActs = { 'mañana': [], 'tarde': [], 'noche': [] };
+    activities.forEach(a => { const t = TIMES.includes(a.timeOfDay) ? a.timeOfDay : 'tarde'; groupedActs[t].push(a); });
+    // Zona = day title from itinerario section header (dayEdits or default city)
+    const zoneText = dayTitle(d);
+    const countText = hasActs ? (activities.length + ' ' + (activities.length === 1 ? 'actividad' : 'actividades')) : '';
+    return `
+      <div class="border-b rule last:border-b-0 ${hasActs ? '' : 'opacity-60'}" data-budget-day="${d.n}">
+        <button class="w-full grid grid-cols-[70px_1fr_120px_110px_28px] px-4 py-3 items-center ${hasActs ? 'hover:bg-paper-100/70 cursor-pointer' : 'cursor-default'} transition text-left" data-budget-toggle="${d.n}" aria-expanded="${isOpen}" ${hasActs ? '' : 'disabled'}>
+          <div class="font-display text-lg">${d.n}</div>
+          <div class="text-sm min-w-0">
+            <span class="truncate block">${escapeHTML(zoneText)}</span>
+            <span class="text-ink-500 block text-[11px]">${formatDate(d.date)} · ${d.dow}</span>
+          </div>
+          <div class="text-sm text-ink-500">${countText || '<span>-</span>'}</div>
+          <div class="text-right font-mono text-sm">$${dayCost(d.n)}</div>
+          <div class="text-ink-500 flex justify-end">
+            ${hasActs ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 200ms; transform: rotate(${isOpen ? '90' : '0'}deg);"><path d="m9 18 6-6-6-6"/></svg>` : ''}
+          </div>
+        </button>
+        ${isOpen ? `
+          <div class="px-4 pb-4 bg-paper-100/50">
+            ${activities.length === 0
+              ? `<p class="text-sm text-ink-500 italic py-2">Sin actividades este día.</p>`
+              : TIMES.map(t => {
+                  const items = groupedActs[t];
+                  if (items.length === 0) return '';
+                  return `
+                    <div class="mt-3">
+                      <p class="time-chip mb-2">${TIME_LABEL[t]}</p>
+                      <div class="pl-4 space-y-1.5 border-l-2 rule">
+                        ${items.map(a => `
+                          <div class="grid grid-cols-[1fr_100px] gap-3 items-baseline">
+                            <div>
+                              <p class="text-sm">${escapeHTML(a.title || 'Sin título')}</p>
+                              ${a.ubicacion ? `<p class="text-[11px] text-ink-500">${escapeHTML(a.ubicacion)}</p>` : ''}
+                            </div>
+                            <p class="font-mono text-sm text-right">$${Number(a.cost) || 0}</p>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+
+  document.querySelectorAll('[data-budget-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.hasAttribute('disabled')) return;
+      const dn = Number(btn.dataset.budgetToggle);
+      state.budgetExpanded[dn] = !state.budgetExpanded[dn];
+      renderBudget();
+    });
+  });
+}
+
+/* =========================================================
+   PACKING
+   ========================================================= */
+
+function renderPacking() {
+  const grid = document.getElementById('packingGrid');
+  grid.innerHTML = Object.entries(state.packing).map(([cat, items]) => `
+    <div>
+      <h3 class="font-display text-xl mb-3 flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-vermilion-500"></span>
+        ${escapeHTML(cat)}
+      </h3>
+      <ul class="space-y-2">
+        ${items.map((it, i) => `
+          <li class="checkbox-item ${it.done ? 'done' : ''} flex items-center gap-3 text-sm">
+            <input type="checkbox" ${it.done ? 'checked' : ''} data-cat="${escapeAttr(cat)}" data-idx="${i}" class="w-4 h-4 rounded border-ink-400 text-vermilion-500 focus:ring-vermilion-500 focus:ring-offset-paper-50" />
+            <span class="item-label">${escapeHTML(it.label)}</span>
+            ${it.doneBy ? `<span class="text-[10px] text-ink-500">por ${escapeHTML(it.doneBy)}</span>` : ''}
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+  `).join('');
+  grid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const cat = cb.dataset.cat, idx = Number(cb.dataset.idx);
+      const it = state.packing[cat][idx];
+      it.done = cb.checked;
+      it.doneBy = cb.checked ? (state.user || '') : '';
+      saveState(); renderPacking();
+    });
+  });
+}
+
+/* =========================================================
+   BOOT
+   ========================================================= */
+
+function render() {
+  renderTripGlance();
+  renderPills();
+  renderDayView();
+  renderBudget();
+  renderCountdown();
+  updateUserBadge();
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  render();
+  renderMap();
+  ensureUser();
+  setInterval(renderCountdown, 60 * 60 * 1000);
+  // Kick off Supabase sync in the background. Hydrate first (pulls latest
+  // server state and overwrites local), then subscribe to Realtime for live
+  // updates from other family members.
+  await hydrateFromSupabase();
+  subscribeRealtime();
+});
+</script>
+</body>
+</html>

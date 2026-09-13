@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fernando's Finances</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            min-height: 100vh;
+            padding: 24px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+            padding-bottom: 24px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        h1 {
+            color: #1f2937;
+            margin-bottom: 8px;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .last-updated {
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 80px 20px;
+            color: #6b7280;
+            font-size: 16px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 16px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #374151;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 1px solid #fca5a5;
+            padding: 20px;
+            border-radius: 12px;
+            color: #991b1b;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .stat-card.clickable {
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card.clickable:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 16px;
+            max-width: 700px;
+            max-height: 85vh;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideDown 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 32px;
+            border-bottom: 2px solid #e5e7eb;
+            flex-shrink: 0;
+        }
+
+        .modal-body {
+            padding: 24px 32px 32px 32px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .close {
+            font-size: 32px;
+            font-weight: 300;
+            color: #6b7280;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s ease;
+        }
+
+        .close:hover {
+            color: #1f2937;
+        }
+
+        .subscription-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #374151;
+        }
+
+        .subscription-name {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .subscription-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: #374151;
+        }
+
+        .subscription-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            margin-top: 16px;
+            background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+            color: white;
+            border-radius: 8px;
+        }
+
+        .subscription-total-label {
+            font-size: 16px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .subscription-total-amount {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .transaction-table {
+            width: 100%;
+            margin-top: 16px;
+            border-collapse: collapse;
+        }
+
+        .transaction-table th {
+            background: #f9fafb;
+            padding: 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .transaction-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+            color: #1f2937;
+        }
+
+        .transaction-table tr:hover {
+            background: #f9fafb;
+        }
+
+        .transaction-amount {
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .category-header {
+            background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+            color: white;
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 16px;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .category-icon {
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .scroll-container {
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .scroll-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .scroll-container::-webkit-scrollbar-track {
+            background: #f3f4f6;
+            border-radius: 4px;
+        }
+
+        .scroll-container::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+
+        .scroll-container::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        .data-table {
+            display: table;
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .data-row {
+            display: table-row;
+        }
+
+        .month-label {
+            display: table-cell;
+            padding: 12px 16px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: #6b7280;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 100px;
+            white-space: nowrap;
+        }
+
+        .month-value {
+            display: table-cell;
+            padding: 16px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 1px solid #e5e7eb;
+            min-width: 100px;
+            white-space: nowrap;
+            transition: background 0.15s ease;
+        }
+
+        .month-value:hover {
+            background: #f3f4f6;
+        }
+
+        .month-value.has-data {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #065f46;
+            font-weight: 600;
+        }
+
+        .month-value.has-data:hover {
+            background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
+        }
+
+        .month-value.no-data {
+            background: #f9fafb;
+            color: #d1d5db;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+
+            .container {
+                padding: 24px 16px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .category-header {
+                font-size: 14px;
+                padding: 12px 16px;
+            }
+
+            .month-label,
+            .month-value {
+                min-width: 80px;
+                padding: 10px 12px;
+                font-size: 12px;
+            }
+
+            .stats-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Finances</h1>
+            <div class="last-updated" id="lastUpdated">Loading...</div>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <div>Loading expense data...</div>
+        </div>
+        <div id="stats" style="display: none;"></div>
+
+        <div id="charts" style="display: none; margin-bottom: 40px;">
+            <h2 style="color: #1f2937; font-size: 20px; font-weight: 700; margin-bottom: 16px;">Fixed Costs</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+                <!-- Left Column: Donut + Trend Charts -->
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <!-- Donut Chart -->
+                    <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+                        <canvas id="mortgagePieChart" style="max-width: 100%; max-height: 300px;"></canvas>
+                    </div>
+
+                    <!-- Net Remaining Trend -->
+                    <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+                        <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 16px; font-weight: 600;">Net Remaining Trend</h3>
+                        <canvas id="netRemainingTrendChart" style="max-height: 200px;"></canvas>
+                    </div>
+
+                    <!-- Key Metrics -->
+                    <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+                        <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 16px; font-weight: 600;">Key Metrics</h3>
+                        <div id="keyMetrics"></div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Income & Expenses -->
+                <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+                    <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 16px; font-weight: 600;">Income & Expenses</h3>
+                    <div id="mortgageBreakdown"></div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="color: #1f2937; font-size: 20px; font-weight: 700; margin: 0;">Discretionary Spending</h2>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="yearFilter" style="font-size: 14px; color: #6b7280; font-weight: 500;">Year:</label>
+                        <select id="yearFilter" onchange="updateMonthFilterOptions()" style="padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; color: #1f2937; background: white; cursor: pointer;">
+                            <option value="all">All</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="monthFilter" style="font-size: 14px; color: #6b7280; font-weight: 500;">Month:</label>
+                        <select id="monthFilter" style="padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; color: #1f2937; background: white; cursor: pointer;">
+                            <option value="all">All</option>
+                        </select>
+                    </div>
+                    <button onclick="filterDiscretionaryByPeriod()" style="padding: 8px 20px; background: #374151; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#1f2937'" onmouseout="this.style.background='#374151'">
+                        Apply
+                    </button>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 24px;">
+                <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+                    <h3 style="margin-bottom: 16px; color: #1f2937; font-size: 16px; font-weight: 600;">Monthly Trend</h3>
+                    <canvas id="trendChart" style="max-height: 300px;"></canvas>
+                </div>
+                <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+                    <h3 id="categoryChartTitle" style="margin-bottom: 16px; color: #1f2937; font-size: 16px; font-weight: 600;">Top Categories</h3>
+                    <canvas id="categoryChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+
+            <h2 style="color: #1f2937; font-size: 20px; font-weight: 700; margin-bottom: 16px;">Category Breakdown</h2>
+            <div id="categoryBreakdown" style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);"></div>
+        </div>
+    </div>
+
+    <!-- Subscriptions Modal -->
+    <div id="subscriptionsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Active Subscriptions</div>
+                <span class="close" onclick="closeSubscriptionsModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="subscriptionsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Detail Modal -->
+    <div id="categoryDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="categoryDetailTitle">Category Details</div>
+                <span class="close" onclick="closeCategoryDetailModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="categoryDetailContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Modal -->
+    <div id="processingModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 40px; border-radius: 16px; max-width: 500px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: #1f2937; margin-bottom: 16px;">Processing Files</div>
+            <div id="processingStep" style="font-size: 16px; color: #6b7280; margin-bottom: 24px;">Detecting files in inbox...</div>
+            <div style="width: 100%; height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden;">
+                <div id="processingProgress" style="width: 0%; height: 100%; background: #10b981; transition: width 0.3s;"></div>
+            </div>
+            <div id="processingMessage" style="margin-top: 16px; font-size: 14px; color: #9ca3af;"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        const SUPABASE_URL = 'https://uuvsvtpfcexhqojlrsxy.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1dnN2dHBmY2V4aHFvamxyc3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMzUyMjQsImV4cCI6MjA5MjcxMTIyNH0.3dSTEznMxMSlqwkF5NflIbUoIpgMcW3nGYgrfukabvQ';
+
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Auto-processing on page load
+        async function checkAndProcessInbox() {
+            try {
+                // Check if there are files in inbox
+                const checkResponse = await fetch('http://localhost:8000/api/check-inbox');
+                const checkData = await checkResponse.json();
+
+                if (checkData.has_files) {
+                    // Show processing modal
+                    const modal = document.getElementById('processingModal');
+                    modal.style.display = 'flex';
+
+                    document.getElementById('processingStep').textContent = `Found ${checkData.file_count} file(s) to process`;
+                    document.getElementById('processingProgress').style.width = '10%';
+                    document.getElementById('processingMessage').textContent = checkData.files.join(', ');
+
+                    // Wait a moment so user sees the files
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+
+                    // Trigger processing
+                    document.getElementById('processingStep').textContent = 'Processing files...';
+                    document.getElementById('processingProgress').style.width = '30%';
+
+                    const processResponse = await fetch('http://localhost:8000/api/process', {
+                        method: 'POST'
+                    });
+
+                    // Poll for status updates
+                    let complete = false;
+                    while (!complete) {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+
+                        const statusResponse = await fetch('http://localhost:8000/api/status');
+                        const status = await statusResponse.json();
+
+                        document.getElementById('processingStep').textContent = status.step || 'Processing...';
+                        if (status.message) {
+                            document.getElementById('processingMessage').textContent = status.message;
+                        }
+
+                        if (status.status === 'processing' && status.step.includes('database')) {
+                            document.getElementById('processingProgress').style.width = '70%';
+                        } else if (status.status === 'processing') {
+                            document.getElementById('processingProgress').style.width = '50%';
+                        }
+
+                        if (status.status === 'complete') {
+                            document.getElementById('processingProgress').style.width = '100%';
+                            document.getElementById('processingStep').textContent = 'Complete! Reloading dashboard...';
+                            complete = true;
+
+                            // Wait a moment then close modal and reload
+                            await new Promise(resolve => setTimeout(resolve, 1500));
+                            modal.style.display = 'none';
+
+                            // Reset status on server
+                            await fetch('http://localhost:8000/api/reset');
+
+                            // Reload the page to show new data
+                            window.location.reload();
+                        } else if (status.status === 'error') {
+                            document.getElementById('processingStep').textContent = 'Error occurred';
+                            document.getElementById('processingMessage').textContent = status.error;
+                            document.getElementById('processingProgress').style.background = '#dc2626';
+                            complete = true;
+
+                            // Close after showing error
+                            await new Promise(resolve => setTimeout(resolve, 5000));
+                            modal.style.display = 'none';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.log('No auto-processing available (server not running or no files):', error);
+                // Silently continue - dashboard will load normally
+            }
+        }
+
+        // Run auto-processing check on page load
+        checkAndProcessInbox();
+
+        // Global storage for filtering
+        let globalDiscretionaryData = [];
+        let trendChartInstance = null;
+        let categoryChartInstance = null;
+
+        function formatCurrency(amount) {
+            if (!amount) return '-';
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(Math.abs(amount));
+        }
+
+        function showError(message) {
+            document.getElementById('error').textContent = message;
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        async function loadDashboardData() {
+            try {
+                // Get summary stats
+                const { data: stats, error: statsError } = await supabaseClient
+                    .rpc('get_dashboard_stats');
+
+                if (statsError) throw statsError;
+
+                // Get fixed costs summary
+                const { data: fixedCosts, error: fixedError } = await supabaseClient
+                    .from('vw_fixed_costs_summary')
+                    .select('*')
+                    .order('avg_per_month', { ascending: false });
+
+                if (fixedError) throw fixedError;
+
+                // Get discretionary summary
+                const { data: discretionary, error: discError } = await supabaseClient
+                    .from('vw_discretionary_summary')
+                    .select('*')
+                    .order('month', { ascending: true });
+
+                if (discError) throw discError;
+
+                // Get ALL categories for breakdown table (including fixed costs)
+                const { data: allCategories, error: allError } = await supabaseClient
+                    .from('vw_dashboard_summary')
+                    .select('*')
+                    .order('month', { ascending: true });
+
+                if (allError) throw allError;
+
+                // Get Payroll separately (it's excluded from dashboard summary)
+                const { data: payrollData, error: payrollError } = await supabaseClient
+                    .from('expense_transactions')
+                    .select('month, category, amount')
+                    .eq('category', 'Payroll')
+                    .order('month', { ascending: true });
+
+                if (payrollError) throw payrollError;
+
+                // Aggregate Payroll by month
+                const payrollByMonth = {};
+                if (payrollData) {
+                    payrollData.forEach(row => {
+                        if (!payrollByMonth[row.month]) {
+                            payrollByMonth[row.month] = 0;
+                        }
+                        payrollByMonth[row.month] += Math.abs(row.amount);
+                    });
+                }
+
+                // Convert to same format as allCategories
+                const payrollSummary = Object.entries(payrollByMonth).map(([month, total]) => ({
+                    month,
+                    category: 'Payroll',
+                    total,
+                    transaction_count: payrollData.filter(r => r.month === month).length
+                }));
+
+                if (!stats || stats.length === 0) {
+                    showError('No expense data found. Upload some transactions first!');
+                    return;
+                }
+
+                const dashStats = stats[0];
+
+                // Render everything
+                await renderStats(dashStats);
+                await renderCharts(fixedCosts, discretionary);
+                renderCategoryBreakdown(allCategories, payrollSummary);
+
+                document.getElementById('lastUpdated').textContent =
+                    `Last updated: ${new Date().toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                    })}`;
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('stats').style.display = 'block';
+                document.getElementById('charts').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError(`Error loading data: ${error.message}`);
+            }
+        }
+
+        async function renderStats(stats) {
+            // Get subscription count (deduplicated)
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1);
+            const lastCompleteMonth = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+
+            const { data: subscriptions, error } = await supabaseClient
+                .from('expense_transactions')
+                .select('description, amount')
+                .eq('category', 'Subscriptions')
+                .eq('month', lastCompleteMonth);
+
+            // Deduplicate subscriptions by first word
+            const uniqueSubs = {};
+            if (subscriptions) {
+                subscriptions.forEach(sub => {
+                    const firstWord = sub.description.split(/[\s*]/)[0].toLowerCase().trim();
+                    if (!uniqueSubs[firstWord]) {
+                        uniqueSubs[firstWord] = true;
+                    }
+                });
+            }
+            const subscriptionCount = Object.keys(uniqueSubs).length;
+
+            const statsDiv = document.getElementById('stats');
+
+            statsDiv.className = 'stats-summary';
+            statsDiv.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Net Remaining</div>
+                    <div class="stat-value">${formatCurrency(stats.net_remaining)}</div>
+                    <div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">after fixed costs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Discretionary Avg</div>
+                    <div class="stat-value">${formatCurrency(stats.discretionary_avg)}</div>
+                    <div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">per month</div>
+                </div>
+                <div class="stat-card clickable" onclick="openSubscriptionsModal()">
+                    <div class="stat-label">Active Subscriptions</div>
+                    <div class="stat-value">${subscriptionCount}</div>
+                    <div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">click to view</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Months Tracked</div>
+                    <div class="stat-value">${stats.months_tracked}</div>
+                </div>
+            `;
+        }
+
+        async function renderCharts(fixedCosts, discretionary) {
+            // Store discretionary data globally for filtering
+            globalDiscretionaryData = discretionary;
+
+            // Populate year filter
+            const years = [...new Set(discretionary.map(r => r.month.substring(0, 4)))].sort().reverse();
+            const yearSelect = document.getElementById('yearFilter');
+            yearSelect.innerHTML = '<option value="all">All</option>';
+            years.forEach(year => {
+                yearSelect.innerHTML += `<option value="${year}">${year}</option>`;
+            });
+
+            // Populate month filter with all months initially (will default to current month)
+            populateMonthFilter('all');
+
+            // Auto-apply filter to show current month by default
+            setTimeout(() => filterDiscretionaryByPeriod(), 100);
+
+            // Get last 2 payroll transactions
+            const { data: payroll } = await supabaseClient
+                .from('expense_transactions')
+                .select('amount')
+                .eq('category', 'Payroll')
+                .order('transaction_date', { ascending: false })
+                .limit(2);
+
+            const avgPayroll = payroll ? payroll.reduce((sum, p) => sum + Math.abs(p.amount), 0) : 0;
+
+            // Get last complete month
+            const now = new Date();
+            const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1);
+            const lastCompleteMonth = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+
+            // Get recurring expenses for PREVIOUS COMPLETE MONTH
+            const { data: mta } = await supabaseClient
+                .from('expense_transactions')
+                .select('amount')
+                .eq('category', 'MTA')
+                .eq('month', lastCompleteMonth);
+
+            const mtaAmount = mta ? mta.reduce((sum, t) => sum + Math.abs(t.amount), 0) : 0;
+
+            const { data: subscriptions } = await supabaseClient
+                .from('expense_transactions')
+                .select('amount')
+                .eq('category', 'Subscriptions')
+                .eq('month', lastCompleteMonth);
+
+            const subscriptionsAmount = subscriptions ? subscriptions.reduce((sum, t) => sum + Math.abs(t.amount), 0) : 0;
+
+            // Get unique months from discretionary data
+            const allMonths = new Set();
+            discretionary.forEach(row => allMonths.add(row.month));
+            const sortedMonths = Array.from(allMonths).sort();
+
+            const monthLabels = sortedMonths.map(m => {
+                const [year, monthNum] = m.split('-');
+                const date = new Date(year, parseInt(monthNum) - 1);
+                return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+            });
+
+            // Fixed Costs: already averaged by the view
+            // Get 12-month average for Electricity
+            const { data: electricityHistory } = await supabaseClient
+                .from('expense_transactions')
+                .select('amount, transaction_date')
+                .eq('category', 'Electricity')
+                .gte('transaction_date', new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString())
+                .order('transaction_date', { ascending: false });
+
+            const electricityAvg = electricityHistory && electricityHistory.length > 0
+                ? electricityHistory.reduce((sum, t) => sum + Math.abs(t.amount), 0) / electricityHistory.length
+                : 0;
+
+            // Build fixed categories and override Electricity with 12-month average
+            const fixedCategories = fixedCosts
+                .map(row => {
+                    if (row.category === 'Electricity') {
+                        return [row.category, electricityAvg];
+                    }
+                    return [row.category, row.avg_per_month];
+                })
+                .sort((a, b) => b[1] - a[1]);
+
+            // Build complete expense list for donut
+            const allExpenses = [
+                ...fixedCategories,
+                ['MTA', mtaAmount],
+                ['Subscriptions', subscriptionsAmount]
+            ].filter(cat => cat[1] > 0);
+
+            const totalExpenses = allExpenses.reduce((sum, cat) => sum + cat[1], 0);
+            const netRemaining = avgPayroll - totalExpenses;
+            const netColor = netRemaining >= 0 ? '#065f46' : '#dc2626';
+
+            const mortgagePieCtx = document.getElementById('mortgagePieChart').getContext('2d');
+            new Chart(mortgagePieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: allExpenses.map(c => c[0]),
+                    datasets: [{
+                        data: allExpenses.map(c => c[1]),
+                        backgroundColor: ['#dc2626', '#ea580c', '#f59e0b', '#84cc16', '#f59e0b', '#0ea5e9', '#8b5cf6'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return context.label + ': ' + formatCurrency(context.parsed) + '/mo (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [{
+                    id: 'centerText',
+                    afterDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        const centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
+                        const centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
+
+                        ctx.save();
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+
+                        ctx.font = 'bold 14px Arial';
+                        ctx.fillStyle = '#6b7280';
+                        ctx.fillText('Net Remaining', centerX, centerY - 15);
+
+                        ctx.font = 'bold 24px Arial';
+                        ctx.fillStyle = netColor;
+                        ctx.fillText(formatCurrency(netRemaining), centerX, centerY + 10);
+
+                        ctx.restore();
+                    }
+                }]
+            });
+
+            // Fixed Costs: Breakdown - pass pre-fetched data
+            renderMortgageBreakdown(fixedCategories, avgPayroll, mtaAmount, subscriptionsAmount, netRemaining, netColor);
+
+            // Net Remaining Trend Chart
+            await renderNetRemainingTrend();
+
+            // Key Metrics Cards
+            renderKeyMetrics(fixedCategories, avgPayroll, netRemaining, electricityAvg);
+
+            // Discretionary: Line Chart
+            const monthlyDiscTotal = {};
+            discretionary.forEach(row => {
+                if (!monthlyDiscTotal[row.month]) {
+                    monthlyDiscTotal[row.month] = 0;
+                }
+                monthlyDiscTotal[row.month] += row.total;
+            });
+
+            // Destroy existing chart if it exists
+            if (trendChartInstance) {
+                trendChartInstance.destroy();
+            }
+
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            trendChartInstance = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: monthLabels,
+                    datasets: [{
+                        label: 'Monthly Spending',
+                        data: sortedMonths.map(m => monthlyDiscTotal[m] || 0),
+                        borderColor: '#374151',
+                        backgroundColor: 'rgba(55, 65, 81, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value/1000).toFixed(0) + 'k';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Discretionary: Bar Chart (current month)
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const lastCompleteMonthForChart = currentMonth;
+
+            const discCategoryTotals = {};
+            discretionary.filter(row => row.month === lastCompleteMonthForChart).forEach(row => {
+                if (!discCategoryTotals[row.category]) {
+                    discCategoryTotals[row.category] = 0;
+                }
+                discCategoryTotals[row.category] += row.total;
+            });
+
+            const topCategories = Object.entries(discCategoryTotals)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            // Parse month directly to avoid timezone issues
+            let lastMonthLabel = 'Recent Month';
+            if (lastCompleteMonthForChart) {
+                const [year, month] = lastCompleteMonthForChart.split('-');
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                lastMonthLabel = `${monthNames[parseInt(month) - 1]} ${year}`;
+            }
+
+            // Update chart title
+            document.getElementById('categoryChartTitle').textContent = `Top Categories - ${lastMonthLabel}`;
+
+            // Destroy existing chart if it exists
+            if (categoryChartInstance) {
+                categoryChartInstance.destroy();
+            }
+
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            categoryChartInstance = new Chart(categoryCtx, {
+                type: 'bar',
+                data: {
+                    labels: topCategories.map(c => c[0]),
+                    datasets: [{
+                        label: 'Total Spent',
+                        data: topCategories.map(c => c[1]),
+                        backgroundColor: '#374151',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    indexAxis: 'y',
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            const category = topCategories[index][0];
+                            openCategoryDetailModal(category, lastCompleteMonthForChart, lastMonthLabel);
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return formatCurrency(context.parsed.x);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value/1000).toFixed(0) + 'k';
+                                }
+                            }
+                        }
+                    },
+                    onHover: (event, activeElements) => {
+                        event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+                    }
+                }
+            });
+        }
+
+        function populateMonthFilter(year) {
+            const monthSelect = document.getElementById('monthFilter');
+            monthSelect.innerHTML = '<option value="all">All</option>';
+
+            // Get available months for the selected year
+            let availableMonths = globalDiscretionaryData.map(r => r.month);
+            if (year !== 'all') {
+                availableMonths = availableMonths.filter(m => m.startsWith(year));
+            }
+
+            const uniqueMonths = [...new Set(availableMonths)].sort().reverse();
+
+            // Get current month to set as default
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            uniqueMonths.forEach(monthStr => {
+                const [y, m] = monthStr.split('-');
+                const monthName = new Date(y, parseInt(m) - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                const selected = monthStr === currentMonth ? ' selected' : '';
+                monthSelect.innerHTML += `<option value="${monthStr}"${selected}>${monthName}</option>`;
+            });
+        }
+
+        function updateMonthFilterOptions() {
+            const selectedYear = document.getElementById('yearFilter').value;
+            populateMonthFilter(selectedYear);
+        }
+
+        function filterDiscretionaryByPeriod() {
+            const selectedYear = document.getElementById('yearFilter').value;
+            const selectedMonth = document.getElementById('monthFilter').value;
+
+            // Monthly Trend Chart: ALWAYS show all data, just highlight selected month
+            const allMonths = new Set();
+            globalDiscretionaryData.forEach(row => allMonths.add(row.month));
+            let sortedMonths = Array.from(allMonths).sort();
+
+            // Filter months for display if year is selected
+            if (selectedYear !== 'all') {
+                sortedMonths = sortedMonths.filter(m => m.startsWith(selectedYear));
+            }
+
+            const monthLabels = sortedMonths.map(m => {
+                const [year, monthNum] = m.split('-');
+                const date = new Date(year, parseInt(monthNum) - 1);
+                return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+            });
+
+            const monthlyDiscTotal = {};
+            globalDiscretionaryData.forEach(row => {
+                if (!monthlyDiscTotal[row.month]) {
+                    monthlyDiscTotal[row.month] = 0;
+                }
+                monthlyDiscTotal[row.month] += row.total;
+            });
+
+            // Highlight selected month with different point styling
+            const pointBackgroundColors = sortedMonths.map(m => {
+                return m === selectedMonth ? '#dc2626' : '#374151';
+            });
+            const pointRadius = sortedMonths.map(m => {
+                return m === selectedMonth ? 8 : 3;
+            });
+
+            if (trendChartInstance) {
+                trendChartInstance.data.labels = monthLabels;
+                trendChartInstance.data.datasets[0].data = sortedMonths.map(m => monthlyDiscTotal[m] || 0);
+                trendChartInstance.data.datasets[0].pointBackgroundColor = pointBackgroundColors;
+                trendChartInstance.data.datasets[0].pointRadius = pointRadius;
+                trendChartInstance.data.datasets[0].pointHoverRadius = sortedMonths.map(m => m === selectedMonth ? 10 : 5);
+                trendChartInstance.update();
+            }
+
+            // Update Top Categories Chart - show only selected month
+            let targetMonth;
+            let targetMonthLabel;
+
+            if (selectedMonth !== 'all') {
+                targetMonth = selectedMonth;
+                // Parse month directly to avoid timezone issues
+                const [year, month] = selectedMonth.split('-');
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                targetMonthLabel = `${monthNames[parseInt(month) - 1]} ${year}`;
+            } else {
+                // When "All" is selected, show current month
+                const now = new Date();
+                const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                targetMonth = currentMonth;
+                const [year, month] = currentMonth.split('-');
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                targetMonthLabel = `${monthNames[parseInt(month) - 1]} ${year}`;
+            }
+
+            const discCategoryTotals = {};
+            globalDiscretionaryData.filter(row => row.month === targetMonth).forEach(row => {
+                if (!discCategoryTotals[row.category]) {
+                    discCategoryTotals[row.category] = 0;
+                }
+                discCategoryTotals[row.category] += row.total;
+            });
+
+            const topCategories = Object.entries(discCategoryTotals)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            document.getElementById('categoryChartTitle').textContent = `Top Categories - ${targetMonthLabel}`;
+
+            if (categoryChartInstance) {
+                categoryChartInstance.data.labels = topCategories.map(c => c[0]);
+                categoryChartInstance.data.datasets[0].data = topCategories.map(c => c[1]);
+                categoryChartInstance.options.onClick = (event, activeElements) => {
+                    if (activeElements.length > 0) {
+                        const index = activeElements[0].index;
+                        const category = topCategories[index][0];
+                        openCategoryDetailModal(category, targetMonth, targetMonthLabel);
+                    }
+                };
+                categoryChartInstance.update();
+            }
+        }
+
+        function renderMortgageBreakdown(fixedCategories, avgPayroll, mtaAmount, subscriptionsAmount, netRemaining, netColor) {
+            const netBg = netRemaining >= 0 ? '#ecfdf5' : '#fee2e2';
+
+            const breakdownDiv = document.getElementById('mortgageBreakdown');
+            let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+
+            // Payroll first
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #ecfdf5; border-radius: 8px; border-left: 4px solid #10b981;">
+                    <div>
+                        <div style="font-weight: 700; color: #065f46; margin-bottom: 4px;">💰 Monthly Payroll</div>
+                        <div style="font-size: 12px; color: #047857;">Income</div>
+                    </div>
+                    <div style="font-size: 24px; font-weight: 700; color: #065f46;">${formatCurrency(avgPayroll)}</div>
+                </div>
+                <div style="border-top: 2px solid #e5e7eb; margin: 8px 0;"></div>
+            `;
+
+            // Fixed utilities
+            const colors = ['#dc2626', '#ea580c', '#f59e0b', '#84cc16'];
+            fixedCategories.forEach((cat, idx) => {
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px; border-left: 4px solid ${colors[idx % colors.length]};">
+                        <div>
+                            <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">${cat[0]}</div>
+                            <div style="font-size: 12px; color: #6b7280;">Current month</div>
+                        </div>
+                        <div style="font-size: 18px; font-weight: 700; color: #1f2937;">${formatCurrency(cat[1])}</div>
+                    </div>
+                `;
+            });
+
+            // Recurring expenses
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+                    <div>
+                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">🚇 MTA</div>
+                        <div style="font-size: 12px; color: #6b7280;">Last complete month</div>
+                    </div>
+                    <div style="font-size: 18px; font-weight: 700; color: #1f2937;">${formatCurrency(mtaAmount)}</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px; border-left: 4px solid #8b5cf6;">
+                    <div>
+                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">📱 Subscriptions</div>
+                        <div style="font-size: 12px; color: #6b7280;">Last complete month</div>
+                    </div>
+                    <div style="font-size: 18px; font-weight: 700; color: #1f2937;">${formatCurrency(subscriptionsAmount)}</div>
+                </div>
+            `;
+
+            // Net remaining
+            html += `
+                <div style="border-top: 2px solid #1f2937; margin: 8px 0;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: ${netBg}; border-radius: 8px; border-left: 4px solid ${netColor};">
+                    <div>
+                        <div style="font-weight: 700; color: ${netColor}; margin-bottom: 4px;">Net Remaining</div>
+                        <div style="font-size: 12px; color: #6b7280;">After all expenses</div>
+                    </div>
+                    <div style="font-size: 24px; font-weight: 700; color: ${netColor};">${formatCurrency(netRemaining)}</div>
+                </div>
+            `;
+
+            html += '</div>';
+            breakdownDiv.innerHTML = html;
+        }
+
+        async function renderNetRemainingTrend() {
+            // Get last 6 months of payroll and expenses
+            const { data: payrollData } = await supabaseClient
+                .from('expense_transactions')
+                .select('month, amount')
+                .eq('category', 'Payroll')
+                .order('month', { ascending: false })
+                .limit(6);
+
+            if (!payrollData || payrollData.length === 0) return;
+
+            // Group payroll by month
+            const payrollByMonth = {};
+            payrollData.forEach(p => {
+                if (!payrollByMonth[p.month]) {
+                    payrollByMonth[p.month] = 0;
+                }
+                payrollByMonth[p.month] += Math.abs(p.amount);
+            });
+
+            // Get fixed costs for those same months
+            const { data: expensesData } = await supabaseClient
+                .from('expense_transactions')
+                .select('month, category, amount')
+                .in('category', ['Mortgage Payment', 'HOA', 'Electricity', 'Verizon', 'Insurance', 'Grindhouse', 'MTA', 'Subscriptions'])
+                .order('month', { ascending: true });
+
+            // Group expenses by month
+            const expensesByMonth = {};
+            if (expensesData) {
+                expensesData.forEach(e => {
+                    if (!expensesByMonth[e.month]) {
+                        expensesByMonth[e.month] = 0;
+                    }
+                    expensesByMonth[e.month] += Math.abs(e.amount);
+                });
+            }
+
+            // Calculate net remaining for each month (already in desc order, reverse to asc for chart)
+            const months = Object.keys(payrollByMonth).sort();  // Sort chronologically
+            const last6Months = months;  // Already limited to 6 months
+            const netRemainingData = last6Months.map(month => {
+                const income = payrollByMonth[month] || 0;
+                const expenses = expensesByMonth[month] || 0;
+                return {
+                    month,
+                    netRemaining: income - expenses
+                };
+            });
+
+            // Format month labels
+            const labels = netRemainingData.map(d => {
+                const [year, monthNum] = d.month.split('-');
+                const date = new Date(year, parseInt(monthNum) - 1);
+                return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+            });
+
+            const ctx = document.getElementById('netRemainingTrendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Net Remaining',
+                        data: netRemainingData.map(d => d.netRemaining),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Net: ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            },
+                            grid: {
+                                color: '#e5e7eb'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderKeyMetrics(fixedCategories, avgPayroll, netRemaining, electricityAvg) {
+            // Calculate some key stats
+            const totalFixedCosts = fixedCategories.reduce((sum, cat) => sum + cat[1], 0);
+            const fixedCostsPercent = ((totalFixedCosts / avgPayroll) * 100).toFixed(1);
+
+            // Find highest and lowest fixed cost
+            const sortedFixed = [...fixedCategories].sort((a, b) => b[1] - a[1]);
+            const highest = sortedFixed[0];
+            const lowest = sortedFixed[sortedFixed.length - 1];
+
+            const metricsDiv = document.getElementById('keyMetrics');
+            metricsDiv.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div style="padding: 16px; background: #f0fdf4; border-radius: 8px; border-left: 4px solid #10b981;">
+                        <div style="font-size: 12px; color: #047857; font-weight: 600; margin-bottom: 4px;">TOTAL FIXED</div>
+                        <div style="font-size: 20px; font-weight: 700; color: #065f46;">${formatCurrency(totalFixedCosts)}</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">${fixedCostsPercent}% of income</div>
+                    </div>
+                    <div style="padding: 16px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                        <div style="font-size: 12px; color: #92400e; font-weight: 600; margin-bottom: 4px;">ELECTRICITY AVG</div>
+                        <div style="font-size: 20px; font-weight: 700; color: #78350f;">${formatCurrency(electricityAvg)}</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">12-month average</div>
+                    </div>
+                    <div style="padding: 16px; background: #fee2e2; border-radius: 8px; border-left: 4px solid #dc2626;">
+                        <div style="font-size: 12px; color: #991b1b; font-weight: 600; margin-bottom: 4px;">HIGHEST COST</div>
+                        <div style="font-size: 16px; font-weight: 700; color: #7f1d1d;">${highest[0]}</div>
+                        <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">${formatCurrency(highest[1])}/mo</div>
+                    </div>
+                    <div style="padding: 16px; background: #dbeafe; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+                        <div style="font-size: 12px; color: #075985; font-weight: 600; margin-bottom: 4px;">LOWEST COST</div>
+                        <div style="font-size: 16px; font-weight: 700; color: #0c4a6e;">${lowest[0]}</div>
+                        <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">${formatCurrency(lowest[1])}/mo</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function renderRecurringBreakdown() {
+            // Get last complete month
+            const now = new Date();
+            const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1);
+            const lastCompleteMonth = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+
+            // Get MTA, Subscriptions, Grindhouse for last complete month
+            const { data: recurring, error } = await supabaseClient
+                .from('expense_transactions')
+                .select('category, amount')
+                .in('category', ['MTA', 'Subscriptions', 'Grindhouse'])
+                .eq('month', lastCompleteMonth);
+
+            if (error) {
+                console.error('Error loading recurring expenses:', error);
+                return;
+            }
+
+            // Aggregate by category
+            const categoryTotals = {};
+            recurring.forEach(r => {
+                if (!categoryTotals[r.category]) {
+                    categoryTotals[r.category] = 0;
+                }
+                categoryTotals[r.category] += Math.abs(r.amount);
+            });
+
+            const total = Object.values(categoryTotals).reduce((sum, val) => sum + val, 0);
+
+            const breakdownDiv = document.getElementById('recurringBreakdown');
+            let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+
+            const colors = { 'MTA': '#0ea5e9', 'Subscriptions': '#8b5cf6', 'Grindhouse': '#f59e0b' };
+            const icons = { 'MTA': '🚇', 'Subscriptions': '📱', 'Grindhouse': '💪' };
+
+            ['MTA', 'Subscriptions', 'Grindhouse'].forEach(cat => {
+                const amount = categoryTotals[cat] || 0;
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px; border-left: 4px solid ${colors[cat]};">
+                        <div>
+                            <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">${icons[cat]} ${cat}</div>
+                            <div style="font-size: 12px; color: #6b7280;">Last complete month</div>
+                        </div>
+                        <div style="font-size: 18px; font-weight: 700; color: #1f2937;">${formatCurrency(amount)}</div>
+                    </div>
+                `;
+            });
+
+            // Total
+            html += `
+                <div style="border-top: 2px solid #1f2937; margin: 8px 0;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #f3f4f6; border-radius: 8px; border-left: 4px solid #1f2937;">
+                    <div>
+                        <div style="font-weight: 700; color: #1f2937; margin-bottom: 4px;">Total</div>
+                        <div style="font-size: 12px; color: #6b7280;">Monthly recurring</div>
+                    </div>
+                    <div style="font-size: 24px; font-weight: 700; color: #1f2937;">${formatCurrency(total)}</div>
+                </div>
+            `;
+
+            html += '</div>';
+            breakdownDiv.innerHTML = html;
+        }
+
+        function renderCategoryBreakdown(allCategories, payrollSummary) {
+            // Combine all data
+            const combined = [...allCategories, ...payrollSummary];
+
+            // Get all unique months
+            const months = [...new Set(combined.map(r => r.month))].sort();
+
+            // Categorize into groups
+            const fixedCostCategories = ['Mortgage Payment', 'HOA', 'Electricity', 'Verizon', 'Insurance', 'Payroll', 'Grindhouse'];
+            const fixedCosts = combined.filter(r => fixedCostCategories.includes(r.category));
+            const discretionary = combined.filter(r => !fixedCostCategories.includes(r.category));
+
+            // Get unique categories per group
+            const fixedCostCats = [...new Set(fixedCosts.map(r => r.category))].sort();
+            const discretionaryCats = [...new Set(discretionary.map(r => r.category))].sort();
+
+            // Create data lookup
+            const dataLookup = {};
+            combined.forEach(row => {
+                const key = `${row.category}-${row.month}`;
+                dataLookup[key] = row.total;
+            });
+
+            // Format month labels
+            const monthLabels = months.map(m => {
+                const [year, monthNum] = m.split('-');
+                const date = new Date(year, parseInt(monthNum) - 1);
+                return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+            });
+
+            const breakdownDiv = document.getElementById('categoryBreakdown');
+
+            // Build table with sections
+            let html = '<div class="scroll-container"><div class="data-table">';
+
+            // Header row
+            html += '<div class="data-row"><div class="month-label">Category</div>';
+            monthLabels.forEach(label => {
+                html += `<div class="month-label">${label}</div>`;
+            });
+            html += '</div>';
+
+            // FIXED COSTS SECTION
+            html += '<div class="data-row" style="background: #f3f4f6;"><div class="month-label" style="text-align: left; font-weight: 700; color: #1f2937;">Fixed Costs & Income</div>';
+            months.forEach(() => html += '<div class="month-value"></div>');
+            html += '</div>';
+
+            fixedCostCats.forEach(category => {
+                html += '<div class="data-row">';
+                html += `<div class="month-label" style="text-align: left; font-weight: 600; padding-left: 24px;">${category}</div>`;
+
+                months.forEach((month, idx) => {
+                    const key = `${category}-${month}`;
+                    const value = dataLookup[key];
+
+                    if (value) {
+                        const monthLabel = new Date(month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                        html += `<div class="month-value has-data" onclick="openCategoryDetailModal('${category}', '${month}', '${monthLabel}')" style="cursor: pointer;">${formatCurrency(value)}</div>`;
+                    } else {
+                        html += '<div class="month-value no-data">-</div>';
+                    }
+                });
+
+                html += '</div>';
+            });
+
+            // DISCRETIONARY SECTION
+            html += '<div class="data-row" style="background: #f3f4f6; margin-top: 16px;"><div class="month-label" style="text-align: left; font-weight: 700; color: #1f2937;">Discretionary Spending</div>';
+            months.forEach(() => html += '<div class="month-value"></div>');
+            html += '</div>';
+
+            discretionaryCats.forEach(category => {
+                html += '<div class="data-row">';
+                html += `<div class="month-label" style="text-align: left; font-weight: 600; padding-left: 24px;">${category}</div>`;
+
+                months.forEach((month, idx) => {
+                    const key = `${category}-${month}`;
+                    const value = dataLookup[key];
+
+                    if (value) {
+                        const monthLabel = new Date(month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                        html += `<div class="month-value has-data" onclick="openCategoryDetailModal('${category}', '${month}', '${monthLabel}')" style="cursor: pointer;">${formatCurrency(value)}</div>`;
+                    } else {
+                        html += '<div class="month-value no-data">-</div>';
+                    }
+                });
+
+                html += '</div>';
+            });
+
+            html += '</div></div>';
+            breakdownDiv.innerHTML = html;
+        }
+
+        async function openSubscriptionsModal() {
+            const now = new Date();
+            const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1);
+            const lastCompleteMonth = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+
+            const { data: subscriptions, error } = await supabaseClient
+                .from('expense_transactions')
+                .select('description, amount')
+                .eq('category', 'Subscriptions')
+                .eq('month', lastCompleteMonth)
+                .order('amount', { ascending: false });
+
+            if (error) {
+                console.error('Error loading subscriptions:', error);
+                return;
+            }
+
+            const subscriptionsList = document.getElementById('subscriptionsList');
+
+            if (!subscriptions || subscriptions.length === 0) {
+                subscriptionsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;">No subscriptions found</div>';
+            } else {
+                // Group by description and take first occurrence
+                // Use first word as key to merge similar descriptions (e.g., "ANTHROPIC" and "ANTHROPIC* CLAUDE SUB")
+                const uniqueSubs = {};
+                subscriptions.forEach(sub => {
+                    const firstWord = sub.description.split(/[\s*]/)[0].toLowerCase().trim();
+                    if (!uniqueSubs[firstWord]) {
+                        uniqueSubs[firstWord] = {
+                            description: sub.description,
+                            amount: Math.abs(sub.amount)
+                        };
+                    }
+                });
+
+                const uniqueArray = Object.values(uniqueSubs).sort((a, b) => b.amount - a.amount);
+
+                let html = '';
+                let total = 0;
+
+                uniqueArray.forEach(sub => {
+                    total += sub.amount;
+                    html += `
+                        <div class="subscription-item">
+                            <div class="subscription-name">${sub.description}</div>
+                            <div class="subscription-price">${formatCurrency(sub.amount)}</div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                    <div class="subscription-total">
+                        <div class="subscription-total-label">Total Monthly</div>
+                        <div class="subscription-total-amount">${formatCurrency(total)}</div>
+                    </div>
+                `;
+
+                subscriptionsList.innerHTML = html;
+            }
+
+            document.getElementById('subscriptionsModal').style.display = 'block';
+        }
+
+        function closeSubscriptionsModal() {
+            document.getElementById('subscriptionsModal').style.display = 'none';
+        }
+
+        async function openCategoryDetailModal(category, month, monthLabel) {
+            const { data: transactions, error } = await supabaseClient
+                .from('expense_transactions')
+                .select('transaction_date, description, amount')
+                .eq('category', category)
+                .eq('month', month)
+                .order('transaction_date', { ascending: false });
+
+            if (error) {
+                console.error('Error loading category details:', error);
+                return;
+            }
+
+            const modalContent = document.getElementById('categoryDetailContent');
+            document.getElementById('categoryDetailTitle').textContent = `${category} - ${monthLabel}`;
+
+            if (!transactions || transactions.length === 0) {
+                modalContent.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;">No transactions found</div>';
+            } else {
+                const total = transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+                let html = `
+                    <div style="margin-bottom: 24px; padding: 16px; background: linear-gradient(135deg, #374151 0%, #1f2937 100%); color: white; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">${transactions.length} Transactions</div>
+                                <div style="font-size: 24px; font-weight: 700;">${formatCurrency(total)}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Average</div>
+                                <div style="font-size: 20px; font-weight: 600;">${formatCurrency(total / transactions.length)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="transaction-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th class="transaction-amount">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                transactions.forEach(t => {
+                    const date = new Date(t.transaction_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    html += `
+                        <tr>
+                            <td style="width: 80px;">${date}</td>
+                            <td>${t.description}</td>
+                            <td class="transaction-amount">${formatCurrency(Math.abs(t.amount))}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                        </tbody>
+                    </table>
+                `;
+
+                modalContent.innerHTML = html;
+            }
+
+            document.getElementById('categoryDetailModal').style.display = 'block';
+        }
+
+        function closeCategoryDetailModal() {
+            document.getElementById('categoryDetailModal').style.display = 'none';
+        }
+
+        // Close modals when clicking outside of them
+        window.onclick = function(event) {
+            const subscriptionsModal = document.getElementById('subscriptionsModal');
+            const categoryDetailModal = document.getElementById('categoryDetailModal');
+            if (event.target == subscriptionsModal) {
+                closeSubscriptionsModal();
+            }
+            if (event.target == categoryDetailModal) {
+                closeCategoryDetailModal();
+            }
+        }
+
+        // Load data on page load
+        loadDashboardData();
+    </script>
+</body>
+</html>
