@@ -22,14 +22,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests beautifulsoup4 psycopg2-binary
+          pip install requests beautifulsoup4 supabase
 
       - name: Fetch Redfin property value
         env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           REDFIN_COOKIE: ${{ secrets.REDFIN_COOKIE }}
         run: |
-          python vault/ops/outgoing/docs/fetch_redfin_property_value.py
+          python finances/scripts/fetch_redfin_property_value.py
 
       - name: Notify on failure
         if: failure()
