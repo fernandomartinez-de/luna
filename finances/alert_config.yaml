@@ -1,0 +1,327 @@
+# Finance Alert Configuration
+# Last updated: 2026-09-15
+
+# Email settings
+email:
+  recipient: fernandopv2655@gmail.com
+  sender: finance-alerts@personal.local  # Update with actual sender when email is set up
+  enabled: true
+
+# Monthly report
+monthly_report:
+  enabled: true
+  day_of_month: 1  # Send on 1st of each month
+  time: "09:00"  # 9 AM
+  email: true
+  include:
+    - spending_summary
+    - budget_status
+    - anomalies_detected
+    - subscription_changes
+    - investment_performance
+
+# Budget rules (hard limits with alerts)
+budgets:
+  dining_food:
+    category_patterns:
+      - "Dining"
+      - "Food"
+      - "Groceries"
+      - "Restaurants"
+      - "Delivery"
+    monthly_limit: 600.00
+    alert_thresholds:
+      - percent: 75  # Alert at 75% ($450)
+        message: "Dining budget at 75% - $450 spent of $600"
+      - percent: 90  # Alert at 90% ($540)
+        message: "Dining budget at 90% - $540 spent of $600"
+      - percent: 100  # Alert when over budget
+        message: "⚠️ Dining budget exceeded! Over $600 for the month"
+    dashboard_color:
+      under_budget: "green"
+      at_75_percent: "yellow"
+      at_90_percent: "orange"
+      over_budget: "red"
+
+# Anomaly detection rules (watch for unusual activity)
+anomaly_detection:
+  subscriptions:
+    enabled: true
+    category_patterns:
+      - "Subscription"
+      - "Streaming"
+      - "Software"
+      - "Membership"
+
+    # Known subscriptions with expected amounts
+    known_subscriptions:
+      - vendor: "ANTHROPIC"
+        vendor_patterns: ["ANTHROPIC", "CLAUDE"]
+        expected_amount: 22.00
+        tolerance: 2.00  # Alert if differs by more than $2
+        charge_day: 25  # Charges around 25th of month
+        note: "Claude Pro subscription"
+      - vendor: "SP TRADE COFFEE"
+        vendor_patterns: ["TRADE COFFEE", "SP TRADE"]
+        expected_amount: 26.00
+        tolerance: 2.00
+        charge_day: 18  # Charges around 18th of month
+        note: "Coffee subscription delivery"
+      - vendor: "UBER ONE"
+        vendor_patterns: ["UBER", "UBER ONE", "UBER *ONE"]
+        expected_amount: 10.00
+        tolerance: 1.00
+        charge_day: 11  # Charges around 11th of month
+        note: "Uber One membership"
+      - vendor: "PLAYSTATION"
+        vendor_patterns: ["PLAYSTATION", "SONY", "PSN"]
+        expected_amount: 11.00
+        tolerance: 1.00
+        charge_day: 3  # Charges around 3rd of month
+        note: "PlayStation Plus subscription"
+
+    # Expected monthly total
+    expected_monthly_total: 69.00
+    total_tolerance: 5.00  # Alert if total differs by more than $5
+
+    alerts:
+      - type: "price_change"
+        message: "💰 Subscription price changed: {vendor} from ${old_amount} to ${new_amount}"
+      - type: "duplicate_charge"
+        message: "⚠️ Duplicate subscription charge detected: {vendor} charged ${amount} twice this month"
+      - type: "new_subscription"
+        message: "🆕 New subscription detected: {vendor} ${amount}/month"
+      - type: "missing_subscription"
+        message: "❓ Expected subscription not found: {vendor} (usually ${expected_amount})"
+      - type: "unexpected_amount"
+        message: "💸 Subscription amount unusual: {vendor} charged ${amount} (expected ${expected_amount})"
+
+  utilities:
+    enabled: true
+    category_patterns:
+      - "Utilities"
+      - "Electric"
+      - "Internet"
+      - "Phone"
+
+    # Known utilities with expected behavior
+    known_utilities:
+      - vendor: "Verizon"
+        vendor_patterns: ["VERIZON", "VZW"]
+        expected_amount: 137.00  # Fixed monthly (internet + phone)
+        tolerance: 5.00  # Alert if differs by more than $5
+        type: "fixed"
+        note: "Internet and cell phone"
+      - vendor: "Grindhouse"
+        vendor_patterns: ["GRINDHOUSE", "GRIND HOUSE"]
+        expected_amount: 136.00  # Fixed monthly gym membership
+        tolerance: 5.00
+        type: "fixed"
+        note: "Gym membership"
+      - vendor: "HOA"
+        vendor_patterns: ["HOA", "66 S 6", "CONDO", "COMMON CHARGE"]
+        expected_amount: 506.00  # Fixed monthly condo fees
+        tolerance: 5.00
+        type: "fixed"
+        note: "Condo HOA common charges"
+      - vendor: "ConEd"
+        vendor_patterns: ["CON ED", "CONED", "CON EDISON"]
+        expected_amount: 150.00  # Average (currently ~$154)
+        min_threshold: 50.00  # Alert if below $50 (suspiciously low)
+        max_threshold: 300.00  # Alert if above $300 (unusually high)
+        type: "variable"
+        seasonality: true  # Higher in summer (AC) and winter (heat)
+        note: "Electricity - varies by season"
+      - vendor: "MTA"
+        vendor_patterns: ["MTA", "OMNY", "METROCARD"]
+        expected_amount: 41.00  # Average monthly transit
+        min_threshold: 0.00  # OK if $0 (no transit that month)
+        max_threshold: 150.00  # Alert if above $150 (unusual)
+        type: "variable"
+        note: "NYC subway/transit - varies by usage"
+
+    # Expected monthly total (fixed utilities only)
+    expected_fixed_total: 779.00  # Verizon + Grindhouse + HOA
+    expected_variable_range: [150.00, 250.00]  # ConEd + MTA combined
+
+    alerts:
+      - type: "fixed_cost_change"
+        message: "⚠️ Fixed utility cost changed: {vendor} from ${old_amount} to ${new_amount}"
+      - type: "abnormal_variable"
+        message: "📊 Utility bill abnormal: {vendor} ${amount} (average: ${expected_amount})"
+      - type: "suspiciously_low"
+        message: "❓ Utility bill unusually low: {vendor} ${amount} (check if real or error)"
+      - type: "unusually_high"
+        message: "🔥 Utility bill very high: {vendor} ${amount} (average: ${expected_amount})"
+      - type: "duplicate_charge"
+        message: "⚠️ Duplicate utility charge: {vendor} charged ${amount} twice this month"
+
+# Data quality alerts
+data_quality:
+  duplicate_detection:
+    enabled: true
+    check_window_days: 7  # Look for duplicates within 7 days
+    same_amount_tolerance: 0.01  # Consider duplicate if amounts within $0.01
+    alert_frequency: "weekly"  # Weekly summary (not immediate)
+    message: "🔄 Duplicate transaction detected: {description} ${amount} on {date}"
+
+  missing_categorization:
+    enabled: true
+    auto_tag_as: "Miscellaneous"  # Tag unknown transactions as Miscellaneous
+    alert_frequency: "none"  # Don't alert - just tag for review in dashboard
+    flag_for_review: true  # Show in dashboard "needs review" section
+    message: "❓ Uncategorized transaction tagged as Miscellaneous: {description} ${amount}"
+    note: "Review dashboard monthly to add category rules for recurring merchants"
+
+  large_transactions:
+    enabled: true
+    threshold: 500.00  # Alert for any transaction over $500
+    alert_frequency: "immediate"  # Email right away
+    exclude_categories:  # Don't alert for these (normal large expenses)
+      - "Mortgage"
+      - "HOA"
+      - "Rent"
+      - "Property Tax"
+    exclude_vendors:  # Don't alert for these known large merchants
+      - "CHASE MORTGAGE"
+      - "66 S 6"
+      - "HOA"
+    message: "💳 Large transaction: {description} ${amount} on {date} (category: {category})"
+
+  negative_amounts:
+    enabled: true
+    alert_frequency: "immediate"  # Always notify about refunds
+    min_threshold: 0.01  # Alert on any refund (even $0.01)
+    message: "↩️ Refund or credit received: {description} ${amount} on {date}"
+    note: "Good to know - verify this was expected"
+
+  suspicious_patterns:
+    enabled: true
+    checks:
+      - type: "multiple_same_day"
+        threshold: 5  # Alert if 5+ transactions same day (unusual)
+        message: "⚠️ Unusual activity: {count} transactions on {date}"
+      - type: "rapid_succession"
+        threshold: 3  # Alert if 3+ transactions within 1 hour
+        time_window_minutes: 60
+        message: "⚠️ Rapid transactions: {count} charges within 1 hour"
+      - type: "round_amounts"
+        enabled: false  # Don't alert on round amounts (normal for bills)
+      - type: "late_night"
+        enabled: false  # Don't alert on late-night transactions (normal for you)
+
+  missing_transactions:
+    enabled: true
+    check_expected:
+      # Alert if these expected monthly charges are missing
+      - vendor: "ANTHROPIC"
+        expected_day_range: [23, 27]  # Should charge between 23rd-27th
+        message: "❓ Missing expected charge: Anthropic Claude ($22) not charged this month"
+      - vendor: "SP TRADE COFFEE"
+        expected_day_range: [16, 20]
+        message: "❓ Missing expected charge: Trade Coffee ($26) not charged this month"
+      - vendor: "UBER ONE"
+        expected_day_range: [9, 13]
+        message: "❓ Missing expected charge: Uber One ($10) not charged this month"
+      - vendor: "PLAYSTATION"
+        expected_day_range: [1, 5]
+        message: "❓ Missing expected charge: PlayStation ($11) not charged this month"
+      - vendor: "Verizon"
+        expected_day_range: [1, 31]  # Anytime in month
+        message: "❓ Missing expected charge: Verizon ($137) not charged this month"
+      - vendor: "Grindhouse"
+        expected_day_range: [1, 31]
+        message: "❓ Missing expected charge: Grindhouse gym ($136) not charged this month"
+    alert_frequency: "monthly"  # Check at end of month
+
+# Tax document tracking
+tax_tracking:
+  enabled: true
+  reminder_months: [1, 2, 3, 4]  # Jan-Apr tax season
+
+  reminders:
+    - day: 15
+      month: 1  # January 15
+      message: "📄 Tax season started - check for W-2 and 1099 forms"
+    - day: 1
+      month: 2  # February 1
+      message: "📄 W-2 and 1099 deadline passed - verify all received"
+    - day: 1
+      month: 3  # March 1
+      message: "📄 Tax prep reminder - 6 weeks until April 15 deadline"
+    - day: 1
+      month: 4  # April 1
+      message: "⚠️ Tax deadline in 2 weeks - April 15!"
+    - day: 10
+      month: 4  # April 10
+      message: "🚨 TAX DEADLINE IN 5 DAYS - April 15!"
+
+  expected_documents:
+    - type: "W-2"
+      source: "SS&C Technologies"
+      expected_by: "2027-01-31"  # Employers must send by Jan 31
+    - type: "1098"
+      source: "Chase Mortgage"
+      expected_by: "2027-01-31"
+    - type: "1099-INT"
+      source: "Chase Bank"
+      expected_by: "2027-01-31"
+    - type: "1099-DIV"
+      source: "Morgan Stanley"
+      expected_by: "2027-01-31"
+    - type: "1099-B"
+      source: "Morgan Stanley"
+      expected_by: "2027-02-15"  # Brokers have until Feb 15
+    - type: "1099"
+      source: "Coinbase"
+      expected_by: "2027-02-15"
+
+# Dashboard preferences
+dashboard:
+  refresh_on_load: true
+  default_view: "current_month"
+  show_charts: true
+  color_scheme: "dark"  # or "light"
+
+  widgets:
+    - name: "Budget Progress"
+      enabled: true
+      categories: ["dining_food"]
+    - name: "Subscription Monitor"
+      enabled: true
+    - name: "Utility Tracker"
+      enabled: true
+    - name: "Recent Alerts"
+      enabled: true
+      max_display: 10
+    - name: "Monthly Spending Trend"
+      enabled: true
+      months_to_show: 6
+    - name: "Investment Performance"
+      enabled: true
+
+# Alert delivery schedule
+alert_schedule:
+  immediate:
+    - over_budget
+    - duplicate_charge
+    - new_subscription
+    - abnormal_utility
+    - large_transaction
+
+  daily_digest:
+    enabled: false  # Set to true if you want daily email summary
+    time: "18:00"  # 6 PM
+    include:
+      - budget_status
+      - recent_transactions
+      - anomalies
+
+  weekly_summary:
+    enabled: false  # Set to true if you want weekly email
+    day: "Sunday"
+    time: "10:00"
+    include:
+      - week_spending
+      - budget_progress
+      - subscription_status
