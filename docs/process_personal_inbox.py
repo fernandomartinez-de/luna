@@ -12,10 +12,10 @@ from pathlib import Path
 from PyPDF2 import PdfReader
 
 # Paths
-VAULT_ROOT = Path(r"C:\Users\fmartine\Personal\vaults\ssc-vault-fm")
-INBOX_FOLDER = VAULT_ROOT / "inbox" / "personal-docs"
+VAULT_ROOT = Path(r"C:\Users\fmartine\Personal\repos\personal\vault")
+INBOX_FOLDER = VAULT_ROOT / "ops" / "incoming"
 GDRIVE_ROOT = Path(r"G:\My Drive\Personal")
-TRACKING_NOTE = VAULT_ROOT / "outputs" / "personal-docs-processing-log.md"
+TRACKING_NOTE = VAULT_ROOT / "ops" / "outgoing" / "docs" / "processing-log.md"
 
 # Document type detection patterns
 DETECTION_PATTERNS = {
