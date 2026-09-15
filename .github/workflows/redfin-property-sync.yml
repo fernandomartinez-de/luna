@@ -1,0 +1,37 @@
+name: Redfin Property Value Sync
+
+# Runs monthly on the 1st at midnight UTC (7/8 PM ET depending on DST)
+# Also allows manual trigger from GitHub Actions UI
+on:
+  schedule:
+    - cron: '0 0 1 * *'  # 00:00 UTC on 1st of month
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  fetch-property-value:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4 psycopg2-binary
+
+      - name: Fetch Redfin property value
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          REDFIN_COOKIE: ${{ secrets.REDFIN_COOKIE }}
+        run: |
+          python vault/ops/outgoing/docs/fetch_redfin_property_value.py
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Redfin property sync failed. Check logs for details."
