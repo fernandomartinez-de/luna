@@ -131,12 +131,12 @@ def sync():
 
     print("Fetching all cycles...")
     cycles = whoop_get_all(token, "cycle")
+    cycle_rows = []
     for c in cycles:
         score = c.get("score") or {}
         kj = score.get("kilojoule")
         cal = round(kj * 0.239, 1) if kj else None
-
-        supabase.table('whoop_cycles').upsert({
+        cycle_rows.append({
             'cycle_id': str(c["id"]),
             'start_time': c.get("start"),
             'end_time': c.get("end"),
@@ -145,23 +145,30 @@ def sync():
             'max_heart_rate': score.get("max_heart_rate"),
             'kilojoules': kj,
             'calories_kcal': cal
-        }).execute()
+        })
+    if cycle_rows:
+        print(f"Upserting {len(cycle_rows)} cycles...")
+        supabase.table('whoop_cycles').upsert(cycle_rows).execute()
 
     print("Fetching all recovery...")
     recoveries = whoop_get_all(token, "recovery")
+
+    # Build cycle_id to date map from already-upserted cycles
+    cycle_dates = {row['cycle_id']: row['start_time'] for row in cycle_rows}
+
+    recovery_rows = []
     for r in recoveries:
         score = r.get("score") or {}
         cycle_id_str = str(r["cycle_id"])
 
-        # Get cycle date from whoop_cycles
-        cycle_result = supabase.table('whoop_cycles').select('start_time').eq('cycle_id', cycle_id_str).execute()
+        # Get date from our local cycle map
         rec_date = None
-        if cycle_result.data and len(cycle_result.data) > 0:
-            start_time = cycle_result.data[0]['start_time']
+        if cycle_id_str in cycle_dates:
+            start_time = cycle_dates[cycle_id_str]
             if start_time:
                 rec_date = start_time.split('T')[0] if 'T' in start_time else start_time
 
-        supabase.table('whoop_recovery').upsert({
+        recovery_rows.append({
             'cycle_id': cycle_id_str,
             'recovery_date': rec_date,
             'recovery_score': score.get("recovery_score"),
@@ -169,10 +176,14 @@ def sync():
             'hrv_rmssd_milli': score.get("hrv_rmssd_milli"),
             'spo2_percentage': score.get("spo2_percentage"),
             'skin_temp_celsius': score.get("skin_temp_celsius")
-        }).execute()
+        })
+    if recovery_rows:
+        print(f"Upserting {len(recovery_rows)} recoveries...")
+        supabase.table('whoop_recovery').upsert(recovery_rows).execute()
 
     print("Fetching all sleep...")
     sleeps = whoop_get_all(token, "activity/sleep")
+    sleep_rows = []
     for s in sleeps:
         score = s.get("score") or {}
         stages = score.get("stage_summary") or {}
@@ -181,7 +192,7 @@ def sync():
             dur = round((datetime.fromisoformat(s["end"].replace("Z","+00:00")) -
                    datetime.fromisoformat(s["start"].replace("Z","+00:00"))).seconds / 60, 1)
 
-        supabase.table('whoop_sleep').upsert({
+        sleep_rows.append({
             'sleep_id': str(s["id"]),
             'cycle_id': str(s.get("cycle_id")) if s.get("cycle_id") else None,
             'start_time': s.get("start"),
@@ -193,10 +204,14 @@ def sync():
             'slow_wave_sleep_minutes': ms_to_min(stages.get("total_slow_wave_sleep_time_milli")),
             'rem_sleep_minutes': ms_to_min(stages.get("total_rem_sleep_time_milli")),
             'awake_minutes': ms_to_min(stages.get("total_awake_time_milli"))
-        }).execute()
+        })
+    if sleep_rows:
+        print(f"Upserting {len(sleep_rows)} sleeps...")
+        supabase.table('whoop_sleep').upsert(sleep_rows).execute()
 
     print("Fetching all workouts...")
     workouts = whoop_get_all(token, "activity/workout")
+    workout_rows = []
     for w in workouts:
         score = w.get("score") or {}
         kj = score.get("kilojoule")
@@ -204,7 +219,7 @@ def sync():
         sport_id = w.get("sport_id")
         sport_name = SPORT_NAMES.get(sport_id, f"Unknown ({sport_id})")
 
-        supabase.table('whoop_workouts').upsert({
+        workout_rows.append({
             'workout_id': str(w["id"]),
             'start_time': w.get("start"),
             'end_time': w.get("end"),
@@ -214,7 +229,10 @@ def sync():
             'max_heart_rate': score.get("max_heart_rate"),
             'kilojoules': kj,
             'calories_kcal': cal
-        }).execute()
+        })
+    if workout_rows:
+        print(f"Upserting {len(workout_rows)} workouts...")
+        supabase.table('whoop_workouts').upsert(workout_rows).execute()
 
     try:
         data = whoop_get(token, "user/measurement/body")
