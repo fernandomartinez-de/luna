@@ -22,6 +22,13 @@ jobs:
         run: |
           pip install requests supabase PyNaCl
 
+      - name: Test Supabase DNS and connectivity
+        run: |
+          echo "Testing DNS resolution..."
+          nslookup uuvswtpcexhqojlrsrv.supabase.co || echo "DNS lookup failed"
+          echo "Testing HTTPS connectivity..."
+          curl -v https://uuvswtpcexhqojlrsrv.supabase.co/rest/v1/ -H "apikey: ${{ secrets.SUPABASE_KEY }}" || echo "Connection failed"
+
       - name: Sync Whoop data
         env:
           WHOOP_CLIENT_ID: ${{ secrets.WHOOP_CLIENT_ID }}

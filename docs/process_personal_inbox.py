@@ -329,7 +329,7 @@ for file in files:
 print(f"\n✓ Creating tracking note...")
 
 if TRACKING_NOTE.exists():
-    with open(TRACKING_NOTE, 'r') as f:
+    with open(TRACKING_NOTE, 'r', encoding='utf-8') as f:
         content = f.read()
 else:
     content = "# Personal Documents Processing Log\n\nAutomatic tracking of inbox → Google Drive processing.\n\n"
@@ -342,7 +342,7 @@ for item in processed:
 
 content += entry
 
-with open(TRACKING_NOTE, 'w') as f:
+with open(TRACKING_NOTE, 'w', encoding='utf-8') as f:
     f.write(content)
 
 print(f"  Updated: {TRACKING_NOTE.relative_to(VAULT_ROOT)}")
