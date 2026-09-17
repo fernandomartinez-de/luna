@@ -3705,14 +3705,47 @@
                 // Fetch crypto prices
                 const cryptoPrices = await fetchCryptoPrices();
 
-                // Fetch real estate from Supabase
+                // Fetch real estate from Supabase (includes Redfin data)
                 const realEstateData = await fetchRealEstateData();
 
-                // Fetch fresh Zillow property value
+                // Fetch fresh Zillow property value and merge with existing data
                 try {
                     const zillowData = await fetchZillowPropertyValue();
-                    // Update Condo with fresh Zillow data
-                    realEstateData['Condo'] = zillowData;
+
+                    // If we have existing Condo data (with Redfin), merge Zillow into it
+                    if (realEstateData['Condo']) {
+                        // Store Zillow estimate
+                        realEstateData['Condo'].zillow = {
+                            value: zillowData.value,
+                            mortgage: zillowData.mortgage,
+                            equity: zillowData.equity
+                        };
+
+                        // Recalculate average if we have both Zillow and Redfin
+                        if (realEstateData['Condo'].redfin) {
+                            const avgValue = (zillowData.value + realEstateData['Condo'].redfin.value) / 2;
+                            const avgMortgage = (zillowData.mortgage + realEstateData['Condo'].redfin.mortgage) / 2;
+                            realEstateData['Condo'].value = avgValue;
+                            realEstateData['Condo'].mortgage = avgMortgage;
+                            realEstateData['Condo'].equity = avgValue - avgMortgage;
+                        } else {
+                            // Only Zillow available, use it directly
+                            realEstateData['Condo'].value = zillowData.value;
+                            realEstateData['Condo'].mortgage = zillowData.mortgage;
+                            realEstateData['Condo'].equity = zillowData.equity;
+                        }
+                    } else {
+                        // No existing data, use Zillow as is
+                        realEstateData['Condo'] = {
+                            ...zillowData,
+                            zillow: {
+                                value: zillowData.value,
+                                mortgage: zillowData.mortgage,
+                                equity: zillowData.equity
+                            }
+                        };
+                    }
+
                     console.log('Updated with fresh Zillow data:', zillowData);
                 } catch (zillowError) {
                     console.warn('Zillow API fetch failed, using Supabase data:', zillowError.message);
@@ -3812,11 +3845,11 @@
 
             const data = await response.json();
 
-            // Extract Zestimate value
-            const zestimate = data.zestimate || data.price;
+            // Extract property value (API returns 'value' field directly)
+            const propertyValue = data.value || data.zestimate || data.price;
 
-            if (!zestimate) {
-                throw new Error('Zestimate not found in API response');
+            if (!propertyValue) {
+                throw new Error('Property value not found in API response');
             }
 
             // Calculate mortgage balance based on time elapsed
@@ -3826,8 +3859,8 @@
                                   (today.getMonth() - startDate.getMonth());
             const principalPaid = monthsElapsed * config.monthlyPrincipalPayment;
             const currentMortgage = config.initialMortgage - principalPaid;
-            const equity = zestimate - currentMortgage;
-            const unrealizedGain = zestimate - config.costBasis;
+            const equity = propertyValue - currentMortgage;
+            const unrealizedGain = propertyValue - config.costBasis;
 
             // Save to Supabase
             try {
@@ -3838,7 +3871,7 @@
                         asset_type: 'Real Estate',
                         asset_name: 'Condo',
                         quantity: 1,
-                        home_value: zestimate,
+                        home_value: propertyValue,
                         cost_basis: config.costBasis,
                         mortgage_balance: currentMortgage,
                         net_equity: equity,
@@ -3851,7 +3884,7 @@
             }
 
             return {
-                value: zestimate,
+                value: propertyValue,
                 costBasis: config.costBasis,
                 mortgage: currentMortgage,
                 equity: equity
