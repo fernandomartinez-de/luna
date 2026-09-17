@@ -1,4 +1,4 @@
-import os, requests
+import os, requests, time
 from datetime import datetime, timedelta, timezone
 from base64 import b64encode
 from nacl import encoding, public
@@ -124,6 +124,23 @@ def whoop_get(token, path):
 def ms_to_min(ms):
     return round(ms / 60000.0, 1) if ms else None
 
+def retry_supabase_call(func, *args, max_retries=5, **kwargs):
+    """Retry Supabase calls with exponential backoff for network errors."""
+    for attempt in range(max_retries):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            error_str = str(e).lower()
+            # Retry on DNS/network errors
+            if 'name or service not known' in error_str or 'connecterror' in error_str:
+                if attempt < max_retries - 1:
+                    wait = 2 ** attempt  # 1, 2, 4, 8, 16 seconds
+                    print(f"  Network error (attempt {attempt + 1}/{max_retries}), retrying in {wait}s: {e}")
+                    time.sleep(wait)
+                    continue
+            # Re-raise if not a retryable error or out of retries
+            raise
+
 def sync():
     token = get_access_token()
     print(f"Connecting to Supabase: {SUPABASE_URL[:30]}...")
@@ -148,7 +165,7 @@ def sync():
         })
     if cycle_rows:
         print(f"Upserting {len(cycle_rows)} cycles...")
-        supabase.table('whoop_cycles').upsert(cycle_rows).execute()
+        retry_supabase_call(lambda: supabase.table('whoop_cycles').upsert(cycle_rows).execute())
 
     print("Fetching all recovery...")
     recoveries = whoop_get_all(token, "recovery")
@@ -179,7 +196,7 @@ def sync():
         })
     if recovery_rows:
         print(f"Upserting {len(recovery_rows)} recoveries...")
-        supabase.table('whoop_recovery').upsert(recovery_rows).execute()
+        retry_supabase_call(lambda: supabase.table('whoop_recovery').upsert(recovery_rows).execute())
 
     print("Fetching all sleep...")
     sleeps = whoop_get_all(token, "activity/sleep")
@@ -207,7 +224,7 @@ def sync():
         })
     if sleep_rows:
         print(f"Upserting {len(sleep_rows)} sleeps...")
-        supabase.table('whoop_sleep').upsert(sleep_rows).execute()
+        retry_supabase_call(lambda: supabase.table('whoop_sleep').upsert(sleep_rows).execute())
 
     print("Fetching all workouts...")
     workouts = whoop_get_all(token, "activity/workout")
@@ -232,19 +249,19 @@ def sync():
         })
     if workout_rows:
         print(f"Upserting {len(workout_rows)} workouts...")
-        supabase.table('whoop_workouts').upsert(workout_rows).execute()
+        retry_supabase_call(lambda: supabase.table('whoop_workouts').upsert(workout_rows).execute())
 
     try:
         data = whoop_get(token, "user/measurement/body")
         # Delete all existing body measurements
-        supabase.table('whoop_body').delete().neq('height_meter', -999999).execute()  # Delete all rows
+        retry_supabase_call(lambda: supabase.table('whoop_body').delete().neq('height_meter', -999999).execute())
         # Insert new one
-        supabase.table('whoop_body').insert({
+        retry_supabase_call(lambda: supabase.table('whoop_body').insert({
             'height_meter': data.get("height_meter"),
             'weight_kilogram': data.get("weight_kilogram"),
             'max_heart_rate': data.get("max_heart_rate"),
             'vo2_max': data.get("vo2_max")
-        }).execute()
+        }).execute())
     except Exception as e:
         print(f"Body measurement skipped: {e}")
 
