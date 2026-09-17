@@ -4,13 +4,13 @@ Scans Google Drive Medical folder for new PDFs and InBody images,
 extracts values, inserts into Supabase.
 """
 import os, json, re, io, sys, base64
-import psycopg2, psycopg2.extras
 from datetime import date, datetime
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 import anthropic
 import pdfplumber
+from supabase import create_client, Client
 
 # ── Config ────────────────────────────────────────────────────────────────────
 GDRIVE_FOLDER_ID = "1_pB5M_-xqWU-jNYykK83fhZiWc5ldrS2"
@@ -65,18 +65,6 @@ grasa_visceral should be the level number (e.g. 5), not a range.
 control_peso/grasa/musculo are the target adjustment values (negative = reduce, positive = increase).
 """
 
-LAB_INSERT_SQL = """
-INSERT INTO lab_results (fecha, año, archivo, proveedor, panel, marcador, valor, unidad, ref_min, ref_max, flag, estimulada, conversion_aplicada, revision_requerida)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NULL, false)
-ON CONFLICT (archivo, marcador) DO NOTHING
-"""
-
-INBODY_INSERT_SQL = """
-INSERT INTO inbody_results (fecha, archivo, peso, mme, masa_grasa, pgc, mlg, agua, tmb, score, angulo_fase, grasa_visceral, rel_cintura_cadera, imc, peso_ideal, control_peso, control_grasa, control_musculo, dispositivo, proveedor)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-ON CONFLICT (fecha) DO NOTHING
-"""
-
 # ── Google Drive ──────────────────────────────────────────────────────────────
 def get_drive_service():
     creds_info = json.loads(os.environ["GDRIVE_CREDENTIALS"])
@@ -92,12 +80,12 @@ def list_files_recursive(service, folder_id, mime_types=None):
     ).execute().get("files", [])
     for folder in folders:
         files.extend(list_files_recursive(service, folder["id"], mime_types))
-    
+
     mime_filter = ""
     if mime_types:
         conditions = " or ".join(f"mimeType='{m}'" for m in mime_types)
         mime_filter = f" and ({conditions})"
-    
+
     found = service.files().list(
         q=f"'{folder_id}' in parents{mime_filter} and trashed=false",
         fields="files(id,name,mimeType,parents)"
@@ -125,19 +113,13 @@ def download_file(service, file_id):
     return buf
 
 # ── Already processed ─────────────────────────────────────────────────────────
-def get_processed_labs(conn):
-    cur = conn.cursor()
-    cur.execute("SELECT DISTINCT archivo FROM lab_results WHERE archivo IS NOT NULL")
-    result = {row[0] for row in cur.fetchall()}
-    cur.close()
-    return result
+def get_processed_labs(supabase):
+    result = supabase.table('lab_results').select('archivo').not_.is_('archivo', 'null').execute()
+    return {row['archivo'] for row in result.data}
 
-def get_processed_inbody(conn):
-    cur = conn.cursor()
-    cur.execute("SELECT DISTINCT archivo FROM inbody_results WHERE archivo IS NOT NULL")
-    result = {row[0] for row in cur.fetchall()}
-    cur.close()
-    return result
+def get_processed_inbody(supabase):
+    result = supabase.table('inbody_results').select('archivo').not_.is_('archivo', 'null').execute()
+    return {row['archivo'] for row in result.data}
 
 # ── Filename parsing ──────────────────────────────────────────────────────────
 def parse_filename(filename):
@@ -166,7 +148,7 @@ def parse_filename(filename):
         proveedor = "MNC Javier Luna Moran"
     else:
         proveedor = "Desconocido"
-    
+
     estimulada = "thyrogen" in name_lower or "thryrogen" in name_lower
     return fecha, año, proveedor, estimulada
 
@@ -232,32 +214,35 @@ def parse_inbody_with_claude(image_bytes, mime_type, client):
     return json.loads(raw.strip())
 
 # ── Insert ────────────────────────────────────────────────────────────────────
-def insert_labs(conn, fecha, año, proveedor, archivo, rows, estimulada):
+def insert_labs(supabase, fecha, año, proveedor, archivo, rows, estimulada):
     inserted = 0
-    cur = conn.cursor()
     for r in rows:
         try:
-            cur.execute(LAB_INSERT_SQL, (
-                fecha, año, archivo, proveedor,
-                r.get("panel", "otro"),
-                str(r.get("marcador", ""))[:100],
-                float(r.get("valor", 0)),
-                r.get("unidad"),
-                r.get("ref_min"),
-                r.get("ref_max"),
-                r.get("flag", ""),
-                estimulada,
-            ))
-            if cur.rowcount > 0:
+            result = supabase.table('lab_results').insert({
+                'fecha': fecha.isoformat() if fecha else None,
+                'año': año,
+                'archivo': archivo,
+                'proveedor': proveedor,
+                'panel': r.get("panel", "otro"),
+                'marcador': str(r.get("marcador", ""))[:100],
+                'valor': float(r.get("valor", 0)),
+                'unidad': r.get("unidad"),
+                'ref_min': r.get("ref_min"),
+                'ref_max': r.get("ref_max"),
+                'flag': r.get("flag", ""),
+                'estimulada': estimulada,
+                'conversion_aplicada': None,
+                'revision_requerida': False
+            }).execute()
+            if result.data:
                 inserted += 1
         except Exception as e:
-            print(f"    insert error {r.get('marcador')}: {e}")
-    conn.commit()
-    cur.close()
+            # Duplicate will fail silently
+            if 'duplicate' not in str(e).lower():
+                print(f"    insert error {r.get('marcador')}: {e}")
     return inserted
 
-def insert_inbody(conn, data, archivo, proveedor):
-    cur = conn.cursor()
+def insert_inbody(supabase, data, archivo, proveedor):
     # The date comes from Claude's vision reading of the InBody image itself
     # (not the filename). If it's missing or unparseable, skip the insert
     # rather than silently stamping it with today's date.
@@ -268,43 +253,50 @@ def insert_inbody(conn, data, archivo, proveedor):
         fecha = None
     if fecha is None:
         print(f"    SKIPPED — InBody date unparseable/missing ({raw_fecha!r}), not inserting")
-        cur.close()
         return 0
     try:
-        cur.execute(INBODY_INSERT_SQL, (
-            fecha, archivo,
-            data.get("peso"), data.get("mme"), data.get("masa_grasa"),
-            data.get("pgc"), data.get("mlg"), data.get("agua"),
-            data.get("tmb"), data.get("score"), data.get("angulo_fase"),
-            data.get("grasa_visceral"), data.get("rel_cintura_cadera"),
-            data.get("imc"), data.get("peso_ideal"),
-            data.get("control_peso"), data.get("control_grasa"),
-            data.get("control_musculo"),
-            data.get("dispositivo", "InBody270S"),
-            proveedor,
-        ))
-        conn.commit()
-        inserted = cur.rowcount
+        result = supabase.table('inbody_results').insert({
+            'fecha': fecha.isoformat(),
+            'archivo': archivo,
+            'peso': data.get("peso"),
+            'mme': data.get("mme"),
+            'masa_grasa': data.get("masa_grasa"),
+            'pgc': data.get("pgc"),
+            'mlg': data.get("mlg"),
+            'agua': data.get("agua"),
+            'tmb': data.get("tmb"),
+            'score': data.get("score"),
+            'angulo_fase': data.get("angulo_fase"),
+            'grasa_visceral': data.get("grasa_visceral"),
+            'rel_cintura_cadera': data.get("rel_cintura_cadera"),
+            'imc': data.get("imc"),
+            'peso_ideal': data.get("peso_ideal"),
+            'control_peso': data.get("control_peso"),
+            'control_grasa': data.get("control_grasa"),
+            'control_musculo': data.get("control_musculo"),
+            'dispositivo': data.get("dispositivo", "InBody270S"),
+            'proveedor': proveedor
+        }).execute()
+        inserted = len(result.data) if result.data else 0
     except Exception as e:
-        print(f"    InBody insert error: {e}")
-        conn.rollback()
+        if 'duplicate' not in str(e).lower():
+            print(f"    InBody insert error: {e}")
         inserted = 0
-    cur.close()
     return inserted
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     print("Connecting to Supabase...")
-    conn = psycopg2.connect(os.environ["SUPABASE_DB_URL"])
-    
+    supabase: Client = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])
+
     print("Connecting to Google Drive...")
     service = get_drive_service()
-    
-    processed_labs = get_processed_labs(conn)
-    processed_inbody = get_processed_inbody(conn)
+
+    processed_labs = get_processed_labs(supabase)
+    processed_inbody = get_processed_inbody(supabase)
     print(f"  {len(processed_labs)} lab files already processed")
     print(f"  {len(processed_inbody)} InBody files already processed")
-    
+
     print("Scanning Google Drive Medical folder...")
     all_files = list_files_recursive(service, GDRIVE_FOLDER_ID, [
         "application/pdf",
@@ -313,7 +305,7 @@ def main():
         "image/jpg",
     ])
     print(f"  {len(all_files)} files found")
-    
+
     # Split into labs and InBody
     new_labs = [
         f for f in all_files
@@ -327,10 +319,10 @@ def main():
         and "inbody" in f["name"].lower()
         and f["name"] not in processed_inbody
     ]
-    
+
     print(f"  {len(new_labs)} new lab PDFs to process")
     print(f"  {len(new_inbody)} new InBody images to process")
-    
+
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
     total_lab_rows = 0
     total_inbody = 0
@@ -358,10 +350,10 @@ def main():
             rows = parse_labs_with_claude(text, client)
         except Exception as e:
             print(f"  Parse error: {e}"); continue
-        inserted = insert_labs(conn, fecha, año, proveedor, filename, rows, estimulada)
+        inserted = insert_labs(supabase, fecha, año, proveedor, filename, rows, estimulada)
         print(f"  {len(rows)} markers found, {inserted} inserted")
         total_lab_rows += inserted
-    
+
     # ── Process InBody ────────────────────────────────────────────────────────
     for img in new_inbody:
         filename = img["name"]
@@ -379,11 +371,10 @@ def main():
         except Exception as e:
             print(f"  Parse error: {e}"); continue
         print(f"  Extracted: peso={data.get('peso')} score={data.get('score')}")
-        inserted = insert_inbody(conn, data, filename, proveedor)
+        inserted = insert_inbody(supabase, data, filename, proveedor)
         print(f"  {'Inserted' if inserted else 'Already exists or error'}")
         total_inbody += inserted
-    
-    conn.close()
+
     print(f"\n{'='*50}")
     print(f"DONE — Lab rows inserted: {total_lab_rows} | InBody records inserted: {total_inbody}")
     if skipped_labs:

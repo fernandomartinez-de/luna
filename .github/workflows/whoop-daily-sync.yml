@@ -20,25 +20,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests psycopg2-binary PyNaCl
-
-      - name: Debug - Check secrets
-        env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: |
-          echo "DB_URL length: ${#SUPABASE_DB_URL}"
-          echo "DB_URL starts with: ${SUPABASE_DB_URL:0:15}"
-          if [[ -z "$SUPABASE_DB_URL" ]]; then
-            echo "ERROR: SUPABASE_DB_URL is empty!"
-            exit 1
-          fi
+          pip install requests supabase PyNaCl
 
       - name: Sync Whoop data
         env:
           WHOOP_CLIENT_ID: ${{ secrets.WHOOP_CLIENT_ID }}
           WHOOP_CLIENT_SECRET: ${{ secrets.WHOOP_CLIENT_SECRET }}
           WHOOP_REFRESH_TOKEN: ${{ secrets.WHOOP_REFRESH_TOKEN }}
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           GH_PAT: ${{ secrets.GH_PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |

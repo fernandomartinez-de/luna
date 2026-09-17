@@ -10,8 +10,8 @@ Usage:
     python build_dashboards.py --end-date 2026-04-25
 
 Environment variables:
-    SUPABASE_DB_URL    Required. Full postgres connection string.
-                       Example: postgresql://postgres.xxxxx:PASSWORD@aws-1-us-east-2.pooler.supabase.com:6543/postgres
+    SUPABASE_URL     Required. Supabase project URL
+    SUPABASE_KEY     Required. Supabase anon/service key
 
 Inputs (in same directory):
     nutritionist_template.html    Template with __DATA_PLACEHOLDER__ token
@@ -31,8 +31,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from statistics import mean, stdev
 
-import psycopg2
-import psycopg2.extras
+from supabase import create_client, Client
 
 
 # =============================================================================
@@ -64,30 +63,27 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 # DATABASE
 # =============================================================================
 
-def get_connection():
-    db_url = os.environ.get("SUPABASE_DB_URL")
-    if not db_url:
-        sys.exit("ERROR: SUPABASE_DB_URL environment variable not set")
-    return psycopg2.connect(db_url)
+def get_client():
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_KEY")
+    if not url or not key:
+        sys.exit("ERROR: SUPABASE_URL and SUPABASE_KEY environment variables must be set")
+    return create_client(url, key)
 
 
-def fetch_inbody_data(conn):
+def fetch_inbody_data(supabase):
     """Pull all InBody measurements from Supabase, ordered by date."""
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute("""
-        SELECT fecha, peso, mme, masa_grasa, pgc, mlg, agua, tmb, score,
-               angulo_fase, grasa_visceral, rel_cintura_cadera, imc,
-               peso_ideal, control_peso, control_grasa, control_musculo,
-               dispositivo, proveedor
-        FROM inbody_results
-        ORDER BY fecha ASC
-    """)
-    rows = cur.fetchall()
-    cur.close()
+    result = supabase.table('inbody_results').select(
+        'fecha, peso, mme, masa_grasa, pgc, mlg, agua, tmb, score, '
+        'angulo_fase, grasa_visceral, rel_cintura_cadera, imc, '
+        'peso_ideal, control_peso, control_grasa, control_musculo, '
+        'dispositivo, proveedor'
+    ).order('fecha').execute()
+
     out = []
-    for r in rows:
+    for r in result.data:
         out.append({
-            "fecha": r["fecha"].isoformat(),
+            "fecha": r["fecha"],
             "peso": float(r["peso"]) if r["peso"] else None,
             "mme": float(r["mme"]) if r["mme"] else None,
             "masa_grasa": float(r["masa_grasa"]) if r["masa_grasa"] else None,
@@ -109,75 +105,95 @@ def fetch_inbody_data(conn):
     return out
 
 
-def fetch_data(conn, start_date, end_date):
+def fetch_data(supabase, start_date, end_date):
     """Pull all WHOOP tables filtered to the date window."""
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     # Cycles: daily strain and energy
-    cur.execute("""
-        SELECT
-            start_time::date AS d,
-            strain,
-            kilojoules,
-            average_heart_rate,
-            max_heart_rate
-        FROM whoop_cycles
-        WHERE start_time::date BETWEEN %s AND %s
-        ORDER BY d
-    """, (start_date, end_date))
-    cycles = cur.fetchall()
+    cycles_result = supabase.rpc('get_cycles_by_date', {
+        'start_d': start_date.isoformat(),
+        'end_d': end_date.isoformat()
+    }).execute()
+
+    # If RPC doesn't exist, fall back to direct query with client-side filtering
+    if not cycles_result.data:
+        cycles_result = supabase.table('whoop_cycles').select(
+            'start_time, strain, kilojoules, average_heart_rate, max_heart_rate'
+        ).gte('start_time', start_date.isoformat()).lte('start_time', end_date.isoformat()).order('start_time').execute()
+
+        # Extract date and format
+        cycles = []
+        for c in cycles_result.data:
+            start_time = c['start_time']
+            d = start_time.split('T')[0] if 'T' in start_time else start_time
+            cycles.append({
+                'd': d,
+                'strain': c['strain'],
+                'kilojoules': c['kilojoules'],
+                'average_heart_rate': c['average_heart_rate'],
+                'max_heart_rate': c['max_heart_rate']
+            })
+    else:
+        cycles = cycles_result.data
 
     # Recovery: HRV, RHR, SpO2, skin temp
-    cur.execute("""
-        SELECT
-            recovery_date AS d,
-            recovery_score,
-            hrv_rmssd_milli AS hrv,
-            resting_heart_rate AS rhr,
-            spo2_percentage AS spo2,
-            skin_temp_celsius AS skin_temp
-        FROM whoop_recovery
-        WHERE recovery_date BETWEEN %s AND %s
-        ORDER BY d
-    """, (start_date, end_date))
-    recovery = cur.fetchall()
+    recovery_result = supabase.table('whoop_recovery').select(
+        'recovery_date, recovery_score, hrv_rmssd_milli, resting_heart_rate, spo2_percentage, skin_temp_celsius'
+    ).gte('recovery_date', start_date.isoformat()).lte('recovery_date', end_date.isoformat()).order('recovery_date').execute()
+
+    recovery = []
+    for r in recovery_result.data:
+        recovery.append({
+            'd': r['recovery_date'],
+            'recovery_score': r['recovery_score'],
+            'hrv': r['hrv_rmssd_milli'],
+            'rhr': r['resting_heart_rate'],
+            'spo2': r['spo2_percentage'],
+            'skin_temp': r['skin_temp_celsius']
+        })
 
     # Sleep: stages, performance, efficiency (columns are in minutes not millis)
-    cur.execute("""
-        SELECT
-            start_time::date AS d,
-            (light_sleep_minutes + slow_wave_sleep_minutes + rem_sleep_minutes + awake_minutes) AS in_bed_min,
-            awake_minutes,
-            light_sleep_minutes AS light_min,
-            slow_wave_sleep_minutes AS deep_min,
-            rem_sleep_minutes AS rem_min,
-            performance_percentage AS performance,
-            sleep_efficiency_percentage AS efficiency,
-            end_time AS end_ts
-        FROM whoop_sleep
-        WHERE start_time::date BETWEEN %s AND %s
-        ORDER BY d
-    """, (start_date, end_date))
-    sleep = cur.fetchall()
+    sleep_result = supabase.table('whoop_sleep').select(
+        'start_time, light_sleep_minutes, slow_wave_sleep_minutes, rem_sleep_minutes, awake_minutes, '
+        'performance_percentage, sleep_efficiency_percentage, end_time'
+    ).gte('start_time', start_date.isoformat()).lte('start_time', end_date.isoformat()).order('start_time').execute()
+
+    sleep = []
+    for s in sleep_result.data:
+        start_time = s['start_time']
+        d = start_time.split('T')[0] if 'T' in start_time else start_time
+        in_bed_min = (s['light_sleep_minutes'] or 0) + (s['slow_wave_sleep_minutes'] or 0) + (s['rem_sleep_minutes'] or 0) + (s['awake_minutes'] or 0)
+        sleep.append({
+            'd': d,
+            'in_bed_min': in_bed_min,
+            'awake_minutes': s['awake_minutes'],
+            'light_min': s['light_sleep_minutes'],
+            'deep_min': s['slow_wave_sleep_minutes'],
+            'rem_min': s['rem_sleep_minutes'],
+            'performance': s['performance_percentage'],
+            'efficiency': s['sleep_efficiency_percentage'],
+            'end_ts': s['end_time']
+        })
 
     # Workouts: sport, strain, HR, duration
-    cur.execute("""
-        SELECT
-            start_time::date AS d,
-            sport_name,
-            strain,
-            kilojoules,
-            average_heart_rate,
-            max_heart_rate,
-            start_time AS start_ts,
-            end_time AS end_ts
-        FROM whoop_workouts
-        WHERE start_time::date BETWEEN %s AND %s
-        ORDER BY start_time
-    """, (start_date, end_date))
-    workouts = cur.fetchall()
+    workouts_result = supabase.table('whoop_workouts').select(
+        'start_time, end_time, sport_name, strain, kilojoules, average_heart_rate, max_heart_rate'
+    ).gte('start_time', start_date.isoformat()).lte('start_time', end_date.isoformat()).order('start_time').execute()
 
-    cur.close()
+    workouts = []
+    for w in workouts_result.data:
+        start_time = w['start_time']
+        d = start_time.split('T')[0] if 'T' in start_time else start_time
+        workouts.append({
+            'd': d,
+            'sport_name': w['sport_name'],
+            'strain': w['strain'],
+            'kilojoules': w['kilojoules'],
+            'average_heart_rate': w['average_heart_rate'],
+            'max_heart_rate': w['max_heart_rate'],
+            'start_ts': w['start_time'],
+            'end_ts': w['end_time']
+        })
+
     return {
         "cycles": cycles,
         "recovery": recovery,
@@ -339,9 +355,14 @@ def compute_sleep_regularity_weekly(sleep_rows, all_dates):
     for s in sleep_rows:
         if s["end_ts"] is None:
             continue
-        dt = s["end_ts"]
+        # Parse timestamp string
+        if isinstance(s["end_ts"], str):
+            dt = datetime.fromisoformat(s["end_ts"].replace('Z', '+00:00'))
+        else:
+            dt = s["end_ts"]
         wake_hour = dt.hour + dt.minute / 60 + dt.second / 3600
-        wake_by_date[s["d"].isoformat() if hasattr(s["d"], "isoformat") else str(s["d"])] = wake_hour
+        d_str = s["d"] if isinstance(s["d"], str) else s["d"].isoformat()
+        wake_by_date[d_str] = wake_hour
 
     # Group all_dates by ISO week, compute SD per week
     week_sds = {}
@@ -375,9 +396,13 @@ def compute_wake_hour(sleep_rows, all_dates):
     for s in sleep_rows:
         if s["end_ts"] is None:
             continue
-        dt = s["end_ts"]
+        # Parse timestamp string
+        if isinstance(s["end_ts"], str):
+            dt = datetime.fromisoformat(s["end_ts"].replace('Z', '+00:00'))
+        else:
+            dt = s["end_ts"]
         wake_hour = dt.hour + dt.minute / 60
-        d_str = s["d"].isoformat() if hasattr(s["d"], "isoformat") else str(s["d"])
+        d_str = s["d"] if isinstance(s["d"], str) else s["d"].isoformat()
         wake_by_date[d_str] = round(wake_hour, 2)
     return [wake_by_date.get(d_str) for d_str in all_dates]
 
@@ -394,7 +419,16 @@ def compute_workout_duration_min(workout):
     """Metric 12: workout duration in minutes from start/end timestamps."""
     if workout["start_ts"] is None or workout["end_ts"] is None:
         return None
-    delta = workout["end_ts"] - workout["start_ts"]
+    # Parse timestamp strings
+    if isinstance(workout["start_ts"], str):
+        start_dt = datetime.fromisoformat(workout["start_ts"].replace('Z', '+00:00'))
+    else:
+        start_dt = workout["start_ts"]
+    if isinstance(workout["end_ts"], str):
+        end_dt = datetime.fromisoformat(workout["end_ts"].replace('Z', '+00:00'))
+    else:
+        end_dt = workout["end_ts"]
+    delta = end_dt - start_dt
     return round(delta.total_seconds() / 60, 1)
 
 
@@ -412,22 +446,12 @@ def build_daily_series(raw, start_date, end_date):
         d += timedelta(days=1)
 
     # Index raw data by date string
-    cycles_by_date = {
-        (c["d"].isoformat() if hasattr(c["d"], "isoformat") else str(c["d"])): c
-        for c in raw["cycles"]
-    }
-    recovery_by_date = {
-        (r["d"].isoformat() if hasattr(r["d"], "isoformat") else str(r["d"])): r
-        for r in raw["recovery"]
-    }
-    sleep_by_date = {
-        (s["d"].isoformat() if hasattr(s["d"], "isoformat") else str(s["d"])): s
-        for s in raw["sleep"]
-    }
+    cycles_by_date = {c["d"]: c for c in raw["cycles"]}
+    recovery_by_date = {r["d"]: r for r in raw["recovery"]}
+    sleep_by_date = {s["d"]: s for s in raw["sleep"]}
     workouts_by_date = {}
     for w in raw["workouts"]:
-        key = w["d"].isoformat() if hasattr(w["d"], "isoformat") else str(w["d"])
-        workouts_by_date.setdefault(key, []).append(w)
+        workouts_by_date.setdefault(w["d"], []).append(w)
 
     # Build aligned series
     strain = [cycles_by_date[d]["strain"] if d in cycles_by_date else None for d in days]
@@ -515,8 +539,7 @@ def build_workout_series(raw):
     """Assemble flat workout arrays for the workouts chart."""
     out = {"d": [], "sp": [], "st": [], "mn": [], "hr": [], "kc": [], "z": []}
     for w in raw["workouts"]:
-        d_str = w["d"].isoformat() if hasattr(w["d"], "isoformat") else str(w["d"])
-        out["d"].append(d_str)
+        out["d"].append(w["d"])
         out["sp"].append(w.get("sport_name") or "Unknown")
         out["st"].append(safe_round(w.get("strain"), 1))
         out["mn"].append(compute_workout_duration_min(w))
@@ -602,16 +625,15 @@ def main():
 
     # 1. Pull from Supabase
     print("Connecting to Supabase...")
-    conn = get_connection()
+    supabase = get_client()
     print("Fetching WHOOP tables...")
-    raw = fetch_data(conn, start_date, end_date)
+    raw = fetch_data(supabase, start_date, end_date)
     print(f"  cycles: {len(raw['cycles'])}, recovery: {len(raw['recovery'])}, "
           f"sleep: {len(raw['sleep'])}, workouts: {len(raw['workouts'])}")
 
     print("Fetching InBody data...")
-    inbody = fetch_inbody_data(conn)
+    inbody = fetch_inbody_data(supabase)
     print(f"  {len(inbody)} InBody measurements")
-    conn.close()
 
     # 2. Compute metrics and assemble payload
     print("Computing derived metrics...")

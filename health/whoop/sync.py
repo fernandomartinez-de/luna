@@ -1,12 +1,14 @@
-import os, requests, psycopg2
+import os, requests
 from datetime import datetime, timedelta, timezone
 from base64 import b64encode
 from nacl import encoding, public
+from supabase import create_client, Client
 
 CLIENT_ID     = os.environ["WHOOP_CLIENT_ID"]
 CLIENT_SECRET = os.environ["WHOOP_CLIENT_SECRET"]
 REFRESH_TOKEN = os.environ["WHOOP_REFRESH_TOKEN"]
-DB_URL        = os.environ["SUPABASE_DB_URL"]
+SUPABASE_URL  = os.environ["SUPABASE_URL"]
+SUPABASE_KEY  = os.environ["SUPABASE_KEY"]
 GH_PAT        = os.environ.get("GH_PAT")
 GH_REPO = os.environ.get("GITHUB_REPOSITORY", "fernandomartinez-de/whoop-pipeline")
 
@@ -124,8 +126,7 @@ def ms_to_min(ms):
 
 def sync():
     token = get_access_token()
-    conn  = psycopg2.connect(DB_URL)
-    cur   = conn.cursor()
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
     print("Fetching all cycles...")
     cycles = whoop_get_all(token, "cycle")
@@ -133,40 +134,41 @@ def sync():
         score = c.get("score") or {}
         kj = score.get("kilojoule")
         cal = round(kj * 0.239, 1) if kj else None
-        cur.execute("""
-            insert into whoop_cycles (cycle_id, start_time, end_time, strain,
-              average_heart_rate, max_heart_rate, kilojoules, calories_kcal)
-            values (%s,%s,%s,%s,%s,%s,%s,%s)
-            on conflict (cycle_id) do update set
-              strain=excluded.strain, average_heart_rate=excluded.average_heart_rate,
-              max_heart_rate=excluded.max_heart_rate, kilojoules=excluded.kilojoules,
-              calories_kcal=excluded.calories_kcal
-        """, (str(c["id"]), c.get("start"), c.get("end"),
-              score.get("strain"), score.get("average_heart_rate"),
-              score.get("max_heart_rate"), kj, cal))
+
+        supabase.table('whoop_cycles').upsert({
+            'cycle_id': str(c["id"]),
+            'start_time': c.get("start"),
+            'end_time': c.get("end"),
+            'strain': score.get("strain"),
+            'average_heart_rate': score.get("average_heart_rate"),
+            'max_heart_rate': score.get("max_heart_rate"),
+            'kilojoules': kj,
+            'calories_kcal': cal
+        }).execute()
 
     print("Fetching all recovery...")
     recoveries = whoop_get_all(token, "recovery")
     for r in recoveries:
         score = r.get("score") or {}
         cycle_id_str = str(r["cycle_id"])
-        cur.execute("select start_time::date from whoop_cycles where cycle_id = %s", (cycle_id_str,))
-        row = cur.fetchone()
-        rec_date = row[0] if row else None
-        cur.execute("""
-            insert into whoop_recovery (cycle_id, recovery_date, recovery_score, resting_heart_rate,
-              hrv_rmssd_milli, spo2_percentage, skin_temp_celsius)
-            values (%s,%s,%s,%s,%s,%s,%s)
-            on conflict (cycle_id) do update set
-              recovery_date=excluded.recovery_date,
-              recovery_score=excluded.recovery_score,
-              resting_heart_rate=excluded.resting_heart_rate,
-              hrv_rmssd_milli=excluded.hrv_rmssd_milli,
-              spo2_percentage=excluded.spo2_percentage,
-              skin_temp_celsius=excluded.skin_temp_celsius
-        """, (cycle_id_str, rec_date, score.get("recovery_score"),
-              score.get("resting_heart_rate"), score.get("hrv_rmssd_milli"),
-              score.get("spo2_percentage"), score.get("skin_temp_celsius")))
+
+        # Get cycle date from whoop_cycles
+        cycle_result = supabase.table('whoop_cycles').select('start_time').eq('cycle_id', cycle_id_str).execute()
+        rec_date = None
+        if cycle_result.data and len(cycle_result.data) > 0:
+            start_time = cycle_result.data[0]['start_time']
+            if start_time:
+                rec_date = start_time.split('T')[0] if 'T' in start_time else start_time
+
+        supabase.table('whoop_recovery').upsert({
+            'cycle_id': cycle_id_str,
+            'recovery_date': rec_date,
+            'recovery_score': score.get("recovery_score"),
+            'resting_heart_rate': score.get("resting_heart_rate"),
+            'hrv_rmssd_milli': score.get("hrv_rmssd_milli"),
+            'spo2_percentage': score.get("spo2_percentage"),
+            'skin_temp_celsius': score.get("skin_temp_celsius")
+        }).execute()
 
     print("Fetching all sleep...")
     sleeps = whoop_get_all(token, "activity/sleep")
@@ -177,26 +179,20 @@ def sync():
         if s.get("start") and s.get("end"):
             dur = round((datetime.fromisoformat(s["end"].replace("Z","+00:00")) -
                    datetime.fromisoformat(s["start"].replace("Z","+00:00"))).seconds / 60, 1)
-        cur.execute("""
-            insert into whoop_sleep (sleep_id, cycle_id, start_time, end_time,
-              duration_minutes, performance_percentage, sleep_efficiency_percentage,
-              light_sleep_minutes, slow_wave_sleep_minutes, rem_sleep_minutes, awake_minutes)
-            values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            on conflict (sleep_id) do update set
-              performance_percentage=excluded.performance_percentage,
-              sleep_efficiency_percentage=excluded.sleep_efficiency_percentage,
-              light_sleep_minutes=excluded.light_sleep_minutes,
-              slow_wave_sleep_minutes=excluded.slow_wave_sleep_minutes,
-              rem_sleep_minutes=excluded.rem_sleep_minutes,
-              awake_minutes=excluded.awake_minutes
-        """, (str(s["id"]), str(s.get("cycle_id")) if s.get("cycle_id") else None,
-              s.get("start"), s.get("end"), dur,
-              score.get("sleep_performance_percentage"),
-              score.get("sleep_efficiency_percentage"),
-              ms_to_min(stages.get("total_light_sleep_time_milli")),
-              ms_to_min(stages.get("total_slow_wave_sleep_time_milli")),
-              ms_to_min(stages.get("total_rem_sleep_time_milli")),
-              ms_to_min(stages.get("total_awake_time_milli"))))
+
+        supabase.table('whoop_sleep').upsert({
+            'sleep_id': str(s["id"]),
+            'cycle_id': str(s.get("cycle_id")) if s.get("cycle_id") else None,
+            'start_time': s.get("start"),
+            'end_time': s.get("end"),
+            'duration_minutes': dur,
+            'performance_percentage': score.get("sleep_performance_percentage"),
+            'sleep_efficiency_percentage': score.get("sleep_efficiency_percentage"),
+            'light_sleep_minutes': ms_to_min(stages.get("total_light_sleep_time_milli")),
+            'slow_wave_sleep_minutes': ms_to_min(stages.get("total_slow_wave_sleep_time_milli")),
+            'rem_sleep_minutes': ms_to_min(stages.get("total_rem_sleep_time_milli")),
+            'awake_minutes': ms_to_min(stages.get("total_awake_time_milli"))
+        }).execute()
 
     print("Fetching all workouts...")
     workouts = whoop_get_all(token, "activity/workout")
@@ -206,33 +202,33 @@ def sync():
         cal = round(kj * 0.239, 1) if kj else None
         sport_id = w.get("sport_id")
         sport_name = SPORT_NAMES.get(sport_id, f"Unknown ({sport_id})")
-        cur.execute("""
-            insert into whoop_workouts (workout_id, start_time, end_time, sport_name,
-              strain, average_heart_rate, max_heart_rate, kilojoules, calories_kcal)
-            values (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            on conflict (workout_id) do update set
-              sport_name=excluded.sport_name,
-              strain=excluded.strain,
-              kilojoules=excluded.kilojoules,
-              calories_kcal=excluded.calories_kcal
-        """, (str(w["id"]), w.get("start"), w.get("end"), sport_name,
-              score.get("strain"), score.get("average_heart_rate"),
-              score.get("max_heart_rate"), kj, cal))
+
+        supabase.table('whoop_workouts').upsert({
+            'workout_id': str(w["id"]),
+            'start_time': w.get("start"),
+            'end_time': w.get("end"),
+            'sport_name': sport_name,
+            'strain': score.get("strain"),
+            'average_heart_rate': score.get("average_heart_rate"),
+            'max_heart_rate': score.get("max_heart_rate"),
+            'kilojoules': kj,
+            'calories_kcal': cal
+        }).execute()
 
     try:
         data = whoop_get(token, "user/measurement/body")
-        cur.execute("delete from whoop_body")
-        cur.execute("""
-            insert into whoop_body (height_meter, weight_kilogram, max_heart_rate, vo2_max)
-            values (%s,%s,%s,%s)
-        """, (data.get("height_meter"), data.get("weight_kilogram"),
-              data.get("max_heart_rate"), data.get("vo2_max")))
+        # Delete all existing body measurements
+        supabase.table('whoop_body').delete().neq('height_meter', -999999).execute()  # Delete all rows
+        # Insert new one
+        supabase.table('whoop_body').insert({
+            'height_meter': data.get("height_meter"),
+            'weight_kilogram': data.get("weight_kilogram"),
+            'max_heart_rate': data.get("max_heart_rate"),
+            'vo2_max': data.get("vo2_max")
+        }).execute()
     except Exception as e:
         print(f"Body measurement skipped: {e}")
 
-    conn.commit()
-    cur.close()
-    conn.close()
     print(f"Sync complete: {datetime.now()}")
     print(f"Totals: {len(cycles)} cycles, {len(recoveries)} recoveries, {len(sleeps)} sleeps, {len(workouts)} workouts")
 
