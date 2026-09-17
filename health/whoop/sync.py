@@ -126,7 +126,8 @@ def ms_to_min(ms):
 
 def sync():
     token = get_access_token()
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    print(f"Connecting to Supabase: {SUPABASE_URL[:30]}...")
+    supabase: Client = create_client(SUPABASE_URL.strip(), SUPABASE_KEY.strip())
 
     print("Fetching all cycles...")
     cycles = whoop_get_all(token, "cycle")
