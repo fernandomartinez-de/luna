@@ -108,6 +108,51 @@ DETECTION_PATTERNS = {
         "keywords": ["transcript", "academic record"],
         "target_folder": "Education",
         "category": "transcripts"
+    },
+    "trust-will": {
+        "keywords": ["will", "pour over will", "last will", "testament"],
+        "target_folder": "Property/66 S 6th Street/Trust",
+        "category": "trust"
+    },
+    "trust-living": {
+        "keywords": ["revocable living trust", "living trust", "trust agreement"],
+        "target_folder": "Property/66 S 6th Street/Trust",
+        "category": "trust"
+    },
+    "trust-hipaa": {
+        "keywords": ["hipaa", "hipaa authorization", "health information"],
+        "target_folder": "Property/66 S 6th Street/Trust",
+        "category": "trust"
+    },
+    "trust-poa": {
+        "keywords": ["power of attorney", "attorney-in-fact", "poa"],
+        "target_folder": "Property/66 S 6th Street/Trust",
+        "category": "trust"
+    },
+    "trust-directive": {
+        "keywords": ["advance health care directive", "living will", "health care directive"],
+        "target_folder": "Property/66 S 6th Street/Trust",
+        "category": "trust"
+    },
+    "trust-assets": {
+        "keywords": ["schedule of assets", "asset schedule", "trust assets"],
+        "target_folder": "Property/66 S 6th Street/Trust",
+        "category": "trust"
+    },
+    "trust-certification": {
+        "keywords": ["certification of trust", "trust certification"],
+        "target_folder": "Property/66 S 6th Street/Trust",
+        "category": "trust"
+    },
+    "trust-guide": {
+        "keywords": ["trust funding guide", "funding guide"],
+        "target_folder": "Property/66 S 6th Street/Trust",
+        "category": "trust"
+    },
+    "trust-transfer": {
+        "keywords": ["bill of transfer", "transfer of property", "deed transfer"],
+        "target_folder": "Property/66 S 6th Street/Trust",
+        "category": "trust"
     }
 }
 
