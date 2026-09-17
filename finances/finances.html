@@ -3862,24 +3862,31 @@
             const equity = propertyValue - currentMortgage;
             const unrealizedGain = propertyValue - config.costBasis;
 
-            // Save to Supabase
+            // Save to Supabase (upsert to handle duplicates)
             try {
-                await supabaseClient
+                const { error } = await supabaseClient
                     .from('real_estate_history')
-                    .insert({
+                    .upsert({
                         snapshot_date: today.toISOString().split('T')[0],
                         asset_type: 'Real Estate',
                         asset_name: 'Condo',
-                        quantity: 1,
                         home_value: propertyValue,
                         cost_basis: config.costBasis,
                         mortgage_balance: currentMortgage,
                         net_equity: equity,
                         unrealized_gain_loss: unrealizedGain,
                         data_source: 'Zillow'
+                    }, {
+                        onConflict: 'snapshot_date,asset_name,data_source'
                     });
+
+                if (error) {
+                    console.warn('Could not save to Supabase:', error.message);
+                } else {
+                    console.log('✅ Zillow data saved to Supabase successfully');
+                }
             } catch (error) {
-                console.warn('Could not save to Supabase:', error.message);
+                console.warn('❌ Could not save to Supabase:', error.message);
                 // Continue even if save fails
             }
 
