@@ -35,13 +35,13 @@ REDFIN_URL = "https://www.redfin.com/NY/Brooklyn/66-S-6th-St-11249/unit-4A/home/
 # For owner dashboard (requires cookie): https://www.redfin.com/myredfin/owner-dashboard/36948925
 PROPERTY_NAME = "66 S 6th St, Unit 4A, Brooklyn, NY"
 ASSET_TYPE = "Condo"
-COST_BASIS = Decimal("600000.00")  # Original purchase price
+COST_BASIS = Decimal("895000.00")  # Original purchase price (April 2025)
 
 # Mortgage details for equity calculation
 # You can update this manually or fetch from Chase mortgage statements
-INITIAL_MORTGAGE = Decimal("590000.00")  # Initial loan amount
-MONTHLY_PAYMENT_TO_PRINCIPAL = Decimal("1200.00")  # Approximate principal per month
-MORTGAGE_START_DATE = date(2024, 6, 1)  # Adjust to your actual closing date
+INITIAL_MORTGAGE = Decimal("475000.00")  # Initial loan amount
+MONTHLY_PAYMENT_TO_PRINCIPAL = Decimal("798.00")  # Approximate principal per month (6.49% rate)
+MORTGAGE_START_DATE = date(2025, 4, 1)  # April 2025 closing
 
 
 def get_current_mortgage_balance():
@@ -93,7 +93,7 @@ def fetch_redfin_home_value(url):
             cookies = {'RF_AUTH': redfin_cookie}
             print("  Using authentication cookie")
         else:
-            print("  ⚠ No REDFIN_COOKIE set - may not work for owner dashboard")
+            print("  [!] No REDFIN_COOKIE set - may not work for owner dashboard")
 
         print(f"Fetching: {url}")
         response = requests.get(url, headers=headers, cookies=cookies, timeout=30)
@@ -108,7 +108,7 @@ def fetch_redfin_home_value(url):
         og_price = soup.find('meta', property='og:price:amount')
         if og_price and og_price.get('content'):
             value = Decimal(og_price['content'])
-            print(f"  ✓ Found value in meta tag: ${value:,.2f}")
+            print(f"  [OK] Found value in meta tag: ${value:,.2f}")
             return value
 
         # Method 2: Look for price in specific divs or spans
@@ -132,7 +132,7 @@ def fetch_redfin_home_value(url):
                 if price_match:
                     value_str = price_match.group(1).replace(',', '')
                     value = Decimal(value_str)
-                    print(f"  ✓ Found value with selector {selector}: ${value:,.2f}")
+                    print(f"  [OK] Found value with selector {selector}: ${value:,.2f}")
                     return value
 
         # Method 3: Search for any text containing "$" and numbers
@@ -141,18 +141,18 @@ def fetch_redfin_home_value(url):
         if estimate_match:
             value_str = estimate_match.group(1).replace(',', '')
             value = Decimal(value_str)
-            print(f"  ✓ Found Redfin Estimate in text: ${value:,.2f}")
+            print(f"  [OK] Found Redfin Estimate in text: ${value:,.2f}")
             return value
 
-        print("  ✗ Could not find home value on page")
-        print("  → You may need to inspect the HTML and update the selectors")
+        print("  [X] Could not find home value on page")
+        print("  -> You may need to inspect the HTML and update the selectors")
         return None
 
     except requests.RequestException as e:
-        print(f"  ✗ Network error fetching Redfin page: {e}")
+        print(f"  [X] Network error fetching Redfin page: {e}")
         return None
     except Exception as e:
-        print(f"  ✗ Error parsing Redfin page: {e}")
+        print(f"  [X] Error parsing Redfin page: {e}")
         return None
 
 
@@ -177,16 +177,16 @@ def update_supabase(snapshot_date, home_value, mortgage_balance):
         print(f"\nConnecting to Supabase...")
         supabase: Client = create_client(supabase_url, supabase_key)
 
-        # Check if snapshot for this date already exists
-        existing = supabase.table('real_estate_history').select('*').eq('snapshot_date', str(snapshot_date)).eq('asset_name', PROPERTY_NAME).execute()
+        # Check if snapshot for this date and source already exists
+        existing = supabase.table('real_estate_history').select('*').eq('snapshot_date', str(snapshot_date)).eq('asset_name', PROPERTY_NAME).eq('data_source', 'Redfin').execute()
 
         # Calculate equity and gain/loss
         net_equity = float(home_value) - float(mortgage_balance)
-        unrealized_gain_loss = net_equity - float(COST_BASIS)
+        unrealized_gain_loss = float(home_value) - float(COST_BASIS)
 
         if existing.data and len(existing.data) > 0:
             record = existing.data[0]
-            print(f"  ⚠ Snapshot for {snapshot_date} already exists:")
+            print(f"  [!] Snapshot for {snapshot_date} already exists:")
             print(f"    Previous value: ${float(record['home_value']):,.2f}, equity: ${float(record['net_equity']):,.2f}")
             print(f"    New value: ${home_value:,.2f}, new equity: ${net_equity:,.2f}")
 
@@ -203,7 +203,7 @@ def update_supabase(snapshot_date, home_value, mortgage_balance):
                 'unrealized_gain_loss': unrealized_gain_loss
             }
             supabase.table('real_estate_history').update(update_data).eq('id', record['id']).execute()
-            print(f"  ✓ Updated snapshot for {snapshot_date}")
+            print(f"  [OK] Updated snapshot for {snapshot_date}")
         else:
             # Insert new record with calculated values
             insert_data = {
@@ -214,15 +214,16 @@ def update_supabase(snapshot_date, home_value, mortgage_balance):
                 'mortgage_balance': float(mortgage_balance),
                 'net_equity': net_equity,
                 'cost_basis': float(COST_BASIS),
-                'unrealized_gain_loss': unrealized_gain_loss
+                'unrealized_gain_loss': unrealized_gain_loss,
+                'data_source': 'Redfin'
             }
             result = supabase.table('real_estate_history').insert(insert_data).execute()
-            print(f"  ✓ Inserted new snapshot for {snapshot_date}")
+            print(f"  [OK] Inserted new snapshot for {snapshot_date}")
 
         # Display summary (use already calculated values)
         gain_loss_pct = (unrealized_gain_loss / float(COST_BASIS) * 100) if COST_BASIS else 0
 
-        print(f"\n📊 Property Snapshot Summary:")
+        print(f"\n Property Snapshot Summary:")
         print(f"  Date:               {snapshot_date}")
         print(f"  Home Value:         ${home_value:,.2f}")
         print(f"  Mortgage Balance:   ${mortgage_balance:,.2f}")
@@ -233,7 +234,7 @@ def update_supabase(snapshot_date, home_value, mortgage_balance):
         return True
 
     except Exception as e:
-        print(f"  ✗ Unexpected error: {e}")
+        print(f"  [X] Unexpected error: {e}")
         return False
 
 
@@ -250,7 +251,7 @@ def main():
     home_value = fetch_redfin_home_value(REDFIN_URL)
 
     if not home_value:
-        print("\n❌ Failed to fetch home value from Redfin.")
+        print("\n[FAILED] Failed to fetch home value from Redfin.")
         print("\nTroubleshooting:")
         print("  1. Check if Redfin URL is still valid")
         print("  2. Verify network connection")
@@ -268,10 +269,10 @@ def main():
     success = update_supabase(today, home_value, mortgage_balance)
 
     if success:
-        print("\n✅ SUCCESS: Property value updated in Supabase!")
-        print(f"\nView in dashboard: finances.html → Investments tab → Real Estate card")
+        print("\n[SUCCESS] SUCCESS: Property value updated in Supabase!")
+        print(f"\nView in dashboard: finances.html -> Investments tab -> Real Estate card")
     else:
-        print("\n❌ FAILED: Could not update Supabase")
+        print("\n[FAILED] FAILED: Could not update Supabase")
         sys.exit(1)
 
 

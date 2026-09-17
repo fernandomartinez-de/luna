@@ -125,7 +125,7 @@ def apply_rules_to_dataframe(df):
     standardized_descriptions = []
 
     for _, row in df.iterrows():
-        # Step 1: Try database pattern mapping first (highest priority patterns)
+        # Step 1: Try database pattern mapping (category_mapping table)
         try:
             cat_result = supabase.rpc('apply_category_mapping', {'transaction_desc': row['description']}).execute()
             category = cat_result.data if cat_result.data else None
@@ -136,13 +136,9 @@ def apply_rules_to_dataframe(df):
         if not category and pd.notna(row.get('chase_category')) and row['chase_category'] in CHASE_CATEGORY_MAP:
             category = CHASE_CATEGORY_MAP[row['chase_category']]
 
-        # Step 3: Fall back to old pattern matching (legacy)
+        # Step 3: Default to Miscellaneous if no match
         if not category:
-            try:
-                cat_result = supabase.rpc('apply_categorization_rules', {'transaction_desc': row['description']}).execute()
-                category = cat_result.data if cat_result.data else 'Miscellaneous'
-            except:
-                category = 'Miscellaneous'
+            category = 'Miscellaneous'
 
         categories.append(category)
 
@@ -303,7 +299,7 @@ def main():
     print("\nNext steps:")
     print("  1. Review dashboard: http://localhost:8000/finances.html")
     print("  2. Check Miscellaneous: SELECT * FROM expense_transactions WHERE category = 'Miscellaneous'")
-    print("  3. Add rules: INSERT INTO categorization_rules (...)")
+    print("  3. Add rules: INSERT INTO category_mapping (pattern, category, pattern_type, priority) VALUES (...)")
 
 
 if __name__ == '__main__':

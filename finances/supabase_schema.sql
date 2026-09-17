@@ -11,12 +11,13 @@ CREATE TABLE IF NOT EXISTS real_estate_history (
     net_equity DECIMAL(12, 2) NOT NULL,
     cost_basis DECIMAL(12, 2) NOT NULL,
     unrealized_gain_loss DECIMAL(12, 2),
+    data_source VARCHAR(20) DEFAULT 'Redfin',
     location VARCHAR(200),
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
 
-    -- Prevent duplicate entries for same asset on same date
-    UNIQUE(snapshot_date, asset_name)
+    -- Prevent duplicate entries for same asset on same date from same source
+    UNIQUE(snapshot_date, asset_name, data_source)
 );
 
 -- Index for fast date-based queries
@@ -26,11 +27,12 @@ CREATE INDEX idx_real_estate_asset_name ON real_estate_history(asset_name);
 -- Comments
 COMMENT ON TABLE real_estate_history IS 'Monthly snapshots of real estate property values, equity, and mortgage tracking';
 COMMENT ON COLUMN real_estate_history.snapshot_date IS 'First day of month (YYYY-MM-01)';
-COMMENT ON COLUMN real_estate_history.home_value IS 'Total property value from Redfin estimate';
+COMMENT ON COLUMN real_estate_history.home_value IS 'Total property value estimate';
 COMMENT ON COLUMN real_estate_history.mortgage_balance IS 'Outstanding mortgage debt';
 COMMENT ON COLUMN real_estate_history.net_equity IS 'Home value minus mortgage balance';
 COMMENT ON COLUMN real_estate_history.cost_basis IS 'Original purchase price (never changes)';
 COMMENT ON COLUMN real_estate_history.unrealized_gain_loss IS 'Current home value minus cost basis';
+COMMENT ON COLUMN real_estate_history.data_source IS 'Source of home value estimate (Zillow, Redfin, Manual)';
 
 -- Example query: Get latest values for all properties
 -- SELECT asset_name, home_value, net_equity, mortgage_balance
