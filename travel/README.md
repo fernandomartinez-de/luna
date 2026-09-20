@@ -4,7 +4,7 @@ Static HTML trip planning sites for the Martinez family, one per trip, hosted on
 
 ## Trips
 
-- **Japan · November 2026** - [/japan](./japan/) · [live site](https://fernandomartinez-de.github.io/trips/japan/)
+- **Japan · November 2026** - [/japan](./japan/) · [live site](https://fernandomartinez-de.github.io/personal/travel/japan/)
 
 ## How to add a new trip
 
@@ -54,8 +54,8 @@ Two caveats when running locally by double-clicking the file (`file:///...`):
 
 Already configured. Settings → Pages → Deploy from a branch, `main`, `/ (root)`. Live at:
 
-- `https://fernandomartinez-de.github.io/trips/` (landing page listing all trips)
-- `https://fernandomartinez-de.github.io/trips/japan/` (Japan trip direct)
+- `https://fernandomartinez-de.github.io/personal/travel/` (landing page listing all trips)
+- `https://fernandomartinez-de.github.io/personal/travel/japan/` (Japan trip direct)
 
 ## Supabase
 
