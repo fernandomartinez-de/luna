@@ -1,0 +1,43 @@
+name: Build Overload
+
+# Refreshes health/fitness/index.html each morning with the latest WHOOP
+# readiness. Uses the SUPABASE_DB_URL repo secret. No database key ever ships
+# to the browser: data is baked in at build time.
+
+on:
+  schedule:
+    - cron: "0 12 * * *"   # 12:00 UTC = ~08:00 America/New_York (EDT). cron is UTC.
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-fitness
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r health/fitness/requirements.txt
+
+      - name: Render latest readiness
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python health/fitness/build_overload.py
+
+      - name: Commit if changed
+        run: |
+          git config user.name "overload-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add health/fitness/index.html
+          git diff --quiet --cached || git commit -m "chore: refresh Overload readiness ($(date -u +%F))"
+          git push
