@@ -2,7 +2,7 @@ name: Pull Body Composition (Renpho)
 
 on:
   schedule:
-    - cron: '15 8 * * *'  # Daily at 08:15 UTC
+    - cron: '0 14 * * *'  # 14:00 UTC = ~10:00 America/New_York (EDT). Runs after the morning weigh-in.
   workflow_dispatch:
 
 jobs:
