@@ -1,0 +1,42 @@
+name: Pull Finances (Plaid)
+
+# Daily incremental pull of Chase transactions via Plaid /transactions/sync
+# into Supabase (expense_transactions). The cursor lives in Supabase, so the
+# stateless runner resumes exactly where the last run stopped. No repo commit:
+# all writes go to the database.
+
+on:
+  schedule:
+    - cron: "0 13 * * *"   # 13:00 UTC ~= 09:00 America/New_York (EDT)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pull-finances
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r finances/requirements.txt
+
+      - name: Sync Plaid -> Supabase
+        env:
+          PLAID_CLIENT_ID:    ${{ secrets.PLAID_CLIENT_ID }}
+          PLAID_SECRET:       ${{ secrets.PLAID_SECRET }}
+          PLAID_ENV:          production
+          PLAID_ACCESS_TOKEN: ${{ secrets.PLAID_ACCESS_TOKEN }}
+          PLAID_ITEM_ID:      ${{ secrets.PLAID_ITEM_ID }}
+          SUPABASE_URL:       ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY:       ${{ secrets.SUPABASE_KEY }}
+        run: python finances/plaid_sync.py
