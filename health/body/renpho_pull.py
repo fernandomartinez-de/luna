@@ -24,20 +24,21 @@ except ImportError as e:
 
 REQUIRED_ENV = ("RENPHO_EMAIL", "RENPHO_PASSWORD", "SUPABASE_URL", "SUPABASE_KEY")
 
-# Column semantics per renpho-api README. Fields marked with `?` were ambiguous
-# in the library docs; the raw column preserves the original record so any
-# remapping can be done in SQL against public.body_composition.raw afterwards.
+# Renpho field semantics: `muscle`, `sinew`, `water`, `protein` are percentages.
+# `bone` is mass in kg. `muscle_mass_kg` is derived from muscle % * weight.
+# The raw column preserves the original record so any remapping can be done in
+# SQL against public.body_composition.raw afterwards.
 FIELD_CANDIDATES = {
     "weight_kg":           ("weight",),
     "bmi":                 ("bmi",),
     "body_fat_pct":        ("bodyfat", "body_fat", "body_fat_percentage"),
-    "muscle_mass_kg":      ("muscle_mass_kg", "muscle_kg", "muscle"),
-    "skeletal_muscle_pct": ("skeletal_muscle_pct", "sinew"),
+    "muscle_pct":          ("muscle",),
+    "skeletal_muscle_pct": ("sinew", "skeletal_muscle_pct"),
     "water_pct":           ("water", "water_percentage"),
     "protein_pct":         ("protein",),
     "visceral_fat":        ("visfat", "visceral_fat"),
-    "bone_mass_kg":        ("bone_mass_kg", "bone"),
-    "bmr_kcal":            ("bmr",),
+    "bone_mass_kg":        ("bone", "bone_mass_kg"),
+    "bmr_kcal":             ("bmr",),
     "metabolic_age":       ("bodyage", "metabolic_age", "body_age"),
 }
 
@@ -114,19 +115,44 @@ def map_row(rec):
     measured_at = parse_measured_at(rec)
     if measured_at is None:
         return None
+    weight_kg   = normalize_weight_kg(rec)
+    body_fat    = to_float(pick(rec, FIELD_CANDIDATES["body_fat_pct"]))
+    muscle_pct  = to_float(pick(rec, FIELD_CANDIDATES["muscle_pct"]))
+    sinew_pct   = to_float(pick(rec, FIELD_CANDIDATES["skeletal_muscle_pct"]))
+    water_pct   = to_float(pick(rec, FIELD_CANDIDATES["water_pct"]))
+    protein_pct = to_float(pick(rec, FIELD_CANDIDATES["protein_pct"]))
+    visfat      = to_float(pick(rec, FIELD_CANDIDATES["visceral_fat"]))
+    bone_kg     = to_float(pick(rec, FIELD_CANDIDATES["bone_mass_kg"]))
+    bmr         = to_int(pick(rec, FIELD_CANDIDATES["bmr_kcal"]))
+    body_age    = to_int(pick(rec, FIELD_CANDIDATES["metabolic_age"]))
+    bmi         = to_float(pick(rec, FIELD_CANDIDATES["bmi"]))
+
+    # Weight-only weigh-ins (no bioimpedance) report body fat as 0. Preserve
+    # the weight timepoint for the trend but null every composition field so
+    # they do not skew averages.
+    if body_fat is not None and body_fat == 0:
+        body_fat = muscle_pct = sinew_pct = water_pct = protein_pct = None
+        visfat = bone_kg = None
+        bmr = body_age = None
+
+    muscle_mass_kg = None
+    if weight_kg is not None and muscle_pct is not None:
+        muscle_mass_kg = round(weight_kg * muscle_pct / 100.0, 2)
+
     return {
         "measured_at":          measured_at.isoformat(),
-        "weight_kg":            normalize_weight_kg(rec),
-        "bmi":                  to_float(pick(rec, FIELD_CANDIDATES["bmi"])),
-        "body_fat_pct":         to_float(pick(rec, FIELD_CANDIDATES["body_fat_pct"])),
-        "muscle_mass_kg":       to_float(pick(rec, FIELD_CANDIDATES["muscle_mass_kg"])),
-        "skeletal_muscle_pct":  to_float(pick(rec, FIELD_CANDIDATES["skeletal_muscle_pct"])),
-        "water_pct":            to_float(pick(rec, FIELD_CANDIDATES["water_pct"])),
-        "protein_pct":          to_float(pick(rec, FIELD_CANDIDATES["protein_pct"])),
-        "visceral_fat":         to_float(pick(rec, FIELD_CANDIDATES["visceral_fat"])),
-        "bone_mass_kg":         to_float(pick(rec, FIELD_CANDIDATES["bone_mass_kg"])),
-        "bmr_kcal":             to_int(pick(rec, FIELD_CANDIDATES["bmr_kcal"])),
-        "metabolic_age":        to_int(pick(rec, FIELD_CANDIDATES["metabolic_age"])),
+        "weight_kg":            weight_kg,
+        "bmi":                  bmi,
+        "body_fat_pct":         body_fat,
+        "muscle_pct":           muscle_pct,
+        "muscle_mass_kg":       muscle_mass_kg,
+        "skeletal_muscle_pct":  sinew_pct,
+        "water_pct":            water_pct,
+        "protein_pct":          protein_pct,
+        "visceral_fat":         visfat,
+        "bone_mass_kg":         bone_kg,
+        "bmr_kcal":             bmr,
+        "metabolic_age":        body_age,
         "source":               "renpho",
         "raw":                  rec,
     }
