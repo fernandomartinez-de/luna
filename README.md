@@ -5,7 +5,7 @@ Consolidated repository for all personal automation workflows.
 ## What This Is
 
 ONE repo containing all personal data automation:
-- **Finances** - Expense tracking and categorization
+- **Finances** - Expense tracking and categorization. Chase transactions auto-pull daily via Plaid.
 - **Docs** - Personal document filing and expiration tracking
 - **Health** - Whoop fitness sync + medical lab dashboards
 - **Travel** - Trip tracking and planning
@@ -15,7 +15,9 @@ ONE repo containing all personal data automation:
 ```
 personal/
 ├── finances/          Expense tracking with auto-categorization
-│   ├── START.bat      → Launch dashboard
+│   ├── plaid_link.py  → One time: connect Chase via Plaid (Hosted Link)
+│   ├── plaid_sync.py  → Daily: pull transactions into Supabase
+│   ├── START.bat      → Manual backfill / legacy dashboard launcher
 │   ├── finances.html  → Dashboard
 │   └── scripts/       → Processing scripts
 │
@@ -27,6 +29,7 @@ personal/
 ├── health/
 │   ├── whoop/         Whoop fitness data sync
 │   ├── fitness/       Overload dashboard: Training + Nutrition (GitHub Pages)
+│   ├── body/          Renpho body composition daily pull into Supabase
 │   └── medical/       Medical lab dashboards
 │
 └── travel/            Trip tracking
@@ -34,14 +37,28 @@ personal/
 
 ## Quick Start
 
-### Finances (Expense Tracking)
+### Finances (Plaid, current)
+
+Chase pulls automatically each morning via the `pull-finances.yml` Action into
+Supabase `expense_transactions`. One time setup:
+
+```powershell
+cd finances
+python plaid_link.py   # Plaid Hosted Link, connect Chase once
+```
+
+After that the daily GitHub Action keeps `expense_transactions` current; no manual
+downloads needed. See `finances/README.md`.
+
+### Finances (manual backfill, legacy)
 ```powershell
 cd finances
 # Double-click START.bat or:
 python serve_dashboard.py
 ```
 
-Drop Excel statements in vault inbox → auto-processes → dashboard updates
+Drop Excel statements in vault inbox → auto-processes → dashboard updates. Kept
+for one-off backfills; not the routine path.
 
 ### Docs (Personal Documents)
 ```powershell
@@ -84,6 +101,14 @@ python build_dashboards.py
 
 Generates medical lab dashboards from Google Drive PDFs
 
+## Automated (GitHub Actions)
+
+- `pull-finances.yml` - Chase via Plaid -> `expense_transactions`
+- `pull-body.yml` - Renpho body composition -> `body_composition`
+- `build-fitness.yml` - Rebuild the Overload dashboard from Supabase
+- `whoop-daily-sync.yml` - Whoop sync
+- `medical-ingest-labs.yml`, `medical-clean-drive.yml`, `medical-rebuild-dashboards.yml`
+
 ## Common Pattern
 
 All workflows follow the same pattern:
@@ -113,6 +138,8 @@ Dashboard / Reports
 ```
 
 ## Vault Integration
+
+The vault is local only and gitignored; it is not committed to this repo.
 
 **Inbox folders:**
 - `vault/inbox/finances/` - Bank statements
@@ -190,7 +217,7 @@ cd health/whoop
 ## Maintenance
 
 **Monthly tasks:**
-- Process finances inbox (auto via dashboard)
+- Finances: automatic via the Plaid daily pull (manual Excel only for backfills)
 - Process personal docs inbox
 - Scan document expirations
 - Sync Whoop data
@@ -201,6 +228,7 @@ cd health/whoop
 - **Python** - Data processing, automation
 - **Flask** - Dashboards and APIs
 - **Supabase** - Database (finances)
+- **Plaid** - Chase transaction auto-pull (Production)
 - **Google Drive** - Permanent storage
 - **Obsidian** - Inbox and tracking
 - **Chart.js** - Visualizations

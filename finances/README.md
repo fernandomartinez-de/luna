@@ -5,6 +5,14 @@ transactions daily into Supabase (`expense_transactions`), categorized the same
 way the manual pipeline categorizes them, so the finance report just keeps
 working.
 
+## Status
+
+- Chase OAuth registration submitted to Plaid 2026-09-21, in review (est. 24h).
+  Go-live once Chase shows Enabled at
+  https://dashboard.plaid.com/activity/status/oauth-institutions
+- Phase 2 (planned): Fidelity retirement holdings via Plaid Investments product
+  into stocks_crypto_history.
+
 ## Pieces
 
     finances/plaid_link.py   One-time. Connects Chase, gets the access token.
