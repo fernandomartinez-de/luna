@@ -28,25 +28,25 @@ var CITE = {
 // weeks 5, 10, 15. Sharpen at week 19. Olympic lifts follow their own quality
 // prescription noted per-exercise (never to failure).
 var MESO = [
-  {wk:1, block:1, blockName:"Accumulation",    phase:"build",   pri:{sets:4,reps:"4-6",rpe:"7"},     acc:{sets:3,reps:"8-12",rpe:"8"}},
-  {wk:2, block:1, blockName:"Accumulation",    phase:"build",   pri:{sets:4,reps:"4-6",rpe:"7-8"},   acc:{sets:3,reps:"8-12",rpe:"8"}},
-  {wk:3, block:1, blockName:"Accumulation",    phase:"build",   pri:{sets:4,reps:"4-6",rpe:"8"},     acc:{sets:4,reps:"8-12",rpe:"8"}},
-  {wk:4, block:1, blockName:"Accumulation",    phase:"build",   pri:{sets:4,reps:"4-6",rpe:"8"},     acc:{sets:4,reps:"8-12",rpe:"8"}},
-  {wk:5, block:1, blockName:"Accumulation",    phase:"deload",  pri:{sets:2,reps:"5",rpe:"5-6"},     acc:{sets:2,reps:"10",rpe:"5-6"}},
-  {wk:6, block:2, blockName:"Intensification", phase:"build",   pri:{sets:4,reps:"3-5",rpe:"8"},     acc:{sets:3,reps:"8-12",rpe:"8"}},
-  {wk:7, block:2, blockName:"Intensification", phase:"build",   pri:{sets:4,reps:"3-5",rpe:"8"},     acc:{sets:3,reps:"8-12",rpe:"8"}},
-  {wk:8, block:2, blockName:"Intensification", phase:"build",   pri:{sets:4,reps:"3-5",rpe:"8-9"},   acc:{sets:3,reps:"8-12",rpe:"8"}},
-  {wk:9, block:2, blockName:"Intensification", phase:"build",   pri:{sets:3,reps:"3-5",rpe:"8-9"},   acc:{sets:3,reps:"8-12",rpe:"8"}},
-  {wk:10,block:2, blockName:"Intensification", phase:"deload",  pri:{sets:2,reps:"5",rpe:"5-6"},     acc:{sets:2,reps:"10",rpe:"5-6"}},
-  {wk:11,block:3, blockName:"Peak Intensity",  phase:"build",   pri:{sets:3,reps:"3-5",rpe:"8-9"},   acc:{sets:3,reps:"10-15",rpe:"8"}},
-  {wk:12,block:3, blockName:"Peak Intensity",  phase:"build",   pri:{sets:3,reps:"3-5",rpe:"8-9"},   acc:{sets:3,reps:"10-15",rpe:"8"}},
-  {wk:13,block:3, blockName:"Peak Intensity",  phase:"build",   pri:{sets:3,reps:"3",rpe:"9"},       acc:{sets:2,reps:"10-15",rpe:"8"}},
-  {wk:14,block:3, blockName:"Peak Intensity",  phase:"build",   pri:{sets:3,reps:"3",rpe:"9"},       acc:{sets:2,reps:"10-15",rpe:"8"}},
-  {wk:15,block:3, blockName:"Peak Intensity",  phase:"deload",  pri:{sets:2,reps:"5",rpe:"5-6"},     acc:{sets:2,reps:"10",rpe:"5-6"}},
-  {wk:16,block:4, blockName:"Retention",       phase:"build",   pri:{sets:3,reps:"3-5",rpe:"8"},     acc:{sets:2,reps:"10-15",rpe:"7-8"}},
-  {wk:17,block:4, blockName:"Retention",       phase:"build",   pri:{sets:3,reps:"3-5",rpe:"8"},     acc:{sets:2,reps:"10-15",rpe:"7-8"}},
-  {wk:18,block:4, blockName:"Retention",       phase:"build",   pri:{sets:3,reps:"3",rpe:"8"},       acc:{sets:2,reps:"10",rpe:"7-8"}},
-  {wk:19,block:4, blockName:"Retention",       phase:"sharpen", pri:{sets:2,reps:"2-3",rpe:"6-7"},   acc:{sets:1,reps:"8-10",rpe:"6"}}
+  {wk:1, block:1, blockName:"Accumulation",   phase:"build",   pri:{sets:4,reps:"6-8",rpe:"7"},   acc:{sets:3,reps:"10-15",rpe:"8"}},
+  {wk:2, block:1, blockName:"Accumulation",   phase:"build",   pri:{sets:4,reps:"6-8",rpe:"7-8"}, acc:{sets:4,reps:"10-15",rpe:"8"}},
+  {wk:3, block:1, blockName:"Accumulation",   phase:"build",   pri:{sets:4,reps:"6-8",rpe:"8"},   acc:{sets:4,reps:"10-15",rpe:"8"}},
+  {wk:4, block:1, blockName:"Accumulation",   phase:"build",   pri:{sets:4,reps:"6-8",rpe:"8"},   acc:{sets:4,reps:"10-15",rpe:"8"}},
+  {wk:5, block:1, blockName:"Accumulation",   phase:"deload",  pri:{sets:2,reps:"6",rpe:"5-6"},   acc:{sets:2,reps:"12",rpe:"5-6"}},
+  {wk:6, block:2, blockName:"Intensification",phase:"build",   pri:{sets:4,reps:"5-7",rpe:"8"},   acc:{sets:3,reps:"10-15",rpe:"8"}},
+  {wk:7, block:2, blockName:"Intensification",phase:"build",   pri:{sets:4,reps:"5-7",rpe:"8"},   acc:{sets:3,reps:"10-15",rpe:"8"}},
+  {wk:8, block:2, blockName:"Intensification",phase:"build",   pri:{sets:4,reps:"5-7",rpe:"8"},   acc:{sets:3,reps:"10-15",rpe:"8"}},
+  {wk:9, block:2, blockName:"Intensification",phase:"build",   pri:{sets:4,reps:"5-7",rpe:"8"},   acc:{sets:3,reps:"10-12",rpe:"8"}},
+  {wk:10,block:2, blockName:"Intensification",phase:"deload",  pri:{sets:2,reps:"6",rpe:"5-6"},   acc:{sets:2,reps:"12",rpe:"5-6"}},
+  {wk:11,block:3, blockName:"Retention",      phase:"build",   pri:{sets:4,reps:"5-6",rpe:"8"},   acc:{sets:3,reps:"10-12",rpe:"8"}},
+  {wk:12,block:3, blockName:"Retention",      phase:"build",   pri:{sets:4,reps:"5-6",rpe:"8"},   acc:{sets:3,reps:"10-12",rpe:"8"}},
+  {wk:13,block:3, blockName:"Retention",      phase:"build",   pri:{sets:3,reps:"5-6",rpe:"8"},   acc:{sets:2,reps:"10-12",rpe:"8"}},
+  {wk:14,block:3, blockName:"Retention",      phase:"build",   pri:{sets:3,reps:"5-6",rpe:"8"},   acc:{sets:2,reps:"10-12",rpe:"8"}},
+  {wk:15,block:3, blockName:"Retention",      phase:"deload",  pri:{sets:2,reps:"6",rpe:"5-6"},   acc:{sets:2,reps:"12",rpe:"5-6"}},
+  {wk:16,block:4, blockName:"Taper",          phase:"build",   pri:{sets:3,reps:"5-6",rpe:"8"},   acc:{sets:2,reps:"10-12",rpe:"7-8"}},
+  {wk:17,block:4, blockName:"Taper",          phase:"build",   pri:{sets:3,reps:"5-6",rpe:"8"},   acc:{sets:2,reps:"10-12",rpe:"7-8"}},
+  {wk:18,block:4, blockName:"Taper",          phase:"build",   pri:{sets:3,reps:"5",rpe:"8"},     acc:{sets:2,reps:"10",rpe:"7-8"}},
+  {wk:19,block:4, blockName:"Taper",          phase:"sharpen", pri:{sets:2,reps:"4-5",rpe:"6-7"}, acc:{sets:1,reps:"8-10",rpe:"6"}}
 ];
 
 // Category workouts. Primaries are free-weight compounds run heavy across the
@@ -184,19 +184,12 @@ window.__OVERLOAD_RENDER__ = {esc:esc,n1:n1,n0:n0,sign:sign,citeChip:citeChip,me
 (function(){
 "use strict";
 var D=window.__OVERLOAD_PART1__, R=window.__OVERLOAD_RENDER__;
-var CATEGORIES=D.CATEGORIES, MORNINGS=D.MORNINGS, MESO=D.MESO, CAT_ORDER=D.CAT_ORDER, STRENGTH=D.STRENGTH;
-var esc=R.esc, n1=R.n1, citeChip=R.citeChip, meta=R.meta, phaseLabel=R.phaseLabel, toast=R.toast;
+var CATEGORIES=D.CATEGORIES, MORNINGS=D.MORNINGS, CAT_ORDER=D.CAT_ORDER;
+var esc=R.esc, citeChip=R.citeChip, meta=R.meta, phaseLabel=R.phaseLabel;
 
 var SESSION_STATE = {cat: CAT_ORDER[0]};
 
 function exBlock(ex, kind, spec, rank){
-  var hist = (STRENGTH.byExercise||{})[ex.n];
-  var histHtml = "";
-  if(hist && hist.lastKg!=null){
-    histHtml = '<div class="exhist">Last: <b>'+n1(hist.lastKg)+' kg × '+esc(String(hist.lastReps||"-"))+'</b>'+
-               (hist.bestKg!=null?' · Best: <b>'+n1(hist.bestKg)+' kg</b>':'')+
-               (hist.lastDate?' · '+esc(hist.lastDate):'')+'</div>';
-  }
   var h='';
   h+='<div class="excard">';
   h+='  <div class="exname"><span class="rank">'+kind[0].toUpperCase()+rank+'.</span>'+esc(ex.n)+'</div>';
@@ -208,7 +201,6 @@ function exBlock(ex, kind, spec, rank){
   h+='    <div class="spec"><span>RPE</span>'+esc(String(spec.rpe))+'</div>';
   h+='    <div class="spec"><span>Rest</span>'+Math.round((ex.rest||90)/60*10)/10+' min</div>';
   h+='  </div>';
-  h+=histHtml;
   h+=citeChip(ex.cite);
   h+='</div>';
   return h;
@@ -284,7 +276,7 @@ function renderBlock(){
   var blocks = {};
   MESO.forEach(function(m){ (blocks[m.block]=blocks[m.block]||[]).push(m); });
   var h='<div class="sec-title">The mesocycle · '+MESO.length+' weeks</div>';
-  h+='<div class="note"><b>How to read it.</b> Primaries stay heavy across the cut so intensity signals muscle retention (Refalo 2023, Grgic 2022). Accessory volume tapers as the deficit deepens because recovery falls. Deloads reset accumulated fatigue every ~5 weeks. Week 19 sharpens: technique and neural output only, no PR attempts.</div>';
+  h+='<div class="note"><b>How to read it.</b> Primaries stay heavy but submaximal, RPE about 8 at 5 to 8 reps, across the whole cut. Never triples, never RPE 9: that is a strength peak, not a fat-loss retention block. Accessory volume tapers as the deficit deepens because recovery falls. Deloads reset accumulated fatigue every ~5 weeks. Week 19 sharpens: technique and clean submaximal reps, no PR attempts.</div>';
   h+='<div class="blocktbl"><table>';
   h+='<caption>19-week block plan</caption>';
   h+='<thead><tr><th>Wk</th><th>Block</th><th>Phase</th><th>Primary</th><th>Accessory</th></tr></thead><tbody>';
@@ -317,10 +309,10 @@ function renderBlock(){
 
 function describeBlock(b){
   b = parseInt(b,10);
-  if(b===1) return "Accumulation. Establish primary lift baselines at moderate RPE while accessory volume is highest. Deficit is shallowest here; expect the best primary progress of the mesocycle.";
-  if(b===2) return "Intensification. Push primary RPE toward 8-9 with fewer reps per set. Accessory volume held. This is where retention starts being tested.";
-  if(b===3) return "Peak intensity. Primaries at RPE 9 on top sets. Accessory volume tapers to protect recovery as the deficit deepens.";
-  if(b===4) return "Retention. Keep primary intensity, halve accessory volume, add the sharpening week to arrive at Early February fresh with muscle preserved.";
+  if(b===1) return "Accumulation. Accessory volume is highest and primary loads are established at moderate effort. The deficit is shallowest here, so this is the best window to add a little load to the primary lifts.";
+  if(b===2) return "Intensification. Hold primaries heavy at RPE 8 in the 5 to 7 rep range; accessory volume stays moderate. The job is retention, not PRs.";
+  if(b===3) return "Retention. Primaries at RPE 8 for 5 to 6 reps. Start trimming accessory sets as the deficit deepens and recovery falls.";
+  if(b===4) return "Taper. Hold primary intensity on fewer sets and keep accessories at the minimum that maintains. Week 19 sharpens so you arrive lean with muscle intact.";
   return "";
 }
 
@@ -333,15 +325,16 @@ function renderMethod(){
   h+=refs(["Schoenfeld2010"]);
   h+='</div>';
   h+='<div class="msec"><h3>In a cut, muscle retention leans on intensity, not volume<span class="est established">Established</span></h3>';
-  h+='<p>Under a caloric deficit, recovery is compromised and high-volume programs overshoot the athlete\'s tolerance. Training close to failure on hard sets protects the growth signal even when total volume is trimmed. That is why Overload holds primary RPE high across the mesocycle and pulls back accessory volume as the deficit deepens.</p>';
+  h+='<p>Under a caloric deficit, recovery is compromised and high-volume programs overshoot the athlete\'s tolerance. Heavy submaximal loading protects the retention signal even when total volume is trimmed. Overload holds primary sets at RPE about 8 for 5 to 8 reps across the whole cut and trims accessory volume as the deficit deepens. Primaries are deliberately not taken to failure, and never dropped to triples at RPE 9: that is a strength peak, not a retention block.</p>';
   h+=refs(["Refalo2023","Grgic2022"]);
   h+='</div>';
   h+='<div class="msec"><h3>10-20 hard sets per muscle per week is the effective range<span class="est established">Established</span></h3>';
   h+='<p>Schoenfeld\'s dose-response meta shows a roughly linear return through about 10 to 20 hard sets per muscle per week for trained lifters. Overload targets the middle of this range in Block 1 and lands near the lower end by Block 4, matching the reduced recovery capacity of a deep cut.</p>';
+  h+='<p>On a four-day split each muscle is trained directly about once a week. Growth in a surplus favors roughly twice, but retaining muscle in a deficit needs less, and pressing carries over to triceps, pulling to biceps, and the Mornings core block adds indirect frequency for the trunk. 1x direct is a deliberate retention choice here, not a shortfall.</p>';
   h+=refs(["Schoenfeld2017Vol","Schoenfeld2016Freq"]);
   h+='</div>';
   h+='<div class="msec"><h3>Train 0 to 3 reps in reserve<span class="est established">Established</span></h3>';
-  h+='<p>Sets taken 0 to 3 reps shy of failure produce essentially identical hypertrophy at equated volume, and closer proximity to failure is required when total volume is low. Primary lifts sit at RIR 1 to 2, accessories at RIR 0 to 2; deload weeks intentionally push RIR to 3 to 4.</p>';
+  h+='<p>Sets taken 0 to 3 reps shy of failure produce essentially identical hypertrophy at equated volume, and closer proximity to failure is required when total volume is low. In a retention cut, Overload sits primaries at RIR about 2 (RPE 8) so quality reps still accumulate without draining CNS or joints; accessories run at RIR 1 to 2; deload weeks push RIR to 3 to 4.</p>';
   h+=refs(["Refalo2023","Grgic2022"]);
   h+='</div>';
   h+='<div class="msec"><h3>Full range with a loaded stretch<span class="est established">Established</span></h3>';
