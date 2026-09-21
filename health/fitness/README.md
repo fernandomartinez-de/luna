@@ -1,8 +1,10 @@
-# Overload
+# Overload · Cut to Abs
 
-Personal hypertrophy training app. Opens in the gym, tells you what to do,
-logs every set, and shows a WHOOP recovery readiness card up top so you know
-whether to push or pull back today.
+Personal training advisor for a 19-week cut ending in early February. Opens on the
+phone, tells me the current mesocycle week, gives the full session for each of
+my four lifting categories with primaries and accessories, sets a plain
+"copy-into-WHOOP" list, and shows body-fat trend from the scale. WHOOP logs the
+workout; this only advises.
 
 Lives at `health/fitness/` inside `fernandomartinez-de/personal` and is served
 by GitHub Pages at:
@@ -11,45 +13,71 @@ by GitHub Pages at:
 
 ## What it does
 
-- **Readiness** from WHOOP: recovery score, HRV, resting HR, sleep, and a
-  14 day recovery trend, with a training note that shifts by recovery band.
-- **Train**: pick the day, see last session's numbers per exercise, log each
-  set with a weight/reps stepper, and an auto rest timer between sets.
-- **History**: session volume trend, personal records, past sessions.
-- **Routine**: edit days, exercises, and set/rep targets in the app.
+- **Plan** — the cut goal, timeline to Early February, and body-fat / weight
+  trend from `public.body_composition`.
+- **Session** — pick a category (Chest & Tricep, Back & Bicep, Legs,
+  Olympic & Shoulder, or the Mornings block) and get this week's sets, reps,
+  RPE, and a "Copy to WHOOP" block.
+- **Block** — the whole 19-week mesocycle table with block/phase/primary/
+  accessory targets, current week highlighted.
+- **Method** — the evidence base: mechanical tension, cut retention leans on
+  intensity not volume, 10-20 hard sets per muscle per week at 0-3 RIR,
+  full-ROM with a loaded stretch, primaries for stimulus-to-fatigue. Real
+  citations to Schoenfeld, Refalo, Kassiano, Wolf, Maeo, Helms, Longland,
+  and Suchomel.
 
-Workout logs and routine edits are saved in the browser (localStorage) on the
-device you use. They never leave your phone and are not stored in this repo.
+No recovery, HRV, sleep, or strain UI. Weights in kg.
+
+## Mesocycle structure
+
+Four blocks across 19 weeks, deloads at weeks 5, 10, 15, sharpen at week 19.
+
+| Block | Weeks | Name             | What it does                                               |
+|-------|-------|------------------|------------------------------------------------------------|
+| 1     | 1-5   | Accumulation     | Baseline primaries at moderate RPE; highest accessory volume |
+| 2     | 6-10  | Intensification  | Push primary RPE to 8-9; accessory volume held             |
+| 3     | 11-15 | Peak Intensity   | Primaries at RPE 9 on top sets; accessories taper          |
+| 4     | 16-19 | Retention        | Keep primary intensity, cut accessory volume, sharpen wk 19 |
+
+The programming principle: keep primaries heavy across the cut so intensity
+signals muscle retention (Refalo 2023, Grgic 2022); pull back accessory volume
+as the deficit deepens because recovery falls. Nutrition is out of scope.
 
 ## How the data gets in
 
-WHOOP readiness is **baked in at build time**, not fetched in the browser, so
-no database key is ever exposed on the page.
+Data is **baked in at build time**, not fetched in the browser, so no database
+credential ever ships to the page.
 
-    template.html  ->  build_overload.py (reads Supabase)  ->  index.html
+    template.html  ->  build_overload.py (reads Supabase via SUPABASE_DB_URL)  ->  index.html
 
-`build_overload.py` pulls the latest recovery snapshot with `SUPABASE_DB_URL`
-(the same secret the old dashboards used), fills the `__WHOOP_DATA__` token in
-`template.html`, and writes `index.html`. The `Build Overload` GitHub Action
-runs it every morning and commits the refreshed page.
+`build_overload.py` injects four JSON payloads into `template.html`:
+
+    __PLAN_DATA__      - mesocycle timeline + current week (computed from date)
+    __BODY_DATA__      - public.body_composition history (weight_kg, body_fat_pct, ...)
+    __WORKOUTS_DATA__  - whoop_workouts cadence counts (no strain surfaced)
+    __STRENGTH_DATA__  - last kg/reps per primary lift (strength_sessions/sets/exercises)
+
+The `Build Overload` GitHub Action runs it every morning and commits the
+refreshed `index.html`.
 
 ## Files
 
-    health/fitness/template.html      App with the __WHOOP_DATA__ token
-    health/fitness/build_overload.py  Pulls readiness from Supabase, renders index.html
-    health/fitness/index.html         The built, served page (do not hand edit)
-    health/fitness/requirements.txt   psycopg2-binary
-    .github/workflows/build-fitness.yml   Daily rebuild + commit
+    health/fitness/template.html        App with the four __*_DATA__ tokens
+    health/fitness/build_overload.py    Pulls body/workouts/strength, renders index.html
+    health/fitness/app.js               Client-side rendering, mesocycle table, categories, method
+    health/fitness/index.html           The built, served page (do not hand edit)
+    health/fitness/requirements.txt     psycopg2-binary
+    .github/workflows/build-fitness.yml Daily rebuild + commit
 
 ## Setup
 
 1. Confirm the repo secret `SUPABASE_DB_URL` exists (Settings > Secrets and
    variables > Actions).
-2. Make sure GitHub Pages serves from branch `main`, path `/ (root)`, so the
+2. GitHub Pages serves from branch `main`, path `/ (root)`, so the
    `health/fitness/` path resolves.
 3. Push. The Action refreshes `index.html` daily and on manual dispatch
    (Actions tab > Build Overload > Run workflow).
-4. On your phone, open the Pages URL and Add to Home Screen for an app icon.
+4. On phone, open the Pages URL and Add to Home Screen for an app icon.
 
 ## Run locally
 
@@ -59,11 +87,14 @@ runs it every morning and commits the refreshed page.
 
 ## Notes
 
-- **Privacy**: this repo is public, so `index.html` and the WHOOP numbers baked
-  into it are readable by anyone with the URL. Your workout logs stay on your
-  phone.
-- **Schema**: the query targets the live `whoop_*` columns (`recovery_date`,
-  `recovery_score`, `resting_heart_rate`, `hrv_rmssd_milli`,
-  `whoop_sleep.performance_percentage`, `duration_minutes`).
-- **Routine**: the app ships with a sample push/pull/legs split. Edit it in the
-  Routine tab, or set your own as the built in default.
+- **Privacy**: this repo is public, so `index.html` and the body-composition
+  numbers baked into it are readable by anyone with the URL. Do not treat the
+  Pages URL as private.
+- **Schema**: reads `public.body_composition(measured_at, weight_kg, body_fat_pct, muscle_mass_kg, bmi)`
+  populated by the Renpho pull; `whoop_workouts(start_time, sport_name)` for
+  cadence only; `strength_sessions / strength_sets / strength_exercises` for
+  primary-lift history if populated.
+- **Mesocycle dates**: `MESO_START` (2026-09-21) and `MESO_END` (2027-02-01)
+  are constants in `build_overload.py`. Change them there to reset the cycle.
+- **Fitness plan, not medical advice**. See Method tab for the evidence base
+  and citations.
