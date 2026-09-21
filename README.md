@@ -26,6 +26,8 @@ personal/
 │
 ├── health/
 │   ├── whoop/         Whoop fitness data sync
+│   ├── fitness/       Overload cut-to-abs dashboard (GitHub Pages)
+│   ├── nutrition/     Nutrition dashboard (GitHub Pages)
 │   └── medical/       Medical lab dashboards
 │
 └── travel/            Trip tracking
@@ -58,6 +60,20 @@ python sync.py
 ```
 
 Syncs Whoop data to Google Drive
+
+### Health (Nutrition Dashboard)
+```powershell
+$env:SUPABASE_URL="https://<ref>.supabase.co"
+$env:SUPABASE_KEY="<anon-or-service-role-key>"
+pip install -r health/nutrition/requirements.txt
+python health/nutrition/build_nutrition.py
+```
+
+View-only Cronometer-style day view + trends served at
+https://fernandomartinez-de.github.io/personal/health/nutrition/. Food is
+logged upstream by chat; a daily GitHub Action rebuilds `index.html` from
+Supabase (`nutrition_log`, `whoop_cycles`, `body_composition`). See
+`health/nutrition/README.md`.
 
 ### Health (Medical Labs)
 ```powershell

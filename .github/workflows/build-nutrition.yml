@@ -1,0 +1,45 @@
+name: Build Nutrition
+
+# Refreshes health/nutrition/index.html each morning with the latest
+# nutrition_log, WHOOP burn, and body composition. Uses the SUPABASE_URL +
+# SUPABASE_KEY repo secrets (same secrets as build-fitness). No database key
+# ever ships to the browser: data is baked in at build time.
+
+on:
+  schedule:
+    - cron: "15 12 * * *"   # 12:15 UTC = ~08:15 America/New_York (EDT). cron is UTC.
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-nutrition
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r health/nutrition/requirements.txt
+
+      - name: Render nutrition dashboard
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python health/nutrition/build_nutrition.py
+
+      - name: Commit if changed
+        run: |
+          git config user.name "nutrition-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add health/nutrition/index.html
+          git diff --quiet --cached || git commit -m "chore: refresh Nutrition dashboard ($(date -u +%F))"
+          git push
