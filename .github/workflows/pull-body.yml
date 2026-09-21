@@ -1,0 +1,31 @@
+name: Pull Body Composition (Renpho)
+
+on:
+  schedule:
+    - cron: '15 8 * * *'  # Daily at 08:15 UTC
+  workflow_dispatch:
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: health/body/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r health/body/requirements.txt
+
+      - name: Pull Renpho and upsert into Supabase
+        env:
+          RENPHO_EMAIL:     ${{ secrets.RENPHO_EMAIL }}
+          RENPHO_PASSWORD:  ${{ secrets.RENPHO_PASSWORD }}
+          SUPABASE_DB_URL:  ${{ secrets.SUPABASE_DB_URL }}
+        run: python health/body/renpho_pull.py
