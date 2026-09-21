@@ -31,7 +31,8 @@ jobs:
 
       - name: Render latest readiness
         env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: python health/fitness/build_overload.py
 
       - name: Commit if changed

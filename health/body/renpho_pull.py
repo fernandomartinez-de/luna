@@ -3,15 +3,17 @@
 One row per weigh-in, keyed on measured_at. Idempotent: re-runs never duplicate.
 The complete original record is preserved in the raw jsonb column, so column
 mappings below can be revised later without losing information.
+
+Writes go through the Supabase REST client (SUPABASE_URL + SUPABASE_KEY) rather
+than direct Postgres, because the direct db host is IPv6-only and GitHub
+Actions runners are IPv4-only. This matches how health/whoop/sync.py works.
 """
 
-import json
 import os
 import sys
 from datetime import datetime, timezone
 
-import psycopg2
-from psycopg2.extras import Json
+from supabase import create_client, Client
 
 try:
     from renpho import RenphoClient, RenphoAPIError
@@ -20,7 +22,7 @@ except ImportError as e:
     sys.exit(1)
 
 
-REQUIRED_ENV = ("RENPHO_EMAIL", "RENPHO_PASSWORD", "SUPABASE_DB_URL")
+REQUIRED_ENV = ("RENPHO_EMAIL", "RENPHO_PASSWORD", "SUPABASE_URL", "SUPABASE_KEY")
 
 # Column semantics per renpho-api README. Fields marked with `?` were ambiguous
 # in the library docs; the raw column preserves the original record so any
@@ -113,7 +115,7 @@ def map_row(rec):
     if measured_at is None:
         return None
     return {
-        "measured_at":          measured_at,
+        "measured_at":          measured_at.isoformat(),
         "weight_kg":            normalize_weight_kg(rec),
         "bmi":                  to_float(pick(rec, FIELD_CANDIDATES["bmi"])),
         "body_fat_pct":         to_float(pick(rec, FIELD_CANDIDATES["body_fat_pct"])),
@@ -125,22 +127,9 @@ def map_row(rec):
         "bone_mass_kg":         to_float(pick(rec, FIELD_CANDIDATES["bone_mass_kg"])),
         "bmr_kcal":             to_int(pick(rec, FIELD_CANDIDATES["bmr_kcal"])),
         "metabolic_age":        to_int(pick(rec, FIELD_CANDIDATES["metabolic_age"])),
+        "source":               "renpho",
         "raw":                  rec,
     }
-
-
-UPSERT_SQL = """
-INSERT INTO public.body_composition (
-    measured_at, weight_kg, bmi, body_fat_pct, muscle_mass_kg,
-    skeletal_muscle_pct, water_pct, protein_pct, visceral_fat,
-    bone_mass_kg, bmr_kcal, metabolic_age, source, raw
-) VALUES (
-    %(measured_at)s, %(weight_kg)s, %(bmi)s, %(body_fat_pct)s, %(muscle_mass_kg)s,
-    %(skeletal_muscle_pct)s, %(water_pct)s, %(protein_pct)s, %(visceral_fat)s,
-    %(bone_mass_kg)s, %(bmr_kcal)s, %(metabolic_age)s, 'renpho', %(raw)s
-)
-ON CONFLICT (measured_at) DO NOTHING;
-"""
 
 
 def main():
@@ -168,7 +157,6 @@ def main():
         if row is None:
             dropped += 1
             continue
-        row["raw"] = Json(rec)
         rows.append(row)
 
     if dropped:
@@ -178,18 +166,11 @@ def main():
         print("No usable rows to upsert.")
         return
 
-    print(f"Connecting to Supabase Postgres and upserting {len(rows)} rows...")
-    conn = psycopg2.connect(env["SUPABASE_DB_URL"])
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                inserted = 0
-                for row in rows:
-                    cur.execute(UPSERT_SQL, row)
-                    inserted += cur.rowcount
-                print(f"Inserted {inserted} new rows (skipped {len(rows) - inserted} already-present).")
-    finally:
-        conn.close()
+    print(f"Connecting to Supabase REST and upserting {len(rows)} rows...")
+    supabase: Client = create_client(env["SUPABASE_URL"].strip(), env["SUPABASE_KEY"].strip())
+    resp = supabase.table("body_composition").upsert(rows, on_conflict="measured_at").execute()
+    written = len(resp.data) if getattr(resp, "data", None) else 0
+    print(f"Upserted {written} rows into body_composition (of {len(rows)} sent).")
 
 
 if __name__ == "__main__":

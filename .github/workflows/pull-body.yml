@@ -27,5 +27,6 @@ jobs:
         env:
           RENPHO_EMAIL:     ${{ secrets.RENPHO_EMAIL }}
           RENPHO_PASSWORD:  ${{ secrets.RENPHO_PASSWORD }}
-          SUPABASE_DB_URL:  ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_URL:     ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY:     ${{ secrets.SUPABASE_KEY }}
         run: python health/body/renpho_pull.py

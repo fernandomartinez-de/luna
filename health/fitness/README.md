@@ -48,7 +48,7 @@ as the deficit deepens because recovery falls. Nutrition is out of scope.
 Data is **baked in at build time**, not fetched in the browser, so no database
 credential ever ships to the page.
 
-    template.html  ->  build_overload.py (reads Supabase via SUPABASE_DB_URL)  ->  index.html
+    template.html  ->  build_overload.py (reads Supabase REST with SUPABASE_URL + SUPABASE_KEY)  ->  index.html
 
 `build_overload.py` injects four JSON payloads into `template.html`:
 
@@ -71,8 +71,9 @@ refreshed `index.html`.
 
 ## Setup
 
-1. Confirm the repo secret `SUPABASE_DB_URL` exists (Settings > Secrets and
-   variables > Actions).
+1. Confirm the repo secrets `SUPABASE_URL` and `SUPABASE_KEY` exist (Settings
+   > Secrets and variables > Actions). Direct-Postgres `SUPABASE_DB_URL` is
+   no longer used because that host is IPv6-only and GitHub Actions is IPv4.
 2. GitHub Pages serves from branch `main`, path `/ (root)`, so the
    `health/fitness/` path resolves.
 3. Push. The Action refreshes `index.html` daily and on manual dispatch
@@ -81,7 +82,8 @@ refreshed `index.html`.
 
 ## Run locally
 
-    export SUPABASE_DB_URL="postgresql://...pooler.supabase.com:6543/postgres"
+    export SUPABASE_URL="https://<ref>.supabase.co"
+    export SUPABASE_KEY="<anon-or-service-role-key>"
     pip install -r health/fitness/requirements.txt
     python health/fitness/build_overload.py
 
