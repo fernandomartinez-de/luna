@@ -79,3 +79,5 @@ tmp/
 # Plaid secrets (never commit)
 finances/.env
 finances/.plaid_secrets.local
+
+vault/
