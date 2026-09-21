@@ -100,6 +100,37 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .chip{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;box-shadow:var(--shadow-sm);font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:14px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
 .chip[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 
+/* weekly calendar */
+.wkcal{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 12px 10px;box-shadow:var(--shadow-sm)}
+.wkcalh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+.wkcalh b{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:15px;letter-spacing:.06em;text-transform:uppercase}
+.wkcalh span{font-size:11px;color:var(--faint);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.wkgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.wkday{border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:6px 4px 5px;text-align:center;cursor:pointer;min-height:56px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;position:relative;overflow:hidden}
+.wkday.today{border-color:var(--accent)}
+.wkday.done{background:color-mix(in srgb,var(--good) 15%,var(--surface));border-color:color-mix(in srgb,var(--good) 40%,var(--line))}
+.wkday.missed{background:color-mix(in srgb,var(--lo) 12%,var(--surface));border-color:color-mix(in srgb,var(--lo) 40%,var(--line))}
+.wkday .dow{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.wkday.today .dow{color:var(--accent)}
+.wkday .lbl{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:10.5px;line-height:1.05;text-transform:uppercase;color:var(--ink);text-align:center;letter-spacing:.02em}
+.wkday.done .lbl{color:var(--good-ink)}
+.wkday.missed .lbl{color:var(--lo)}
+.wkday .mark{position:absolute;top:2px;right:4px;font-size:11px;color:var(--good-ink);font-weight:700}
+.wkday.missed .mark{color:var(--lo)}
+.wksum{margin-top:10px;font-size:12px;color:var(--muted)}
+.wksum b{color:var(--ink);font-weight:700}
+.wksum .warn{color:var(--lo);font-weight:700}
+.suggest{margin-top:10px;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:10px;padding:8px 10px;font-size:13px;color:var(--ink)}
+.suggest b{font-family:"Barlow Condensed",sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.02em;color:var(--accent);font-size:13.5px}
+.suggest.behind{background:color-mix(in srgb,var(--lo) 12%,var(--surface));border-color:color-mix(in srgb,var(--lo) 40%,var(--line))}
+.suggest.behind b{color:var(--lo)}
+
+/* exercise image strip */
+.imgstrip{display:flex;gap:8px;margin-top:10px}
+.imgstrip figure{flex:1;margin:0;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;overflow:hidden;display:flex;flex-direction:column}
+.imgstrip img{width:100%;height:100px;object-fit:contain;background:#fff;display:block}
+.imgstrip figcaption{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);text-align:center;padding:4px 0 5px;background:var(--surface-2)}
+
 .dayhead{padding:8px 0 4px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
 .dayhead h1{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:30px;line-height:.98;margin:0;text-transform:uppercase;letter-spacing:.005em}
 .dayhead .meta{color:var(--muted);font-size:13px;font-weight:500;margin-top:3px}
@@ -217,8 +248,8 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 (function(){
 "use strict";
 var PLAN = {"startDate":"2026-09-21","endDate":"2027-02-01","totalWeeks":19,"currentWeek":1,"weeksRemaining":19,"daysToTarget":133,"targetLabel":"Early February"};
-var BODY = {"series":[{"measured_at":"2026-04-20T23:36:53+00:00","weight_kg":65.3,"body_fat_pct":11.6,"muscle_mass_kg":37.3,"bmi":22.6},{"measured_at":"2026-04-20T23:37:17+00:00","weight_kg":65.3,"body_fat_pct":11.6,"muscle_mass_kg":37.3,"bmi":22.6},{"measured_at":"2026-05-02T17:31:15+00:00","weight_kg":70.2,"body_fat_pct":12.9,"muscle_mass_kg":39.5,"bmi":24.3},{"measured_at":"2026-05-12T11:31:38+00:00","weight_kg":67.5,"body_fat_pct":null,"muscle_mass_kg":null,"bmi":23.4},{"measured_at":"2026-08-08T01:00:41+00:00","weight_kg":65.1,"body_fat_pct":11.6,"muscle_mass_kg":37.2,"bmi":22.5},{"measured_at":"2026-08-13T23:55:41+00:00","weight_kg":69.2,"body_fat_pct":12.7,"muscle_mass_kg":39.0,"bmi":23.9},{"measured_at":"2026-09-09T14:30:42+00:00","weight_kg":69.3,"body_fat_pct":12.7,"muscle_mass_kg":39.1,"bmi":24.0}],"latest":{"measured_at":"2026-09-09T14:30:42+00:00","weight_kg":69.3,"body_fat_pct":12.7,"muscle_mass_kg":39.1,"bmi":24.0},"startWeight":65.3,"startBodyFat":11.6,"deltaWeight":4.0,"deltaBodyFat":1.1};
-var WORKOUTS = {"liftsThisWeek":0,"soccerThisWeek":0,"runsThisWeek":0,"recent":[{"day":"2026-09-19","sport":"Walking"},{"day":"2026-09-19","sport":"Walking"},{"day":"2026-09-19","sport":"Activity"},{"day":"2026-09-19","sport":"Activity"},{"day":"2026-09-19","sport":"Walking"},{"day":"2026-09-17","sport":"Walking"},{"day":"2026-09-17","sport":"Walking"},{"day":"2026-09-12","sport":"Walking"},{"day":"2026-09-12","sport":"Soccer"},{"day":"2026-09-12","sport":"Walking"},{"day":"2026-09-11","sport":"Golf"},{"day":"2026-09-09","sport":"Soccer"},{"day":"2026-09-08","sport":"Walking"},{"day":"2026-09-08","sport":"Walking"},{"day":"2026-09-07","sport":"Walking"},{"day":"2026-09-07","sport":"Walking"},{"day":"2026-09-07","sport":"Activity"},{"day":"2026-09-04","sport":"Golf"},{"day":"2026-09-04","sport":"Walking"},{"day":"2026-09-03","sport":"Walking"}]};
+var BODY = {"series":[],"latest":null,"startWeight":null,"startBodyFat":null,"deltaWeight":null,"deltaBodyFat":null};
+var WORKOUTS = {"liftsThisWeek":0,"soccerThisWeek":0,"runsThisWeek":0,"recent":[]};
 var STRENGTH = {"byExercise":{}};
 window.__DATA__={plan:PLAN,body:BODY,workouts:WORKOUTS,strength:STRENGTH};
 })();

@@ -49,6 +49,42 @@ var MESO = [
   {wk:19,block:4, blockName:"Taper",          phase:"sharpen", pri:{sets:2,reps:"4-5",rpe:"6-7"}, acc:{sets:1,reps:"8-10",rpe:"6"}}
 ];
 
+// Start/End frames per exercise, sourced from yuhonas/free-exercise-db (public
+// domain). Values are relative paths under IMG_BASE. Any exercise absent from
+// this map renders no image at all.
+var IMG_BASE = "https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/";
+var EX_IMGS = {
+  "Flat Barbell Bench Press":       ["Barbell_Bench_Press_-_Medium_Grip/0.jpg","Barbell_Bench_Press_-_Medium_Grip/1.jpg"],
+  "Incline DB Press":               ["Incline_Dumbbell_Press/0.jpg","Incline_Dumbbell_Press/1.jpg"],
+  "Close Grip Bench Press":         ["Close-Grip_Barbell_Bench_Press/0.jpg","Close-Grip_Barbell_Bench_Press/1.jpg"],
+  "Cable or Machine Fly":           ["Cable_Crossover/0.jpg","Cable_Crossover/1.jpg"],
+  "Overhead Rope Cable Extension":  ["Cable_Rope_Overhead_Triceps_Extension/0.jpg","Cable_Rope_Overhead_Triceps_Extension/1.jpg"],
+  "Cable Pushdown":                 ["Triceps_Pushdown_-_Rope_Attachment/0.jpg","Triceps_Pushdown_-_Rope_Attachment/1.jpg"],
+  "Weighted Pull-Up":               ["Weighted_Pull_Ups/0.jpg","Weighted_Pull_Ups/1.jpg"],
+  "Barbell Row (Pendlay)":          ["Bent_Over_Barbell_Row/0.jpg","Bent_Over_Barbell_Row/1.jpg"],
+  "Incline DB Curl":                ["Incline_Dumbbell_Curl/0.jpg","Incline_Dumbbell_Curl/1.jpg"],
+  "Lat Pulldown (neutral grip)":    ["Close-Grip_Front_Lat_Pulldown/0.jpg","Close-Grip_Front_Lat_Pulldown/1.jpg"],
+  "Cable Pullover":                 ["Straight-Arm_Dumbbell_Pullover/0.jpg","Straight-Arm_Dumbbell_Pullover/1.jpg"],
+  "Bayesian Cable Curl":            ["Standing_Biceps_Cable_Curl/0.jpg","Standing_Biceps_Cable_Curl/1.jpg"],
+  "Back Squat":                     ["Barbell_Squat/0.jpg","Barbell_Squat/1.jpg"],
+  "Romanian Deadlift":              ["Romanian_Deadlift/0.jpg","Romanian_Deadlift/1.jpg"],
+  "Bulgarian Split Squat":          ["Split_Squat_with_Dumbbells/0.jpg","Split_Squat_with_Dumbbells/1.jpg"],
+  "Leg Press (deep)":               ["Leg_Press/0.jpg","Leg_Press/1.jpg"],
+  "Seated Leg Curl":                ["Seated_Leg_Curl/0.jpg","Seated_Leg_Curl/1.jpg"],
+  "Leg Extension (paused)":         ["Leg_Extensions/0.jpg","Leg_Extensions/1.jpg"],
+  "Standing Calf Raise (deficit)":  ["Rocking_Standing_Calf_Raise/0.jpg","Rocking_Standing_Calf_Raise/1.jpg"],
+  "Power Clean":                    ["Clean/0.jpg","Clean/1.jpg"],
+  "Push Press":                     ["Push_Press/0.jpg","Push_Press/1.jpg"],
+  "Standing Overhead Press":        ["Standing_Military_Press/0.jpg","Standing_Military_Press/1.jpg"],
+  "Seated DB Shoulder Press":       ["Seated_Dumbbell_Press/0.jpg","Seated_Dumbbell_Press/1.jpg"],
+  "Leaning DB Lateral Raise":       ["Side_Lateral_Raise/0.jpg","Side_Lateral_Raise/1.jpg"],
+  "Rear Delt Cable Fly":            ["Cable_Rear_Delt_Fly/0.jpg","Cable_Rear_Delt_Fly/1.jpg"],
+  "Hanging Leg Raise":              ["Hanging_Leg_Raise/0.jpg","Hanging_Leg_Raise/1.jpg"],
+  "Cable Crunch":                   ["Cable_Crunch/0.jpg","Cable_Crunch/1.jpg"],
+  "Face Pull":                      ["Face_Pull/0.jpg","Face_Pull/1.jpg"],
+  "Band Pull-Apart":                ["Band_Pull_Apart/0.jpg","Band_Pull_Apart/1.jpg"]
+};
+
 // Category workouts. Primaries are free-weight compounds run heavy across the
 // cut for muscle-retention intent; accessories are machines/DBs at higher reps
 // covering complementary angles. Olympic lifts are prescribed for quality reps
@@ -120,7 +156,7 @@ var MORNINGS = {
 
 var CAT_ORDER = ["Chest & Tricep","Back & Bicep","Legs","Olympic & Shoulder"];
 
-window.__OVERLOAD_PART1__ = {PLAN:PLAN,BODY:BODY,WORKOUTS:WORKOUTS,STRENGTH:STRENGTH,CITE:CITE,MESO:MESO,CATEGORIES:CATEGORIES,MORNINGS:MORNINGS,CAT_ORDER:CAT_ORDER};
+window.__OVERLOAD_PART1__ = {PLAN:PLAN,BODY:BODY,WORKOUTS:WORKOUTS,STRENGTH:STRENGTH,CITE:CITE,MESO:MESO,CATEGORIES:CATEGORIES,MORNINGS:MORNINGS,CAT_ORDER:CAT_ORDER,IMG_BASE:IMG_BASE,EX_IMGS:EX_IMGS};
 })();
 
 (function(){
@@ -184,10 +220,65 @@ window.__OVERLOAD_RENDER__ = {esc:esc,n1:n1,n0:n0,sign:sign,citeChip:citeChip,me
 (function(){
 "use strict";
 var D=window.__OVERLOAD_PART1__, R=window.__OVERLOAD_RENDER__;
-var CATEGORIES=D.CATEGORIES, MORNINGS=D.MORNINGS, CAT_ORDER=D.CAT_ORDER;
-var esc=R.esc, citeChip=R.citeChip, meta=R.meta, phaseLabel=R.phaseLabel;
+var CATEGORIES=D.CATEGORIES, MORNINGS=D.MORNINGS, CAT_ORDER=D.CAT_ORDER, WORKOUTS=D.WORKOUTS;
+var IMG_BASE=D.IMG_BASE, EX_IMGS=D.EX_IMGS;
+var esc=R.esc, citeChip=R.citeChip, meta=R.meta, phaseLabel=R.phaseLabel, toast=R.toast;
 
-var SESSION_STATE = {cat: CAT_ORDER[0]};
+function imgStrip(exName){
+  var paths = EX_IMGS[exName];
+  if(!paths || !paths.length) return "";
+  var img0 = IMG_BASE + paths[0], img1 = IMG_BASE + paths[1] || "";
+  var hide = "this.parentNode && (this.parentNode.style.display='none');";
+  return '<div class="imgstrip">'
+       + '<figure><img src="'+esc(img0)+'" loading="lazy" alt="'+esc(exName)+' start" onerror="'+hide+'"><figcaption>Start</figcaption></figure>'
+       + '<figure><img src="'+esc(img1)+'" loading="lazy" alt="'+esc(exName)+' end"   onerror="'+hide+'"><figcaption>End</figcaption></figure>'
+       + '</div>';
+}
+
+var SESSION_STATE = {cat: null};
+
+// Day-option cycle order per tap. Includes the 4 categories + Soccer, Mornings, Rest.
+var DAY_OPTIONS = ["Chest & Tricep","Back & Bicep","Legs","Olympic & Shoulder","Flex/Make-up","Soccer","Mornings","Rest"];
+var DEFAULT_ASSIGN = { // Mon=0 through Sun=6 (Mon-first week per user spec)
+  0:"Chest & Tricep", 1:"Back & Bicep", 2:"Legs", 3:"Olympic & Shoulder",
+  4:"Flex/Make-up",   5:"Soccer",       6:"Rest"
+};
+var DAY_LABEL_SHORT = {
+  "Chest & Tricep":"Chest+Tri", "Back & Bicep":"Back+Bi", "Legs":"Legs",
+  "Olympic & Shoulder":"Oly+Sh", "Flex/Make-up":"Flex", "Soccer":"Soccer",
+  "Mornings":"Mornings", "Rest":"Rest"
+};
+var DOW_LABEL = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+function isoWeekKey(d){
+  // ISO week: Thursday of the same ISO week determines the year.
+  var t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  var dayNum = (t.getUTCDay() + 6) % 7;
+  t.setUTCDate(t.getUTCDate() - dayNum + 3);
+  var firstThu = new Date(Date.UTC(t.getUTCFullYear(), 0, 4));
+  var week = 1 + Math.round(((t - firstThu)/86400000 - 3 + ((firstThu.getUTCDay()+6)%7))/7);
+  return t.getUTCFullYear() + "-W" + String(week).padStart(2,"0");
+}
+function mondayOf(d){
+  var t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  var off = (t.getDay() + 6) % 7; // Sun=6, Mon=0
+  t.setDate(t.getDate() - off);
+  return t;
+}
+function loadWeek(key){
+  try {
+    var raw = localStorage.getItem("overload-week-" + key);
+    if(raw){ var v = JSON.parse(raw); if(v && v.assign && v.done) return v; }
+  } catch(_){}
+  return {assign: Object.assign({}, DEFAULT_ASSIGN), done: {}};
+}
+function saveWeek(key, state){
+  try { localStorage.setItem("overload-week-" + key, JSON.stringify(state)); } catch(_){}
+}
+function cycleDay(current){
+  var i = DAY_OPTIONS.indexOf(current);
+  return DAY_OPTIONS[(i<0?0:(i+1)) % DAY_OPTIONS.length];
+}
 
 function exBlock(ex, kind, spec, rank){
   var h='';
@@ -201,6 +292,7 @@ function exBlock(ex, kind, spec, rank){
   h+='    <div class="spec"><span>RPE</span>'+esc(String(spec.rpe))+'</div>';
   h+='    <div class="spec"><span>Rest</span>'+Math.round((ex.rest||90)/60*10)/10+' min</div>';
   h+='  </div>';
+  h+=imgStrip(ex.n);
   h+=citeChip(ex.cite);
   h+='</div>';
   return h;
@@ -230,16 +322,106 @@ function renderMorningsCard(){
     h+='<div class="spec"><span>Sets</span>'+esc(ex.sets)+'</div>';
     h+='<div class="spec"><span>Reps</span>'+esc(ex.reps)+'</div>';
     h+='<div class="spec"><span>RPE</span>'+esc(ex.rpe)+'</div>';
-    h+='</div>'+citeChip(ex.cite)+'</div>';
+    h+='</div>'+imgStrip(ex.n)+citeChip(ex.cite)+'</div>';
   });
   return h;
 }
 
+function computeSuggestion(week){
+  // Which categories are already done this week?
+  var doneCats = {};
+  Object.keys(week.assign).forEach(function(dowStr){
+    var a = week.assign[dowStr];
+    if(week.done[dowStr] && CAT_ORDER.indexOf(a) >= 0) doneCats[a] = true;
+  });
+  var remaining = CAT_ORDER.filter(function(c){ return !doneCats[c]; });
+  var today = new Date();
+  var todayDow = (today.getDay() + 6) % 7;
+  // Missed = past lift-category days that are not marked done.
+  var missed = [];
+  for(var i=0;i<todayDow;i++){
+    var a = week.assign[i];
+    if(CAT_ORDER.indexOf(a) >= 0 && !week.done[i] && !doneCats[a]){
+      missed.push({dow:i, cat:a});
+    }
+  }
+  // Remaining lift-eligible days: today onward whose assignment is not Rest/Soccer AND
+  // day is not already marked done.
+  var openLiftDaysLeft = 0;
+  for(var j=todayDow;j<=6;j++){
+    var aa = week.assign[j];
+    if(week.done[j]) continue;
+    if(aa === "Rest" || aa === "Soccer") continue;
+    openLiftDaysLeft++;
+  }
+  var behindBy = Math.max(0, remaining.length - openLiftDaysLeft);
+  return {
+    doneCats: doneCats,
+    remaining: remaining,
+    missed: missed,
+    openLiftDaysLeft: openLiftDaysLeft,
+    behindBy: behindBy,
+    next: remaining.length ? remaining[0] : null,
+    todayDow: todayDow
+  };
+}
+
+function renderCalendar(){
+  var now = new Date();
+  var mon = mondayOf(now);
+  var key = isoWeekKey(mon);
+  var week = loadWeek(key);
+  SESSION_STATE.weekKey = key;
+  SESSION_STATE.week = week;
+  var sug = computeSuggestion(week);
+  var todayDow = sug.todayDow;
+  var missedDows = {}; sug.missed.forEach(function(m){ missedDows[m.dow] = true; });
+
+  var h = '<div class="wkcal">';
+  h += '<div class="wkcalh"><b>This week · '+esc(key)+'</b><span>tap done · long-press to change</span></div>';
+  h += '<div class="wkgrid">';
+  for(var i=0;i<7;i++){
+    var d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+i);
+    var a = week.assign[i] || DEFAULT_ASSIGN[i];
+    var isDone = !!week.done[i];
+    var isToday = (i === todayDow);
+    var isMissed = missedDows[i];
+    var cls = "wkday";
+    if(isToday) cls += " today";
+    if(isDone) cls += " done";
+    else if(isMissed) cls += " missed";
+    h += '<button class="'+cls+'" data-day="'+i+'" data-date="'+d.toISOString().slice(0,10)+'" aria-label="Day '+DOW_LABEL[i]+' '+esc(a)+'">';
+    h += '  <span class="dow">'+DOW_LABEL[i]+'</span>';
+    h += '  <span class="lbl">'+esc(DAY_LABEL_SHORT[a]||a)+'</span>';
+    if(isDone) h += '<span class="mark">&#10003;</span>';
+    else if(isMissed) h += '<span class="mark">!</span>';
+    h += '</button>';
+  }
+  h += '</div>';
+  var doneCount = Object.keys(sug.doneCats).length;
+  var liftsWhoop = (WORKOUTS && WORKOUTS.liftsThisWeek) || 0;
+  h += '<div class="wksum">Done this week: <b>'+doneCount+' of 4 categories</b>. WHOOP shows <b>'+liftsWhoop+' lifts logged</b> (cross-check).';
+  if(sug.missed.length){
+    h += ' <span class="warn">Missed: '+esc(sug.missed.map(function(m){return DOW_LABEL[m.dow]+' '+m.cat;}).join(", "))+'.</span>';
+  }
+  h += '</div>';
+  if(sug.behindBy > 0 && sug.remaining.length){
+    h += '<div class="suggest behind"><b>Behind by '+sug.behindBy+':</b> double up on a day or prioritize <b>'+esc(sug.remaining.join(" &rarr; "))+'</b>.</div>';
+  } else if(sug.next){
+    h += '<div class="suggest"><b>Suggested today: '+esc(sug.next)+'</b>. Or pick any category below.</div>';
+  } else {
+    h += '<div class="suggest"><b>All 4 categories done this week.</b> Nice. Mornings and easy runs only.</div>';
+  }
+  h += '</div>';
+  return {html: h, suggestion: sug, week: week, weekKey: key};
+}
+
 function renderSession(){
   var w=D.PLAN.currentWeek||1, m=meta(w);
-  var cat = SESSION_STATE.cat || CAT_ORDER[0];
+  var cal = renderCalendar();
+  var cat = SESSION_STATE.cat || cal.suggestion.next || CAT_ORDER[0];
   var catData = CATEGORIES[cat];
-  var h='';
+  var h = cal.html;
   h+='<div class="filter">';
   CAT_ORDER.forEach(function(c){
     h+='<button class="chip" data-cat="'+esc(c)+'" aria-selected="'+(c===cat?"true":"false")+'">'+esc(c)+'</button>';
@@ -261,7 +443,25 @@ function renderSession(){
   return h;
 }
 
+function toggleDayDone(dow){
+  if(!SESSION_STATE.week) return;
+  var w = SESSION_STATE.week, k = SESSION_STATE.weekKey;
+  w.done[dow] = !w.done[dow];
+  saveWeek(k, w);
+}
+function cycleDayAssign(dow){
+  if(!SESSION_STATE.week) return;
+  var w = SESSION_STATE.week, k = SESSION_STATE.weekKey;
+  var current = w.assign[dow] || DEFAULT_ASSIGN[dow];
+  w.assign[dow] = cycleDay(current);
+  // Reset done when cycling assignment: a fresh option is not yet done.
+  w.done[dow] = false;
+  saveWeek(k, w);
+}
+
 window.__OVERLOAD_RENDER__.renderSession = renderSession;
+window.__OVERLOAD_RENDER__.toggleDayDone = toggleDayDone;
+window.__OVERLOAD_RENDER__.cycleDayAssign = cycleDayAssign;
 window.__OVERLOAD_STATE__ = SESSION_STATE;
 })();
 
@@ -392,10 +592,42 @@ function bindNav(){
   });
 }
 
+var LONG_PRESS_MS = 500;
+var _pressTimer = null, _pressFired = false, _pressDay = null;
+function clearPress(){ if(_pressTimer){ clearTimeout(_pressTimer); _pressTimer=null; } }
+
 function bindApp(){
   var app=document.getElementById("app");
   if(!app) return;
+
+  app.addEventListener("pointerdown", function(e){
+    var day = e.target.closest("[data-day]");
+    if(!day) return;
+    _pressDay = parseInt(day.getAttribute("data-day"),10);
+    _pressFired = false;
+    clearPress();
+    _pressTimer = setTimeout(function(){
+      _pressFired = true;
+      R.cycleDayAssign(_pressDay);
+      render();
+      R.toast("Day cycled");
+    }, LONG_PRESS_MS);
+  });
+  app.addEventListener("pointerup", function(e){
+    clearPress();
+  });
+  app.addEventListener("pointercancel", clearPress);
+  app.addEventListener("pointerleave", clearPress);
+
   app.addEventListener("click", function(e){
+    var day = e.target.closest("[data-day]");
+    if(day){
+      if(_pressFired){ _pressFired = false; return; } // long-press already handled
+      var dow = parseInt(day.getAttribute("data-day"),10);
+      R.toggleDayDone(dow);
+      render();
+      return;
+    }
     var chip = e.target.closest("[data-cat]");
     if(chip){
       S.cat = chip.getAttribute("data-cat");
