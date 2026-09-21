@@ -1,10 +1,17 @@
-# Overload · Cut to Abs
+# Overload · Cut to Abs (Training + Nutrition)
 
-Personal training advisor for a 19-week cut ending in early February. Opens on the
-phone, tells me the current mesocycle week, gives the full session for each of
-my four lifting categories with primaries and accessories, sets a plain
-"copy-into-WHOOP" list, and shows body-fat trend from the scale. WHOOP logs the
-workout; this only advises.
+Personal training + nutrition advisor for a 19-week cut ending in early
+February. Opens on the phone, top-level segmented control switches between
+two domains:
+
+- **Training** — mesocycle week, the four lifting categories with primaries
+  and accessories, "copy-into-WHOOP" block, body-fat trend from the scale.
+  WHOOP logs the workout; this only advises.
+- **Nutrition** — view-only Cronometer-style Today (calories in from food vs
+  out from WHOOP, deficit / surplus badge, macros vs target, meal-grouped
+  diary) and Trends (rolling deficit, protein-on-target, body-comp overlay).
+  Food is logged elsewhere (by chat) into `nutrition_log`; this page only
+  displays.
 
 Lives at `health/fitness/` inside `fernandomartinez-de/personal` and is served
 by GitHub Pages at:
@@ -50,12 +57,14 @@ credential ever ships to the page.
 
     template.html  ->  build_overload.py (reads Supabase REST with SUPABASE_URL + SUPABASE_KEY)  ->  index.html
 
-`build_overload.py` injects four JSON payloads into `template.html`:
+`build_overload.py` injects five JSON payloads into `template.html`:
 
-    __PLAN_DATA__      - mesocycle timeline + current week (computed from date)
-    __BODY_DATA__      - public.body_composition history (weight_kg, body_fat_pct, ...)
-    __WORKOUTS_DATA__  - whoop_workouts cadence counts (no strain surfaced)
-    __STRENGTH_DATA__  - last kg/reps per primary lift (strength_sessions/sets/exercises)
+    __PLAN_DATA__       - mesocycle timeline + current week (computed from date)
+    __BODY_DATA__       - public.body_composition history (weight_kg, body_fat_pct, ...)
+    __WORKOUTS_DATA__   - whoop_workouts cadence counts (no strain surfaced)
+    __STRENGTH_DATA__   - last kg/reps per primary lift (strength_sessions/sets/exercises)
+    __NUTRITION_DATA__  - nutrition_log grouped by day + meal, whoop_cycles calories out,
+                          protein target from body_composition weight
 
 The `Build Overload` GitHub Action runs it every morning and commits the
 refreshed `index.html`.

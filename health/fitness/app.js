@@ -5,6 +5,7 @@ var PLAN = (window.__DATA__ && window.__DATA__.plan) || {startDate:"",endDate:""
 var BODY = (window.__DATA__ && window.__DATA__.body) || {series:[],latest:null,startWeight:null,startBodyFat:null,deltaWeight:null,deltaBodyFat:null};
 var WORKOUTS = (window.__DATA__ && window.__DATA__.workouts) || {liftsThisWeek:0,soccerThisWeek:0,runsThisWeek:0,recent:[]};
 var STRENGTH = (window.__DATA__ && window.__DATA__.strength) || {byExercise:{}};
+var NUTRITION = (window.__DATA__ && window.__DATA__.nutrition) || {today:null,trends:null,generatedAt:null};
 
 var CITE = {
   "Schoenfeld2010":{t:"The mechanisms of muscle hypertrophy and their application to resistance training.",a:"Schoenfeld BJ.",j:"J Strength Cond Res 2010;24(10):2857-2872.",u:"https://pubmed.ncbi.nlm.nih.gov/20847704/"},
@@ -156,7 +157,7 @@ var MORNINGS = {
 
 var CAT_ORDER = ["Chest & Tricep","Back & Bicep","Legs","Olympic & Shoulder"];
 
-window.__OVERLOAD_PART1__ = {PLAN:PLAN,BODY:BODY,WORKOUTS:WORKOUTS,STRENGTH:STRENGTH,CITE:CITE,MESO:MESO,CATEGORIES:CATEGORIES,MORNINGS:MORNINGS,CAT_ORDER:CAT_ORDER,IMG_BASE:IMG_BASE,EX_IMGS:EX_IMGS};
+window.__OVERLOAD_PART1__ = {PLAN:PLAN,BODY:BODY,WORKOUTS:WORKOUTS,STRENGTH:STRENGTH,NUTRITION:NUTRITION,CITE:CITE,MESO:MESO,CATEGORIES:CATEGORIES,MORNINGS:MORNINGS,CAT_ORDER:CAT_ORDER,IMG_BASE:IMG_BASE,EX_IMGS:EX_IMGS};
 })();
 
 (function(){
@@ -557,40 +558,377 @@ window.__OVERLOAD_RENDER__.renderBlock = renderBlock;
 window.__OVERLOAD_RENDER__.renderMethod = renderMethod;
 })();
 
+// ---------- Nutrition domain ----------
+(function(){
+"use strict";
+var D=window.__OVERLOAD_PART1__, R=window.__OVERLOAD_RENDER__;
+var NUTRITION = D.NUTRITION || {today:null,trends:null,generatedAt:null};
+var esc=R.esc;
+
+var CHARTS = {};
+function destroyChart(k){ if(CHARTS[k]){ try{CHARTS[k].destroy();}catch(_){} CHARTS[k]=null; } }
+function destroyAllCharts(){ Object.keys(CHARTS).forEach(destroyChart); }
+
+function fmtInt(n){ if(n==null||isNaN(n))return "-"; return Math.round(n).toLocaleString("en-US"); }
+function fmtSigned(n){ if(n==null||isNaN(n))return "-"; var r=Math.round(n); return (r>=0?"+":"")+r.toLocaleString("en-US"); }
+function fmtG(n){ if(n==null||isNaN(n))return "0"; var v=Math.round(n*10)/10; return (v%1===0?v.toFixed(0):v.toFixed(1)); }
+function fmtDate(iso){ if(!iso)return "-"; var d=new Date(iso+"T00:00:00"); if(isNaN(d))return iso; return d.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}); }
+function fmtDateShort(iso){ if(!iso)return "-"; var d=new Date(iso+"T00:00:00"); if(isNaN(d))return iso; return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
+
+function renderNutritionToday(){
+  var T = NUTRITION.today || {};
+  if(!T.date || !T.meals || !T.meals.length){
+    return '<div class="sec-title">Today</div>' +
+           '<div class="emptybox"><b>No food logged yet.</b><br>Log meals by chat and the next build refreshes this page.</div>';
+  }
+  var hasOut = (T.caloriesOut||0) > 0;
+  var badgeCls, badgeTxt;
+  if(!hasOut){ badgeCls="flat"; badgeTxt = "No WHOOP burn yet for this day"; }
+  else if(T.isDeficit){ badgeCls="deficit"; badgeTxt = 'In a deficit · <span class="num">-'+fmtInt(T.deficit)+'</span> kcal'; }
+  else if(T.net===0){ badgeCls="flat"; badgeTxt="Balanced day"; }
+  else { badgeCls="surplus"; badgeTxt='Surplus · <span class="num">+'+fmtInt(T.deficit)+'</span> kcal'; }
+
+  var protein = T.protein_g || 0;
+  var target  = T.proteinTarget_g;
+  var proteinUnder = (target!=null) && (protein < target);
+  var proteinPctOfTarget = target ? Math.min(100, Math.round(protein/target*100)) : 0;
+
+  var h = '';
+  h += '<div class="sec-title">Today</div>';
+  h += '<div class="iohero">';
+  h +=   '<div class="ihd"><div class="verb">Fuel &amp; Burn</div><div class="whn">'+esc(fmtDate(T.date))+'</div></div>';
+  h +=   '<div class="iogrid">';
+  h +=     '<div class="iocell"><div class="iolab">In · Food</div><div class="ioval">'+fmtInt(T.caloriesIn)+'<em>kcal</em></div></div>';
+  h +=     '<div class="iosep">vs</div>';
+  h +=     '<div class="iocell right"><div class="iolab">Out · WHOOP</div><div class="ioval">'+fmtInt(T.caloriesOut)+'<em>kcal</em></div></div>';
+  h +=   '</div>';
+  h +=   '<div><span class="iobadge '+badgeCls+'">'+badgeTxt+'</span></div>';
+  h += '</div>';
+
+  h += '<div class="sec-title">Macros</div>';
+  h += '<div class="macros">';
+  var proteinCls = (target!=null) ? (proteinUnder ? "macro under-target" : "macro on-target") : "macro";
+  h += '<div class="'+proteinCls+'"><div class="mlab">Protein</div>' +
+       '<div class="mval">'+fmtG(protein)+'<em>g</em></div>' +
+       '<div class="mpct">'+(T.proteinPct||0)+'% of kcal</div>' +
+       '<div class="mbar"><i style="width:'+Math.min(100, T.proteinPct||0)+'%"></i></div>';
+  if(target!=null){
+    h += '<div class="mtgt">Target '+target+' g · ';
+    if(proteinUnder) h += '<b class="under">Under '+Math.max(0,target-Math.round(protein))+' g</b>';
+    else             h += '<b class="hit">Hit</b>';
+    h += ' · '+proteinPctOfTarget+'%</div>';
+  }
+  h += '</div>';
+  h += '<div class="macro"><div class="mlab">Carbs</div><div class="mval">'+fmtG(T.carbs_g)+'<em>g</em></div>' +
+       '<div class="mpct">'+(T.carbsPct||0)+'% of kcal</div>' +
+       '<div class="mbar"><i style="width:'+Math.min(100, T.carbsPct||0)+'%"></i></div></div>';
+  h += '<div class="macro"><div class="mlab">Fat</div><div class="mval">'+fmtG(T.fat_g)+'<em>g</em></div>' +
+       '<div class="mpct">'+(T.fatPct||0)+'% of kcal</div>' +
+       '<div class="mbar"><i style="width:'+Math.min(100, T.fatPct||0)+'%"></i></div></div>';
+  h += '<div class="macro"><div class="mlab">Fiber</div><div class="mval">'+fmtG(T.fiber_g)+'<em>g</em></div>' +
+       '<div class="mpct">daily total</div>' +
+       '<div class="mbar"><i style="width:'+Math.min(100, Math.round(((T.fiber_g||0)/38)*100))+'%"></i></div></div>';
+  h += '</div>';
+
+  h += '<div class="sec-title">Food diary</div>';
+  (T.meals||[]).forEach(function(m){
+    h += '<div class="meal">';
+    h +=   '<div class="mh"><b>'+esc(m.meal)+'</b><span><b>'+fmtInt(m.total.calories_kcal)+'</b> kcal · P '+fmtG(m.total.protein_g)+'g · C '+fmtG(m.total.carbs_g)+'g · F '+fmtG(m.total.fat_g)+'g</span></div>';
+    h +=   '<table><thead><tr><th>Item</th><th>Qty</th><th class="num">kcal</th><th class="num">P</th><th class="num">C</th><th class="num">F</th><th class="num">Fi</th></tr></thead><tbody>';
+    m.items.forEach(function(it){
+      h += '<tr><td class="item">'+esc(it.item)+'</td><td class="qty">'+esc(it.quantity)+'</td>' +
+           '<td class="num">'+fmtInt(it.calories_kcal)+'</td>' +
+           '<td class="num">'+fmtG(it.protein_g)+'</td>' +
+           '<td class="num">'+fmtG(it.carbs_g)+'</td>' +
+           '<td class="num">'+fmtG(it.fat_g)+'</td>' +
+           '<td class="num">'+fmtG(it.fiber_g)+'</td></tr>';
+    });
+    h +=   '</tbody></table>';
+    h += '</div>';
+  });
+
+  h += '<div class="daytot"><span class="lbl">Day total</span><span class="val"><b>'+fmtInt(T.caloriesIn)+'</b> kcal · P '+fmtG(T.protein_g)+'g · C '+fmtG(T.carbs_g)+'g · F '+fmtG(T.fat_g)+'g · Fi '+fmtG(T.fiber_g)+'g</span></div>';
+  h += '<p class="disc">View only. Food logged by chat. Metric units.</p>';
+  return h;
+}
+
+function renderNutritionTrends(){
+  var TR = NUTRITION.trends || {days:[],body:[]};
+  var days = TR.days || [];
+  var avgDef = TR.avgDailyDeficit || 0;
+  var avgProtein = TR.avgDailyProtein || 0;
+  var target = TR.proteinTargetG;
+  var onTarget = TR.daysOnTarget || 0;
+  var tracked = TR.daysTracked || 0;
+  var total = TR.daysTotal || days.length;
+
+  var defCls = avgDef < 0 ? "deficit" : (avgDef > 0 ? "surplus" : "");
+  var defTxt = avgDef < 0 ? "kcal deficit / day" : avgDef > 0 ? "kcal surplus / day" : "balanced";
+
+  var h = '';
+  h += '<div class="sec-title">Rolling '+total+' days</div>';
+  h += '<div class="kpis">';
+  h +=   '<div class="kpi"><div class="klab">Avg daily net</div><div class="kval '+defCls+'">'+fmtSigned(avgDef)+'<em>kcal</em></div><div class="ksub">'+esc(defTxt)+' · '+tracked+'/'+total+' tracked</div></div>';
+  h +=   '<div class="kpi"><div class="klab">Avg daily protein</div><div class="kval">'+fmtG(avgProtein)+'<em>g</em></div><div class="ksub">'+(target!=null?'target '+target+' g':'no target')+'</div></div>';
+  h +=   '<div class="kpi"><div class="klab">Days on target</div><div class="kval">'+onTarget+'<em>/ '+tracked+'</em></div><div class="ksub">since '+esc(days.length?fmtDateShort(days[0].date):'-')+'</div></div>';
+  h += '</div>';
+
+  if(!tracked){
+    h += '<div class="emptybox"><b>No nutrition log rows yet in the rolling window.</b><br>Charts will render once meals start logging.</div>';
+    return h;
+  }
+
+  h += '<div class="chartcard"><h3>Calories in vs out</h3><div class="cwrap"><canvas id="chart-cal"></canvas></div></div>';
+  h += '<div class="chartcard small"><h3>Daily protein · target overlay</h3><div class="cwrap"><canvas id="chart-protein"></canvas></div></div>';
+  h += '<div class="chartcard small"><h3>Body composition · weight and body fat</h3><div class="cwrap"><canvas id="chart-body"></canvas></div></div>';
+  h += '<p class="disc">Metric units. WHOOP burn from <code>whoop_cycles</code>; net = in − out.</p>';
+  return h;
+}
+
+function accentColor(){
+  var v = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+  return v || "#E4551C";
+}
+function inkColor(){
+  var v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+  return v || "#14171C";
+}
+function goodColor(){
+  var v = getComputedStyle(document.documentElement).getPropertyValue("--good").trim();
+  return v || "#12905A";
+}
+function mutedColor(){
+  var v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
+  return v || "#5B6371";
+}
+function faintColor(){
+  var v = getComputedStyle(document.documentElement).getPropertyValue("--faint").trim();
+  return v || "#8B93A1";
+}
+function lineColor(){
+  var v = getComputedStyle(document.documentElement).getPropertyValue("--line").trim();
+  return v || "#E4E7EC";
+}
+
+function commonChartOpts(){
+  var tickColor = mutedColor();
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {mode: "index", intersect: false},
+    plugins: {
+      legend: {labels: {color: mutedColor(), font: {size: 11, weight: "600", family: "Barlow, system-ui, sans-serif"}, boxWidth: 12}},
+      tooltip: {backgroundColor: inkColor(), titleColor: "#fff", bodyColor: "#fff", borderColor: lineColor(), borderWidth: 1}
+    },
+    scales: {
+      x: {ticks: {color: tickColor, font: {size: 10}}, grid: {color: lineColor()}},
+      y: {ticks: {color: tickColor, font: {size: 10}}, grid: {color: lineColor()}, beginAtZero: true}
+    }
+  };
+}
+
+function drawCharts(){
+  if(!window.Chart) { setTimeout(drawCharts, 60); return; }
+  var TR = NUTRITION.trends || {days:[],body:[]};
+  var days = TR.days || [];
+  if(!days.length || !(TR.daysTracked||0)) return;
+
+  var labels = days.map(function(d){ return fmtDateShort(d.date); });
+  var accent = accentColor(), good = goodColor(), muted = mutedColor();
+
+  var cal = document.getElementById("chart-cal");
+  if(cal){
+    destroyChart("cal");
+    CHARTS.cal = new Chart(cal, {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [
+          {label: "In · Food",   data: days.map(function(d){return d.caloriesIn||0;}),  backgroundColor: accent, borderRadius: 3, order: 2},
+          {label: "Out · WHOOP", data: days.map(function(d){return d.caloriesOut||0;}), backgroundColor: muted, borderRadius: 3, order: 2},
+          {label: "Net (in − out)", type: "line", data: days.map(function(d){return d.net||0;}),
+           borderColor: good, backgroundColor: "transparent", tension: 0.25, pointRadius: 2, borderWidth: 2, order: 1, yAxisID: "y2"}
+        ]
+      },
+      options: Object.assign(commonChartOpts(), {
+        scales: Object.assign(commonChartOpts().scales, {
+          y2: {position: "right", ticks: {color: good, font: {size: 10}}, grid: {display: false}}
+        })
+      })
+    });
+  }
+
+  var prot = document.getElementById("chart-protein");
+  if(prot){
+    destroyChart("protein");
+    var target = TR.proteinTargetG;
+    var ds = [{label:"Protein (g)", data: days.map(function(d){return d.protein_g||0;}), backgroundColor: accent, borderRadius: 3}];
+    if(target != null){
+      ds.push({label: "Target " + target + " g", type: "line", data: days.map(function(){return target;}), borderColor: good, borderDash:[6,4], borderWidth: 2, pointRadius: 0, fill: false});
+    }
+    CHARTS.protein = new Chart(prot, {type: "bar", data: {labels: labels, datasets: ds}, options: commonChartOpts()});
+  }
+
+  var bodyCv = document.getElementById("chart-body");
+  var body = TR.body || [];
+  if(bodyCv && body.length){
+    destroyChart("body");
+    var blabels = body.map(function(b){return fmtDateShort(b.measured_at);});
+    CHARTS.body = new Chart(bodyCv, {
+      type: "line",
+      data: {
+        labels: blabels,
+        datasets: [
+          {label: "Weight (kg)",  data: body.map(function(b){return b.weight_kg;}),    borderColor: muted,  backgroundColor:"transparent", tension:0.25, pointRadius:2, borderWidth:2, yAxisID:"y"},
+          {label: "Body Fat (%)", data: body.map(function(b){return b.body_fat_pct;}), borderColor: accent, backgroundColor:"transparent", tension:0.25, pointRadius:2, borderWidth:2, yAxisID:"y2"}
+        ]
+      },
+      options: Object.assign(commonChartOpts(), {
+        scales: Object.assign(commonChartOpts().scales, {
+          y:  {position: "left",  ticks:{color: muted,  font:{size:10}}, grid:{color:lineColor()}, beginAtZero:false},
+          y2: {position: "right", ticks:{color: accent, font:{size:10}}, grid:{display:false}}
+        })
+      })
+    });
+  } else if(bodyCv){
+    destroyChart("body");
+    bodyCv.parentNode.parentNode.innerHTML = '<h3>Body composition · weight and body fat</h3><div class="emptybox">No body-composition readings yet.</div>';
+  }
+}
+
+window.__OVERLOAD_RENDER__.renderNutritionToday  = renderNutritionToday;
+window.__OVERLOAD_RENDER__.renderNutritionTrends = renderNutritionTrends;
+window.__OVERLOAD_RENDER__.drawNutritionCharts   = drawCharts;
+window.__OVERLOAD_RENDER__.destroyNutritionCharts = destroyAllCharts;
+})();
+
 (function(){
 "use strict";
 var R=window.__OVERLOAD_RENDER__, S=window.__OVERLOAD_STATE__;
 
-var NAV_STATE = {page: "plan"};
+// Icons for the bottom nav buttons, kept inline so no extra font load.
+var ICON = {
+  plan:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>',
+  session:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 8 2-2 3 3-2 2z"/><path d="m6 11 7 7"/><path d="m16 6 3-3 2 2-3 3"/><path d="m18 14-4 4"/><path d="m14 10-4 4"/></svg>',
+  block:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>',
+  method:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>',
+  today:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 15h.01M12 15h.01M16 15h.01"/></svg>',
+  trends:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 4 4 5-7"/></svg>'
+};
 
-function render(){
-  var app=document.getElementById("app");
+var PAGES = {
+  training:  [{k:"plan",   label:"Plan"},   {k:"session", label:"Session"}, {k:"block", label:"Block"}, {k:"method", label:"Method"}],
+  nutrition: [{k:"today",  label:"Today"},  {k:"trends",  label:"Trends"}]
+};
+var DEFAULT_PAGE = {training: "plan", nutrition: "today"};
+
+var NAV_STATE = {domain: "training", page: "plan"};
+try {
+  var savedDom = localStorage.getItem("overload-domain");
+  if(savedDom === "training" || savedDom === "nutrition"){ NAV_STATE.domain = savedDom; }
+  var savedPage = localStorage.getItem("overload-page-" + NAV_STATE.domain);
+  if(savedPage && PAGES[NAV_STATE.domain].some(function(p){return p.k===savedPage;})){
+    NAV_STATE.page = savedPage;
+  } else {
+    NAV_STATE.page = DEFAULT_PAGE[NAV_STATE.domain];
+  }
+} catch(_){}
+
+function renderPageBody(){
+  var app = document.getElementById("app");
   if(!app) return;
-  var page=NAV_STATE.page;
+  var domain = NAV_STATE.domain, page = NAV_STATE.page;
   var html;
-  if(page==="plan") html = R.renderPlan();
-  else if(page==="session") html = R.renderSession();
-  else if(page==="block") html = R.renderBlock();
-  else if(page==="method") html = R.renderMethod();
-  else html = R.renderPlan();
+  if(domain === "training"){
+    if(page==="plan")         html = R.renderPlan();
+    else if(page==="session") html = R.renderSession();
+    else if(page==="block")   html = R.renderBlock();
+    else if(page==="method")  html = R.renderMethod();
+    else                      html = R.renderPlan();
+  } else {
+    // Charts must be torn down before we replace the DOM they live in.
+    if(R.destroyNutritionCharts) R.destroyNutritionCharts();
+    if(page==="trends") html = R.renderNutritionTrends();
+    else                html = R.renderNutritionToday();
+  }
   app.innerHTML = html;
-  document.getElementById("scroll").scrollTop = 0;
+  var scroll = document.getElementById("scroll"); if(scroll) scroll.scrollTop = 0;
+  if(domain === "nutrition" && page === "trends" && R.drawNutritionCharts){
+    // Give the DOM one tick so canvases exist before Chart.js reads sizes.
+    setTimeout(R.drawNutritionCharts, 0);
+  }
+}
+
+function renderNav(){
+  var nav = document.getElementById("nav");
+  if(!nav) return;
+  var pages = PAGES[NAV_STATE.domain] || PAGES.training;
+  var h = "";
+  pages.forEach(function(p){
+    var sel = (p.k === NAV_STATE.page) ? "true" : "false";
+    h += '<button data-nav="'+p.k+'" aria-selected="'+sel+'">'+ (ICON[p.k]||"") +'<span>'+p.label+'</span></button>';
+  });
+  nav.innerHTML = h;
+}
+
+function renderAll(){
+  renderNav();
+  renderPageBody();
+  var tag = document.getElementById("brandTag");
+  if(tag) tag.textContent = NAV_STATE.domain === "nutrition" ? "Fuel & Deficit" : "Cut to Abs";
+  var dom = document.getElementById("dom");
+  if(dom){
+    Array.prototype.forEach.call(dom.querySelectorAll("button"), function(b){
+      b.setAttribute("aria-selected", b.getAttribute("data-dom") === NAV_STATE.domain ? "true" : "false");
+    });
+  }
+}
+
+function setDomain(domain){
+  if(!PAGES[domain] || domain === NAV_STATE.domain) return;
+  NAV_STATE.domain = domain;
+  // Restore per-domain last page, or default.
+  var last = null;
+  try { last = localStorage.getItem("overload-page-" + domain); } catch(_){}
+  if(last && PAGES[domain].some(function(p){return p.k===last;})){
+    NAV_STATE.page = last;
+  } else {
+    NAV_STATE.page = DEFAULT_PAGE[domain];
+  }
+  try { localStorage.setItem("overload-domain", domain); } catch(_){}
+  renderAll();
+}
+
+function setPage(page){
+  var pages = PAGES[NAV_STATE.domain] || PAGES.training;
+  if(!pages.some(function(p){return p.k===page;})) return;
+  NAV_STATE.page = page;
+  try { localStorage.setItem("overload-page-" + NAV_STATE.domain, page); } catch(_){}
+  renderAll();
+}
+
+function bindDomain(){
+  var dom = document.getElementById("dom");
+  if(!dom) return;
+  dom.addEventListener("click", function(e){
+    var btn = e.target.closest("button[data-dom]");
+    if(!btn) return;
+    setDomain(btn.getAttribute("data-dom"));
+  });
 }
 
 function bindNav(){
-  var nav=document.getElementById("nav");
+  var nav = document.getElementById("nav");
   if(!nav) return;
   nav.addEventListener("click", function(e){
     var btn = e.target.closest("button[data-nav]");
     if(!btn) return;
-    var page = btn.getAttribute("data-nav");
-    NAV_STATE.page = page;
-    Array.prototype.forEach.call(nav.querySelectorAll("button"), function(b){
-      b.setAttribute("aria-selected", b===btn ? "true" : "false");
-    });
-    render();
+    setPage(btn.getAttribute("data-nav"));
   });
 }
+
+// Kept for internal callers that still invoke render() (e.g. calendar clicks).
+function render(){ renderPageBody(); }
 
 var LONG_PRESS_MS = 500;
 var _pressTimer = null, _pressFired = false, _pressDay = null;
@@ -665,10 +1003,11 @@ function bindTheme(){
   try{ var saved = localStorage.getItem("overload-theme"); if(saved) document.documentElement.setAttribute("data-theme", saved); }catch(_){}
 }
 
-document.addEventListener("DOMContentLoaded", function(){
-  bindNav(); bindApp(); bindTheme(); render();
-});
+function boot(){
+  bindDomain(); bindNav(); bindApp(); bindTheme(); renderAll();
+}
+document.addEventListener("DOMContentLoaded", boot);
 if(document.readyState==="interactive" || document.readyState==="complete"){
-  bindNav(); bindApp(); bindTheme(); render();
+  boot();
 }
 })();
