@@ -7,11 +7,16 @@ working.
 
 ## Status
 
-- Chase OAuth registration submitted to Plaid 2026-09-21, in review (est. 24h).
-  Go-live once Chase shows Enabled at
-  https://dashboard.plaid.com/activity/status/oauth-institutions
-- Phase 2 (planned): Fidelity retirement holdings via Plaid Investments product
-  into stocks_crypto_history.
+- Chase transactions: LIVE since 2026-09-21. Daily pull into expense_transactions,
+  first run reconciled clean (64 rows).
+
+## Investments
+
+Fidelity retirement (employer 401k) holdings pull via Plaid Investments into
+stocks_crypto_history (asset_type Retirement / Brokerage). Weekday workflow
+pull-investments.yml; one time auth finances/plaid_investments_link.py; secret
+PLAID_FIDELITY_ACCESS_TOKEN. Submitted to Plaid review 2026-09-21. The retirement
+card in finances.html is still hardcoded pending a wire-up to this table.
 
 ## Pieces
 

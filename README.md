@@ -17,6 +17,8 @@ personal/
 ├── finances/          Expense tracking with auto-categorization
 │   ├── plaid_link.py  → One time: connect Chase via Plaid (Hosted Link)
 │   ├── plaid_sync.py  → Daily: pull transactions into Supabase
+│   ├── plaid_investments_link.py  → One time: connect Fidelity (Investments)
+│   ├── plaid_investments_sync.py  → Daily: pull holdings into Supabase
 │   ├── START.bat      → Manual backfill / legacy dashboard launcher
 │   ├── finances.html  → Dashboard
 │   └── scripts/       → Processing scripts
@@ -104,6 +106,7 @@ Generates medical lab dashboards from Google Drive PDFs
 ## Automated (GitHub Actions)
 
 - `pull-finances.yml` - Chase via Plaid -> `expense_transactions`
+- `pull-investments.yml` - Fidelity holdings via Plaid -> `stocks_crypto_history` (weekdays)
 - `pull-body.yml` - Renpho body composition -> `body_composition`
 - `build-fitness.yml` - Rebuild the Overload dashboard from Supabase
 - `whoop-daily-sync.yml` - Whoop sync
