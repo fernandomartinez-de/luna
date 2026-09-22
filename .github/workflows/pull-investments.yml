@@ -1,0 +1,40 @@
+name: Pull Investments (Plaid)
+
+# Daily snapshot of Fidelity holdings via Plaid /investments/holdings/get into
+# Supabase stocks_crypto_history (asset_type Retirement / Brokerage). Weekdays
+# after the US close, since holdings only move on trading days.
+
+on:
+  schedule:
+    - cron: "0 22 * * 1-5"   # 22:00 UTC ~= 18:00 America/New_York (EDT)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pull-investments
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r finances/requirements.txt
+
+      - name: Sync investments -> Supabase
+        env:
+          PLAID_CLIENT_ID:             ${{ secrets.PLAID_CLIENT_ID }}
+          PLAID_SECRET:                ${{ secrets.PLAID_SECRET }}
+          PLAID_ENV:                   production
+          PLAID_FIDELITY_ACCESS_TOKEN: ${{ secrets.PLAID_FIDELITY_ACCESS_TOKEN }}
+          SUPABASE_URL:                ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY:                ${{ secrets.SUPABASE_KEY }}
+        run: python finances/plaid_investments_sync.py

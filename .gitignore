@@ -79,5 +79,6 @@ tmp/
 # Plaid secrets (never commit)
 finances/.env
 finances/.plaid_secrets.local
+finances/.plaid_investments_secrets.local
 
 vault/
