@@ -6,6 +6,7 @@ var BODY = (window.__DATA__ && window.__DATA__.body) || {series:[],latest:null,s
 var WORKOUTS = (window.__DATA__ && window.__DATA__.workouts) || {liftsThisWeek:0,soccerThisWeek:0,runsThisWeek:0,recent:[]};
 var STRENGTH = (window.__DATA__ && window.__DATA__.strength) || {byExercise:{}};
 var NUTRITION = (window.__DATA__ && window.__DATA__.nutrition) || {today:null,trends:null,generatedAt:null};
+var SUGGESTIONS = (window.__DATA__ && window.__DATA__.suggestions) || {meals:{}};
 
 var CITE = {
   "Schoenfeld2010":{t:"The mechanisms of muscle hypertrophy and their application to resistance training.",a:"Schoenfeld BJ.",j:"J Strength Cond Res 2010;24(10):2857-2872.",u:"https://pubmed.ncbi.nlm.nih.gov/20847704/"},
@@ -157,7 +158,7 @@ var MORNINGS = {
 
 var CAT_ORDER = ["Chest & Tricep","Back & Bicep","Legs","Olympic & Shoulder"];
 
-window.__OVERLOAD_PART1__ = {PLAN:PLAN,BODY:BODY,WORKOUTS:WORKOUTS,STRENGTH:STRENGTH,NUTRITION:NUTRITION,CITE:CITE,MESO:MESO,CATEGORIES:CATEGORIES,MORNINGS:MORNINGS,CAT_ORDER:CAT_ORDER,IMG_BASE:IMG_BASE,EX_IMGS:EX_IMGS};
+window.__OVERLOAD_PART1__ = {PLAN:PLAN,BODY:BODY,WORKOUTS:WORKOUTS,STRENGTH:STRENGTH,NUTRITION:NUTRITION,SUGGESTIONS:SUGGESTIONS,CITE:CITE,MESO:MESO,CATEGORIES:CATEGORIES,MORNINGS:MORNINGS,CAT_ORDER:CAT_ORDER,IMG_BASE:IMG_BASE,EX_IMGS:EX_IMGS};
 })();
 
 (function(){
@@ -563,6 +564,7 @@ window.__OVERLOAD_RENDER__.renderMethod = renderMethod;
 "use strict";
 var D=window.__OVERLOAD_PART1__, R=window.__OVERLOAD_RENDER__;
 var NUTRITION = D.NUTRITION || {today:null,trends:null,generatedAt:null};
+var SUGGESTIONS = D.SUGGESTIONS || {meals:{}};
 var esc=R.esc;
 
 var CHARTS = {};
@@ -796,8 +798,79 @@ function drawCharts(){
   }
 }
 
+function renderNutritionPlan(){
+  var S = SUGGESTIONS || {meals:{}};
+  var meals = S.meals || {};
+  var order = [
+    {k:"breakfast", label:"Breakfast"},
+    {k:"lunch",     label:"Lunch"},
+    {k:"dinner",    label:"Dinner"},
+    {k:"snack",     label:"Snacks"}
+  ];
+  var hasAny = order.some(function(o){ return (meals[o.k]||[]).length > 0; });
+
+  if(!S.date && !hasAny){
+    return '<div class="sec-title">Plan</div>' +
+           '<div class="emptybox"><b>No plan yet.</b><br>Seed <code>meal_templates</code> in Supabase and the next build will populate this page.</div>';
+  }
+
+  var loadTxt = S.load ? String(S.load).charAt(0).toUpperCase()+String(S.load).slice(1)+" load" : "";
+  var h = '';
+  h += '<div class="sec-title">Plan · '+esc(fmtDate(S.date||""))+'</div>';
+  h += '<div class="iohero">';
+  h +=   '<div class="ihd"><div class="verb">'+esc((S.day_type||"Training")+" day")+'</div>';
+  if(S.recovery != null){
+    h +=   '<div class="whn">Recovery '+S.recovery+'%</div>';
+  }
+  h +=   '</div>';
+  h +=   '<div class="load" style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">';
+  if(loadTxt) h += '<span class="pill">'+esc(loadTxt)+'</span>';
+  h +=     '<span class="pill">avg burn '+fmtInt(S.avg_burn||0)+' kcal</span>';
+  h +=   '</div>';
+  h += '</div>';
+
+  h += '<div class="kpis">';
+  h +=   '<div class="kpi"><div class="klab">Calories</div><div class="kval">'+fmtInt(S.calorie_target||0)+'<em>kcal</em></div><div class="ksub">target for the day</div></div>';
+  h +=   '<div class="kpi"><div class="klab">Protein</div><div class="kval">'+(S.protein_target_g||0)+'<em>g</em></div><div class="ksub">2.0 g/kg</div></div>';
+  h +=   '<div class="kpi"><div class="klab">Water</div><div class="kval">'+(S.water_l||0)+'<em>L</em></div><div class="ksub">daily target</div></div>';
+  h += '</div>';
+
+  order.forEach(function(o){
+    var opts = meals[o.k] || [];
+    h += '<div class="sec-title">'+o.label+'</div>';
+    if(!opts.length){
+      h += '<div class="emptybox">No suggestions yet.</div>';
+      return;
+    }
+    opts.forEach(function(op){
+      h += '<div class="excard">';
+      h +=   '<div class="exname">'+esc(op.name||"(unnamed)");
+      if(op.planned){
+        h += ' <span class="pill warm" style="font-size:10px;margin-left:6px;vertical-align:2px">Planned</span>';
+      }
+      h +=   '</div>';
+      if(op.items){
+        h += '<div class="exmech">'+esc(op.items)+'</div>';
+      }
+      if(!op.planned && op.calories != null){
+        h += '<div class="exspec">';
+        h +=   '<div class="spec"><span>kcal</span>'+fmtInt(op.calories)+'</div>';
+        h +=   '<div class="spec"><span>P</span>'+fmtG(op.protein_g)+'g</div>';
+        h +=   '<div class="spec"><span>C</span>'+fmtG(op.carbs_g)+'g</div>';
+        h +=   '<div class="spec"><span>F</span>'+fmtG(op.fat_g)+'g</div>';
+        h += '</div>';
+      }
+      h += '</div>';
+    });
+  });
+
+  h += '<p class="disc">Suggestions rotate daily from <code>meal_templates</code>. Pinned meals from <code>meal_plan</code> appear first. Baked at build time.</p>';
+  return h;
+}
+
 window.__OVERLOAD_RENDER__.renderNutritionToday  = renderNutritionToday;
 window.__OVERLOAD_RENDER__.renderNutritionTrends = renderNutritionTrends;
+window.__OVERLOAD_RENDER__.renderNutritionPlan   = renderNutritionPlan;
 window.__OVERLOAD_RENDER__.drawNutritionCharts   = drawCharts;
 window.__OVERLOAD_RENDER__.destroyNutritionCharts = destroyAllCharts;
 })();
@@ -813,12 +886,13 @@ var ICON = {
   block:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>',
   method:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>',
   today:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 15h.01M12 15h.01M16 15h.01"/></svg>',
-  trends:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 4 4 5-7"/></svg>'
+  trends:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 4 4 5-7"/></svg>',
+  mealplan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"/><rect x="5" y="5" width="14" height="17" rx="2"/><path d="M9 11h6M9 15h6M9 19h4"/></svg>'
 };
 
 var PAGES = {
   training:  [{k:"plan",   label:"Plan"},   {k:"session", label:"Session"}, {k:"block", label:"Block"}, {k:"method", label:"Method"}],
-  nutrition: [{k:"today",  label:"Today"},  {k:"trends",  label:"Trends"}]
+  nutrition: [{k:"today",  label:"Today"},  {k:"trends",  label:"Trends"},  {k:"mealplan", label:"Plan"}]
 };
 var DEFAULT_PAGE = {training: "plan", nutrition: "today"};
 
@@ -848,8 +922,9 @@ function renderPageBody(){
   } else {
     // Charts must be torn down before we replace the DOM they live in.
     if(R.destroyNutritionCharts) R.destroyNutritionCharts();
-    if(page==="trends") html = R.renderNutritionTrends();
-    else                html = R.renderNutritionToday();
+    if(page==="trends")        html = R.renderNutritionTrends();
+    else if(page==="mealplan") html = R.renderNutritionPlan();
+    else                       html = R.renderNutritionToday();
   }
   app.innerHTML = html;
   var scroll = document.getElementById("scroll"); if(scroll) scroll.scrollTop = 0;

@@ -311,12 +311,14 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 <script>
 (function(){
 "use strict";
-var PLAN      = __PLAN_DATA__;
-var BODY      = __BODY_DATA__;
-var WORKOUTS  = __WORKOUTS_DATA__;
-var STRENGTH  = __STRENGTH_DATA__;
-var NUTRITION = __NUTRITION_DATA__;
-window.__DATA__={plan:PLAN,body:BODY,workouts:WORKOUTS,strength:STRENGTH,nutrition:NUTRITION};
+var PLAN        = __PLAN_DATA__;
+var BODY        = __BODY_DATA__;
+var WORKOUTS    = __WORKOUTS_DATA__;
+var STRENGTH    = __STRENGTH_DATA__;
+var NUTRITION   = __NUTRITION_DATA__;
+var SUGGESTIONS = __SUGGESTIONS_DATA__;
+window.__DATA__={plan:PLAN,body:BODY,workouts:WORKOUTS,strength:STRENGTH,nutrition:NUTRITION,suggestions:SUGGESTIONS};
+window.__SUGGESTIONS_DATA__ = SUGGESTIONS;
 })();
 </script>
 <script src="./app.js" defer></script>

@@ -32,15 +32,18 @@ from pathlib import Path
 
 from supabase import create_client, Client
 
+from suggestions import build_suggestions
+
 SCRIPT_DIR = Path(__file__).parent.resolve()
 TEMPLATE = SCRIPT_DIR / "template.html"
 OUTPUT = SCRIPT_DIR / "index.html"
 
-TOKEN_PLAN      = "__PLAN_DATA__"
-TOKEN_BODY      = "__BODY_DATA__"
-TOKEN_WORKOUTS  = "__WORKOUTS_DATA__"
-TOKEN_STRENGTH  = "__STRENGTH_DATA__"
-TOKEN_NUTRITION = "__NUTRITION_DATA__"
+TOKEN_PLAN        = "__PLAN_DATA__"
+TOKEN_BODY        = "__BODY_DATA__"
+TOKEN_WORKOUTS    = "__WORKOUTS_DATA__"
+TOKEN_STRENGTH    = "__STRENGTH_DATA__"
+TOKEN_NUTRITION   = "__NUTRITION_DATA__"
+TOKEN_SUGGESTIONS = "__SUGGESTIONS_DATA__"
 
 # --- Nutrition constants ---
 MEAL_ORDER = ["Breakfast", "Lunch", "Dinner", "Snack", "Other"]
@@ -464,16 +467,17 @@ def build_nutrition_trends(daily_in, daily_out, body_rows, latest_weight_kg, day
     }
 
 
-def render(plan, body, workouts, strength, nutrition):
+def render(plan, body, workouts, strength, nutrition, suggestions):
     if not TEMPLATE.exists():
         sys.exit(f"ERROR: template not found: {TEMPLATE}")
     tpl = TEMPLATE.read_text(encoding="utf-8")
     tokens = {
-        TOKEN_PLAN:      plan,
-        TOKEN_BODY:      body,
-        TOKEN_WORKOUTS:  workouts,
-        TOKEN_STRENGTH:  strength,
-        TOKEN_NUTRITION: nutrition,
+        TOKEN_PLAN:        plan,
+        TOKEN_BODY:        body,
+        TOKEN_WORKOUTS:    workouts,
+        TOKEN_STRENGTH:    strength,
+        TOKEN_NUTRITION:   nutrition,
+        TOKEN_SUGGESTIONS: suggestions,
     }
     for token in tokens:
         if token not in tpl:
@@ -573,7 +577,13 @@ def main():
         "generatedAt": datetime.now(timezone.utc).isoformat(),
     }
 
-    out = render(plan, body, workouts, strength, nutrition)
+    try:
+        suggestions = build_suggestions()
+    except Exception as exc:
+        print(f"WARN: build_suggestions failed: {str(exc).strip()[:200]}", file=sys.stderr)
+        suggestions = {"meals": {}}
+
+    out = render(plan, body, workouts, strength, nutrition, suggestions)
     latest_bf = (body.get("latest") or {}).get("body_fat_pct") if body.get("latest") else None
     latest_wt = (body.get("latest") or {}).get("weight_kg") if body.get("latest") else None
     nt = nutrition["today"]
