@@ -8,6 +8,7 @@ var STRENGTH = (window.__DATA__ && window.__DATA__.strength) || {byExercise:{}};
 var NUTRITION = (window.__DATA__ && window.__DATA__.nutrition) || {today:null,trends:null,generatedAt:null};
 var SUGGESTIONS = (window.__DATA__ && window.__DATA__.suggestions) || {meals:{}};
 var TRAININGPLAN = (window.__DATA__ && window.__DATA__.trainingPlan) || [];
+var RUNNING = (window.__DATA__ && window.__DATA__.running) || {week:[],suggestion:null};
 
 var CITE = {
   "Schoenfeld2010":{t:"The mechanisms of muscle hypertrophy and their application to resistance training.",a:"Schoenfeld BJ.",j:"J Strength Cond Res 2010;24(10):2857-2872.",u:"https://pubmed.ncbi.nlm.nih.gov/20847704/"},
@@ -159,7 +160,7 @@ var MORNINGS = {
 
 var CAT_ORDER = ["Chest & Triceps","Back & Bicep","Legs","Shoulder & Olympic"];
 
-window.__OVERLOAD_PART1__ = {PLAN:PLAN,BODY:BODY,WORKOUTS:WORKOUTS,STRENGTH:STRENGTH,NUTRITION:NUTRITION,SUGGESTIONS:SUGGESTIONS,TRAININGPLAN:TRAININGPLAN,CITE:CITE,MESO:MESO,CATEGORIES:CATEGORIES,MORNINGS:MORNINGS,CAT_ORDER:CAT_ORDER,IMG_BASE:IMG_BASE,EX_IMGS:EX_IMGS};
+window.__OVERLOAD_PART1__ = {PLAN:PLAN,BODY:BODY,WORKOUTS:WORKOUTS,STRENGTH:STRENGTH,NUTRITION:NUTRITION,SUGGESTIONS:SUGGESTIONS,TRAININGPLAN:TRAININGPLAN,RUNNING:RUNNING,CITE:CITE,MESO:MESO,CATEGORIES:CATEGORIES,MORNINGS:MORNINGS,CAT_ORDER:CAT_ORDER,IMG_BASE:IMG_BASE,EX_IMGS:EX_IMGS};
 })();
 
 (function(){
@@ -228,6 +229,7 @@ var IMG_BASE=D.IMG_BASE, EX_IMGS=D.EX_IMGS;
 var esc=R.esc, citeChip=R.citeChip, meta=R.meta, phaseLabel=R.phaseLabel, toast=R.toast;
 
 var TRAININGPLAN = D.TRAININGPLAN || [];
+var RUNNING = D.RUNNING || {week:[],suggestion:null};
 var TRAINING_FN = "https://uuvsvtpfcexhqojlrsxy.supabase.co/functions/v1/training-update";
 var LOAD_BY_OPTION = {
   "Chest & Triceps":"moderate",
@@ -250,7 +252,7 @@ function imgStrip(exName){
        + '</div>';
 }
 
-var SESSION_STATE = {cat: null, editing: false, editAssign: null, pin: ""};
+var SESSION_STATE = {cat: null, editing: false, editAssign: null, pin: "", runEditing: false};
 
 // Day-option cycle order per tap. The 4 lift categories + Soccer, Rest, Flex.
 var DAY_OPTIONS = ["Chest & Triceps","Back & Bicep","Shoulder & Olympic","Legs","Soccer","Rest","Flex"];
@@ -479,7 +481,7 @@ function renderSession(){
   var cal = renderCalendar();
   var cat = SESSION_STATE.cat || cal.suggestion.next || CAT_ORDER[0];
   var catData = CATEGORIES[cat];
-  var h = cal.html;
+  var h = renderRunningStrip(cal.weekKey) + cal.html;
   h+='<div class="filter">';
   CAT_ORDER.forEach(function(c){
     h+='<button class="chip" data-cat="'+esc(c)+'" aria-selected="'+(c===cat?"true":"false")+'">'+esc(c)+'</button>';
@@ -560,12 +562,133 @@ function saveWeekPlan(pin){
   });
 }
 
-window.__OVERLOAD_RENDER__.renderSession = renderSession;
-window.__OVERLOAD_RENDER__.toggleDayDone = toggleDayDone;
-window.__OVERLOAD_RENDER__.beginEdit     = beginEdit;
-window.__OVERLOAD_RENDER__.cancelEdit    = cancelEdit;
-window.__OVERLOAD_RENDER__.cycleEditDay  = cycleEditDay;
-window.__OVERLOAD_RENDER__.saveWeekPlan  = saveWeekPlan;
+function _todayLocalISO(){
+  var d = new Date();
+  var yr = d.getFullYear();
+  var mo = String(d.getMonth()+1).padStart(2,"0");
+  var da = String(d.getDate()).padStart(2,"0");
+  return yr+"-"+mo+"-"+da;
+}
+function _fmtKm(v){
+  if(v == null || isNaN(v)) return "-";
+  var n = Math.round(v*10)/10;
+  return (n % 1 === 0 ? n.toFixed(1) : String(n)) + " km";
+}
+
+function renderRunningStrip(weekKey){
+  var week = (RUNNING && RUNNING.week) || [];
+  var sug = RUNNING && RUNNING.suggestion;
+  var editing = !!SESSION_STATE.runEditing;
+  var todayIso = _todayLocalISO();
+
+  if(!week.length && !sug){
+    return '<div class="wkcal"><div class="wkcalh"><b>Running · '+esc(weekKey||"")+'</b><span>no run data yet</span></div>' +
+           '<div class="wksum">No run data yet.</div></div>';
+  }
+
+  var savedPin = "";
+  try { savedPin = localStorage.getItem("overload-editor-pin") || ""; } catch(_){}
+
+  var h = '<div class="wkcal">';
+  h += '<div class="wkcalh"><b>Running · '+esc(weekKey||"")+'</b>';
+  h += '<span>'+(editing ? "type distances, save when done" : "km logged per day")+'</span>';
+  h += '</div>';
+
+  if(editing){
+    h += '<div class="exspec" style="align-items:center;gap:8px;margin:6px 0 10px">';
+    h +=   '<div class="spec" style="flex:1;min-width:0"><span>PIN</span>' +
+           '<input data-run-pin type="password" autocomplete="off" inputmode="numeric" value="'+esc(savedPin)+'" ' +
+           'style="border:0;background:transparent;color:var(--ink);font:inherit;font-weight:600;width:100%;padding:0;outline:none"></div>';
+    h +=   '<button class="chip" data-action="save-runs" type="button" ' +
+           'style="background:var(--ink);color:var(--bg);border-color:var(--ink)">Save</button>';
+    h +=   '<button class="chip" data-action="cancel-runs" type="button">Cancel</button>';
+    h += '</div>';
+  } else {
+    h += '<div style="display:flex;justify-content:flex-end;margin:6px 0 10px">';
+    h +=   '<button class="chip" data-action="edit-runs" type="button">Edit</button>';
+    h += '</div>';
+  }
+
+  h += '<div class="wkgrid">';
+  week.forEach(function(day){
+    var isToday = (day.date === todayIso);
+    var cls = "wkday" + (isToday ? " today" : "");
+    h += '<div class="'+cls+'" data-date="'+esc(day.date)+'">';
+    h +=   '<span class="dow">'+esc(day.dow)+'</span>';
+    if(editing){
+      var val = (day.distance_km == null) ? "" : String(day.distance_km);
+      h += '<input data-run-date="'+esc(day.date)+'" type="number" step="0.1" min="0" value="'+esc(val)+'" ' +
+           'style="width:100%;border:0;background:transparent;color:var(--ink);font:inherit;font-weight:700;font-size:11px;text-align:center;padding:0;outline:none">';
+    } else {
+      h += '<span class="lbl">'+esc(_fmtKm(day.distance_km))+'</span>';
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+
+  if(sug){
+    var bfTxt = (sug.body_fat_pct != null) ? ", "+sug.body_fat_pct+"% bf" : "";
+    var msg = "Run target: ~"+sug.target_km+" km to burn ~"+sug.target_kcal+" kcal (~"+
+              sug.kcal_per_km+" kcal/km at "+sug.weight_kg+" kg"+bfTxt+"). ~"+
+              sug.weekly_runs+" runs/week is ~"+sug.weekly_kcal+" kcal. " +
+              "Scales with weight, eases toward "+sug.goal_bf+"% body fat. " +
+              "Rough estimate, not medical advice.";
+    h += '<div class="suggest"><b>Run target</b> · '+esc(msg)+'</div>';
+  } else {
+    h += '<div class="wksum">No run data yet.</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function beginRunEdit(){ SESSION_STATE.runEditing = true; }
+function cancelRunEdit(){ SESSION_STATE.runEditing = false; }
+
+function saveRuns(pin){
+  var runs = [];
+  Array.prototype.forEach.call(document.querySelectorAll("[data-run-date]"), function(inp){
+    var d = inp.getAttribute("data-run-date");
+    var raw = String(inp.value||"").trim();
+    var dist;
+    if(raw === ""){
+      dist = null;
+    } else {
+      var num = Number(raw);
+      dist = (isFinite(num) && num > 0) ? num : null;
+    }
+    runs.push({date: d, distance_km: dist});
+  });
+  return fetch(TRAINING_FN, {
+    method: "POST",
+    headers: {"content-type": "application/json"},
+    body: JSON.stringify({pin: pin, runs: runs})
+  }).then(function(resp){
+    return resp.json().catch(function(){return {};}).then(function(body){
+      if(resp.status === 200 && body && body.ok){
+        var byDate = {};
+        runs.forEach(function(r){ byDate[r.date] = r.distance_km; });
+        (RUNNING.week || []).forEach(function(day){
+          if(Object.prototype.hasOwnProperty.call(byDate, day.date)){
+            day.distance_km = byDate[day.date];
+          }
+        });
+        SESSION_STATE.runEditing = false;
+      }
+      return {status: resp.status, body: body};
+    });
+  });
+}
+
+window.__OVERLOAD_RENDER__.renderSession      = renderSession;
+window.__OVERLOAD_RENDER__.renderRunningStrip = renderRunningStrip;
+window.__OVERLOAD_RENDER__.toggleDayDone      = toggleDayDone;
+window.__OVERLOAD_RENDER__.beginEdit          = beginEdit;
+window.__OVERLOAD_RENDER__.cancelEdit         = cancelEdit;
+window.__OVERLOAD_RENDER__.cycleEditDay       = cycleEditDay;
+window.__OVERLOAD_RENDER__.saveWeekPlan       = saveWeekPlan;
+window.__OVERLOAD_RENDER__.beginRunEdit       = beginRunEdit;
+window.__OVERLOAD_RENDER__.cancelRunEdit      = cancelRunEdit;
+window.__OVERLOAD_RENDER__.saveRuns           = saveRuns;
 window.__OVERLOAD_STATE__ = SESSION_STATE;
 })();
 
@@ -1133,6 +1256,41 @@ function bindApp(){
     if(cancelBtn){
       R.cancelEdit();
       render();
+      return;
+    }
+    var editRunsBtn = e.target.closest("[data-action=edit-runs]");
+    if(editRunsBtn){
+      R.beginRunEdit();
+      render();
+      return;
+    }
+    var cancelRunsBtn = e.target.closest("[data-action=cancel-runs]");
+    if(cancelRunsBtn){
+      R.cancelRunEdit();
+      render();
+      return;
+    }
+    var saveRunsBtn = e.target.closest("[data-action=save-runs]");
+    if(saveRunsBtn){
+      var runPinEl = document.querySelector("[data-run-pin]");
+      var runPin = runPinEl ? String(runPinEl.value||"").trim() : "";
+      if(!runPin){ R.toast("Enter your PIN"); return; }
+      try { localStorage.setItem("overload-editor-pin", runPin); } catch(_){}
+      saveRunsBtn.disabled = true;
+      R.saveRuns(runPin).then(function(res){
+        saveRunsBtn.disabled = false;
+        if(res.status === 200 && res.body && res.body.ok){
+          R.toast("Runs saved.");
+          render();
+        } else if(res.status === 401){
+          R.toast("Wrong PIN");
+        } else {
+          R.toast((res.body && res.body.error) || "Save failed");
+        }
+      }).catch(function(){
+        saveRunsBtn.disabled = false;
+        R.toast("Network error");
+      });
       return;
     }
     var saveBtn = e.target.closest("[data-action=save-week]");

@@ -45,6 +45,7 @@ TOKEN_STRENGTH      = "__STRENGTH_DATA__"
 TOKEN_NUTRITION     = "__NUTRITION_DATA__"
 TOKEN_SUGGESTIONS   = "__SUGGESTIONS_DATA__"
 TOKEN_TRAININGPLAN  = "__TRAININGPLAN_DATA__"
+TOKEN_RUNNING       = "__RUNNING_DATA__"
 
 DOW_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
@@ -470,7 +471,72 @@ def build_nutrition_trends(daily_in, daily_out, body_rows, latest_weight_kg, day
     }
 
 
-def render(plan, body, workouts, strength, nutrition, suggestions, training_plan):
+def build_running(sb, today, body):
+    monday = today - timedelta(days=today.weekday())
+    dates = [monday + timedelta(days=i) for i in range(7)]
+    dow_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+    rows = rest_query(sb, "running_log", lambda s:
+        s.table("running_log").select("run_date,distance_km")
+         .gte("run_date", dates[0].isoformat())
+         .lte("run_date", dates[6].isoformat())
+         .execute()
+    )
+    by_date = {}
+    for r in rows:
+        d = parse_day(r.get("run_date"))
+        if d and r.get("distance_km") is not None:
+            try:
+                by_date[d.isoformat()] = float(r["distance_km"])
+            except (TypeError, ValueError):
+                pass
+
+    week = []
+    for i, d in enumerate(dates):
+        iso = d.isoformat()
+        week.append({
+            "date":        iso,
+            "dow":         dow_labels[i],
+            "distance_km": by_date.get(iso),
+        })
+
+    latest = body.get("latest") if body else None
+    latest_weight_kg = None
+    latest_bf = None
+    if latest:
+        if latest.get("weight_kg") is not None:
+            latest_weight_kg = latest["weight_kg"]
+        if latest.get("body_fat_pct") is not None:
+            latest_bf = latest["body_fat_pct"]
+
+    w = float(latest_weight_kg or 70)
+    kcal_per_km = round(w * 1.036)
+    bf = float(latest_bf) if latest_bf is not None else None
+    goal_bf = 10.0
+    if bf is None:
+        target_kcal = 350
+    elif bf <= goal_bf:
+        target_kcal = 250
+    else:
+        target_kcal = int(min(500, 300 + (bf - goal_bf) * 25))
+    target_km = round(target_kcal / max(1, kcal_per_km), 1)
+
+    return {
+        "week": week,
+        "suggestion": {
+            "weight_kg":    round(w, 1),
+            "body_fat_pct": round(bf, 1) if bf is not None else None,
+            "kcal_per_km":  kcal_per_km,
+            "target_kcal":  target_kcal,
+            "target_km":    target_km,
+            "goal_bf":      10,
+            "weekly_runs":  3,
+            "weekly_kcal":  target_kcal * 3,
+        },
+    }
+
+
+def render(plan, body, workouts, strength, nutrition, suggestions, training_plan, running):
     if not TEMPLATE.exists():
         sys.exit(f"ERROR: template not found: {TEMPLATE}")
     tpl = TEMPLATE.read_text(encoding="utf-8")
@@ -482,6 +548,7 @@ def render(plan, body, workouts, strength, nutrition, suggestions, training_plan
         TOKEN_NUTRITION:    nutrition,
         TOKEN_SUGGESTIONS:  suggestions,
         TOKEN_TRAININGPLAN: training_plan,
+        TOKEN_RUNNING:      running,
     }
     for token in tokens:
         if token not in tpl:
@@ -601,7 +668,9 @@ def main():
             }
     training_plan = [by_dow.get(d, {"dow": d, "training_type": "Rest", "load": "rest"}) for d in DOW_ORDER]
 
-    out = render(plan, body, workouts, strength, nutrition, suggestions, training_plan)
+    running = build_running(sb, today, body)
+
+    out = render(plan, body, workouts, strength, nutrition, suggestions, training_plan, running)
     latest_bf = (body.get("latest") or {}).get("body_fat_pct") if body.get("latest") else None
     latest_wt = (body.get("latest") or {}).get("weight_kg") if body.get("latest") else None
     nt = nutrition["today"]
