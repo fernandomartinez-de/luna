@@ -7,6 +7,7 @@ var WORKOUTS = (window.__DATA__ && window.__DATA__.workouts) || {liftsThisWeek:0
 var STRENGTH = (window.__DATA__ && window.__DATA__.strength) || {byExercise:{}};
 var NUTRITION = (window.__DATA__ && window.__DATA__.nutrition) || {today:null,trends:null,generatedAt:null};
 var SUGGESTIONS = (window.__DATA__ && window.__DATA__.suggestions) || {meals:{}};
+var TRAININGPLAN = (window.__DATA__ && window.__DATA__.trainingPlan) || [];
 
 var CITE = {
   "Schoenfeld2010":{t:"The mechanisms of muscle hypertrophy and their application to resistance training.",a:"Schoenfeld BJ.",j:"J Strength Cond Res 2010;24(10):2857-2872.",u:"https://pubmed.ncbi.nlm.nih.gov/20847704/"},
@@ -158,7 +159,7 @@ var MORNINGS = {
 
 var CAT_ORDER = ["Chest & Tricep","Back & Bicep","Legs","Olympic & Shoulder"];
 
-window.__OVERLOAD_PART1__ = {PLAN:PLAN,BODY:BODY,WORKOUTS:WORKOUTS,STRENGTH:STRENGTH,NUTRITION:NUTRITION,SUGGESTIONS:SUGGESTIONS,CITE:CITE,MESO:MESO,CATEGORIES:CATEGORIES,MORNINGS:MORNINGS,CAT_ORDER:CAT_ORDER,IMG_BASE:IMG_BASE,EX_IMGS:EX_IMGS};
+window.__OVERLOAD_PART1__ = {PLAN:PLAN,BODY:BODY,WORKOUTS:WORKOUTS,STRENGTH:STRENGTH,NUTRITION:NUTRITION,SUGGESTIONS:SUGGESTIONS,TRAININGPLAN:TRAININGPLAN,CITE:CITE,MESO:MESO,CATEGORIES:CATEGORIES,MORNINGS:MORNINGS,CAT_ORDER:CAT_ORDER,IMG_BASE:IMG_BASE,EX_IMGS:EX_IMGS};
 })();
 
 (function(){
@@ -565,6 +566,8 @@ window.__OVERLOAD_RENDER__.renderMethod = renderMethod;
 var D=window.__OVERLOAD_PART1__, R=window.__OVERLOAD_RENDER__;
 var NUTRITION = D.NUTRITION || {today:null,trends:null,generatedAt:null};
 var SUGGESTIONS = D.SUGGESTIONS || {meals:{}};
+var TRAININGPLAN = D.TRAININGPLAN || [];
+var TRAINING_FN = "https://uuvsvtpfcexhqojlrsxy.supabase.co/functions/v1/training-update";
 var esc=R.esc;
 
 var CHARTS = {};
@@ -868,9 +871,86 @@ function renderNutritionPlan(){
   return h;
 }
 
-window.__OVERLOAD_RENDER__.renderNutritionToday  = renderNutritionToday;
-window.__OVERLOAD_RENDER__.renderNutritionTrends = renderNutritionTrends;
-window.__OVERLOAD_RENDER__.renderNutritionPlan   = renderNutritionPlan;
+var DOW_ORDER = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+var LOAD_OPTIONS = ["rest","low","moderate","high"];
+
+function renderNutritionWeekEditor(){
+  var byDow = {};
+  (TRAININGPLAN||[]).forEach(function(r){ if(r && r.dow) byDow[r.dow] = r; });
+  var savedPin = "";
+  try { savedPin = localStorage.getItem("overload-editor-pin") || ""; } catch(_){}
+
+  var h = '';
+  h += '<div class="sec-title">Edit week</div>';
+  h += '<div class="note"><b>Changes apply at the next 7 AM build.</b> Today\'s meals are already set.</div>';
+
+  DOW_ORDER.forEach(function(dow){
+    var row = byDow[dow] || {training_type:"Rest", load:"rest"};
+    var t = row.training_type || "Rest";
+    var l = (row.load || "rest").toLowerCase();
+    h += '<div class="excard" data-wk-dow="'+esc(dow)+'">';
+    h +=   '<div class="exname">'+esc(dow)+'</div>';
+    h +=   '<div class="exspec" style="align-items:center">';
+    h +=     '<div class="spec" style="flex:1;min-width:0"><span>Type</span>' +
+             '<input data-wk-type type="text" maxlength="60" value="'+esc(t)+'" ' +
+             'style="border:0;background:transparent;color:var(--ink);font:inherit;font-weight:600;width:100%;padding:0;outline:none"></div>';
+    h +=     '<div class="spec"><span>Load</span><select data-wk-load ' +
+             'style="border:0;background:transparent;color:var(--ink);font:inherit;font-weight:600;padding:0;outline:none">';
+    LOAD_OPTIONS.forEach(function(opt){
+      h +=       '<option value="'+opt+'"'+(opt===l?' selected':'')+'>'+opt+'</option>';
+    });
+    h +=     '</select></div>';
+    h +=     '<button class="chip" data-action="wk-rest" type="button" style="padding:6px 10px;font-size:12px">Rest</button>';
+    h +=   '</div>';
+    h += '</div>';
+  });
+
+  h += '<div class="excard" style="margin-top:14px">';
+  h +=   '<div class="exname">Save</div>';
+  h +=   '<div class="exmech">PIN is stored on this device only.</div>';
+  h +=   '<div class="exspec" style="align-items:center">';
+  h +=     '<div class="spec" style="flex:1"><span>PIN</span>' +
+           '<input data-wk-pin type="password" autocomplete="off" inputmode="numeric" value="'+esc(savedPin)+'" ' +
+           'style="border:0;background:transparent;color:var(--ink);font:inherit;font-weight:600;width:100%;padding:0;outline:none"></div>';
+  h +=     '<button class="chip" data-action="save-week" type="button" ' +
+           'style="background:var(--ink);color:var(--bg);border-color:var(--ink)">Save week</button>';
+  h +=   '</div>';
+  h += '</div>';
+
+  h += '<p class="disc">Writes go through a PIN-gated Supabase Edge Function. No Supabase key is in this page.</p>';
+  return h;
+}
+
+function saveWeek(pin, updates){
+  return fetch(TRAINING_FN, {
+    method: "POST",
+    headers: {"content-type": "application/json"},
+    body: JSON.stringify({pin: pin, updates: updates})
+  }).then(function(resp){
+    return resp.json().catch(function(){return {};}).then(function(body){
+      if(resp.status === 200 && body && body.ok){
+        // Mirror the save into in-memory TRAININGPLAN so the editor stays coherent
+        // until the next build refreshes the baked data.
+        var byDow = {};
+        (TRAININGPLAN||[]).forEach(function(r){ if(r && r.dow) byDow[r.dow] = r; });
+        (updates||[]).forEach(function(u){
+          byDow[u.dow] = {dow:u.dow, training_type:u.training_type, load:u.load};
+        });
+        TRAININGPLAN = DOW_ORDER.map(function(d){
+          return byDow[d] || {dow:d, training_type:"Rest", load:"rest"};
+        });
+        D.TRAININGPLAN = TRAININGPLAN;
+      }
+      return {status: resp.status, body: body};
+    });
+  });
+}
+
+window.__OVERLOAD_RENDER__.renderNutritionToday      = renderNutritionToday;
+window.__OVERLOAD_RENDER__.renderNutritionTrends     = renderNutritionTrends;
+window.__OVERLOAD_RENDER__.renderNutritionPlan       = renderNutritionPlan;
+window.__OVERLOAD_RENDER__.renderNutritionWeekEditor = renderNutritionWeekEditor;
+window.__OVERLOAD_RENDER__.saveWeek                  = saveWeek;
 window.__OVERLOAD_RENDER__.drawNutritionCharts   = drawCharts;
 window.__OVERLOAD_RENDER__.destroyNutritionCharts = destroyAllCharts;
 })();
@@ -887,12 +967,13 @@ var ICON = {
   method:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>',
   today:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 15h.01M12 15h.01M16 15h.01"/></svg>',
   trends:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 4 4 5-7"/></svg>',
-  mealplan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"/><rect x="5" y="5" width="14" height="17" rx="2"/><path d="M9 11h6M9 15h6M9 19h4"/></svg>'
+  mealplan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"/><rect x="5" y="5" width="14" height="17" rx="2"/><path d="M9 11h6M9 15h6M9 19h4"/></svg>',
+  weekedit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>'
 };
 
 var PAGES = {
   training:  [{k:"plan",   label:"Plan"},   {k:"session", label:"Session"}, {k:"block", label:"Block"}, {k:"method", label:"Method"}],
-  nutrition: [{k:"today",  label:"Today"},  {k:"trends",  label:"Trends"},  {k:"mealplan", label:"Plan"}]
+  nutrition: [{k:"today",  label:"Today"},  {k:"trends",  label:"Trends"},  {k:"mealplan", label:"Plan"}, {k:"weekedit", label:"Edit"}]
 };
 var DEFAULT_PAGE = {training: "plan", nutrition: "today"};
 
@@ -924,6 +1005,7 @@ function renderPageBody(){
     if(R.destroyNutritionCharts) R.destroyNutritionCharts();
     if(page==="trends")        html = R.renderNutritionTrends();
     else if(page==="mealplan") html = R.renderNutritionPlan();
+    else if(page==="weekedit") html = R.renderNutritionWeekEditor();
     else                       html = R.renderNutritionToday();
   }
   app.innerHTML = html;
@@ -1060,6 +1142,48 @@ function bindApp(){
           document.body.removeChild(ta);
         }
       }
+      return;
+    }
+    var wkRestBtn = e.target.closest("[data-action=wk-rest]");
+    if(wkRestBtn){
+      var wkRow = wkRestBtn.closest("[data-wk-dow]");
+      if(wkRow){
+        var t = wkRow.querySelector("[data-wk-type]");
+        var l = wkRow.querySelector("[data-wk-load]");
+        if(t) t.value = "Rest";
+        if(l) l.value = "rest";
+      }
+      return;
+    }
+    var saveBtn = e.target.closest("[data-action=save-week]");
+    if(saveBtn){
+      var pinEl = document.querySelector("[data-wk-pin]");
+      var pin = pinEl ? String(pinEl.value||"").trim() : "";
+      if(!pin){ R.toast("Enter your PIN"); return; }
+      try { localStorage.setItem("overload-editor-pin", pin); } catch(_){}
+      var updates = [];
+      Array.prototype.forEach.call(document.querySelectorAll("[data-wk-dow]"), function(row){
+        var dow = row.getAttribute("data-wk-dow");
+        var typeEl = row.querySelector("[data-wk-type]");
+        var loadEl = row.querySelector("[data-wk-load]");
+        var typeVal = typeEl ? String(typeEl.value||"").trim() : "";
+        var loadVal = loadEl ? String(loadEl.value||"rest").trim() : "rest";
+        updates.push({dow: dow, training_type: typeVal || "Rest", load: loadVal});
+      });
+      saveBtn.disabled = true;
+      R.saveWeek(pin, updates).then(function(res){
+        saveBtn.disabled = false;
+        if(res.status === 200 && res.body && res.body.ok){
+          R.toast("Week saved. Applies at the next 7 AM build.");
+        } else if(res.status === 401){
+          R.toast("Wrong PIN");
+        } else {
+          R.toast((res.body && res.body.error) || "Save failed");
+        }
+      }).catch(function(){
+        saveBtn.disabled = false;
+        R.toast("Network error");
+      });
       return;
     }
   });

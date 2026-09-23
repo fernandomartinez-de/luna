@@ -38,12 +38,15 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 TEMPLATE = SCRIPT_DIR / "template.html"
 OUTPUT = SCRIPT_DIR / "index.html"
 
-TOKEN_PLAN        = "__PLAN_DATA__"
-TOKEN_BODY        = "__BODY_DATA__"
-TOKEN_WORKOUTS    = "__WORKOUTS_DATA__"
-TOKEN_STRENGTH    = "__STRENGTH_DATA__"
-TOKEN_NUTRITION   = "__NUTRITION_DATA__"
-TOKEN_SUGGESTIONS = "__SUGGESTIONS_DATA__"
+TOKEN_PLAN          = "__PLAN_DATA__"
+TOKEN_BODY          = "__BODY_DATA__"
+TOKEN_WORKOUTS      = "__WORKOUTS_DATA__"
+TOKEN_STRENGTH      = "__STRENGTH_DATA__"
+TOKEN_NUTRITION     = "__NUTRITION_DATA__"
+TOKEN_SUGGESTIONS   = "__SUGGESTIONS_DATA__"
+TOKEN_TRAININGPLAN  = "__TRAININGPLAN_DATA__"
+
+DOW_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 # --- Nutrition constants ---
 MEAL_ORDER = ["Breakfast", "Lunch", "Dinner", "Snack", "Other"]
@@ -467,17 +470,18 @@ def build_nutrition_trends(daily_in, daily_out, body_rows, latest_weight_kg, day
     }
 
 
-def render(plan, body, workouts, strength, nutrition, suggestions):
+def render(plan, body, workouts, strength, nutrition, suggestions, training_plan):
     if not TEMPLATE.exists():
         sys.exit(f"ERROR: template not found: {TEMPLATE}")
     tpl = TEMPLATE.read_text(encoding="utf-8")
     tokens = {
-        TOKEN_PLAN:        plan,
-        TOKEN_BODY:        body,
-        TOKEN_WORKOUTS:    workouts,
-        TOKEN_STRENGTH:    strength,
-        TOKEN_NUTRITION:   nutrition,
-        TOKEN_SUGGESTIONS: suggestions,
+        TOKEN_PLAN:         plan,
+        TOKEN_BODY:         body,
+        TOKEN_WORKOUTS:     workouts,
+        TOKEN_STRENGTH:     strength,
+        TOKEN_NUTRITION:    nutrition,
+        TOKEN_SUGGESTIONS:  suggestions,
+        TOKEN_TRAININGPLAN: training_plan,
     }
     for token in tokens:
         if token not in tpl:
@@ -583,7 +587,21 @@ def main():
         print(f"WARN: build_suggestions failed: {str(exc).strip()[:200]}", file=sys.stderr)
         suggestions = {"meals": {}}
 
-    out = render(plan, body, workouts, strength, nutrition, suggestions)
+    training_plan_rows = rest_query(sb, "training_plan", lambda s:
+        s.table("training_plan").select("dow,training_type,load").execute()
+    )
+    by_dow = {}
+    for row in training_plan_rows:
+        d = (row.get("dow") or "").strip()
+        if d in DOW_ORDER:
+            by_dow[d] = {
+                "dow":           d,
+                "training_type": row.get("training_type") or "Rest",
+                "load":          (row.get("load") or "rest"),
+            }
+    training_plan = [by_dow.get(d, {"dow": d, "training_type": "Rest", "load": "rest"}) for d in DOW_ORDER]
+
+    out = render(plan, body, workouts, strength, nutrition, suggestions, training_plan)
     latest_bf = (body.get("latest") or {}).get("body_fat_pct") if body.get("latest") else None
     latest_wt = (body.get("latest") or {}).get("weight_kg") if body.get("latest") else None
     nt = nutrition["today"]
