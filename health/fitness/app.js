@@ -91,9 +91,9 @@ var EX_IMGS = {
 // Category workouts. Primaries are free-weight compounds run heavy across the
 // cut for muscle-retention intent; accessories are machines/DBs at higher reps
 // covering complementary angles. Olympic lifts are prescribed for quality reps
-// and never taken to failure - see Olympic & Shoulder note.
+// and never taken to failure - see Shoulder & Olympic note.
 var CATEGORIES = {
-  "Chest & Tricep":{
+  "Chest & Triceps":{
     primaries:[
       {n:"Flat Barbell Bench Press", m:"Heaviest loadable chest compound. High mechanical tension across the whole pec.", cue:"Bar path over lower chest, feet planted, controlled eccentric.", rest:180, cite:["Schoenfeld2010","Suchomel2016"]},
       {n:"Incline DB Press",           m:"Loaded stretch on the sternal chest with a strong horizontal press pattern.", cue:"Elbows about 45 degrees from torso, touch just above the sternum.", rest:150, cite:["Wolf2023","Kassiano2023"]},
@@ -130,7 +130,7 @@ var CATEGORIES = {
       {n:"Standing Calf Raise (deficit)", m:"Gastroc bias at long muscle length. Big stretch drives growth.", cue:"Full stretch at the bottom, pause 1 second.", rest:75, cite:["Kassiano2023"]}
     ]
   },
-  "Olympic & Shoulder":{
+  "Shoulder & Olympic":{
     note:"Olympic lifts are for quality and speed, never taken close to failure. Use ~70-80% of clean 1RM across the mesocycle; treat the mesocycle sets/reps table as an upper bound on volume, and drop by half on deload weeks.",
     primaries:[
       {n:"Power Clean",                 m:"Explosive hip extension and full-body triple extension. Preserves rate of force development from the track years.", cue:"Bar close to body, aggressive second pull, catch in a quarter squat.", rest:180, cite:["Suchomel2016"]},
@@ -157,7 +157,7 @@ var MORNINGS = {
   ]
 };
 
-var CAT_ORDER = ["Chest & Tricep","Back & Bicep","Legs","Olympic & Shoulder"];
+var CAT_ORDER = ["Chest & Triceps","Back & Bicep","Legs","Shoulder & Olympic"];
 
 window.__OVERLOAD_PART1__ = {PLAN:PLAN,BODY:BODY,WORKOUTS:WORKOUTS,STRENGTH:STRENGTH,NUTRITION:NUTRITION,SUGGESTIONS:SUGGESTIONS,TRAININGPLAN:TRAININGPLAN,CITE:CITE,MESO:MESO,CATEGORIES:CATEGORIES,MORNINGS:MORNINGS,CAT_ORDER:CAT_ORDER,IMG_BASE:IMG_BASE,EX_IMGS:EX_IMGS};
 })();
@@ -230,9 +230,13 @@ var esc=R.esc, citeChip=R.citeChip, meta=R.meta, phaseLabel=R.phaseLabel, toast=
 var TRAININGPLAN = D.TRAININGPLAN || [];
 var TRAINING_FN = "https://uuvsvtpfcexhqojlrsxy.supabase.co/functions/v1/training-update";
 var LOAD_BY_OPTION = {
-  "Chest & Tricep":"moderate", "Back & Bicep":"moderate", "Legs":"high",
-  "Olympic & Shoulder":"moderate", "Flex/Make-up":"moderate", "Soccer":"high",
-  "Mornings":"low", "Rest":"rest"
+  "Chest & Triceps":"moderate",
+  "Back & Bicep":"moderate",
+  "Shoulder & Olympic":"moderate",
+  "Legs":"high",
+  "Soccer":"high",
+  "Rest":"rest",
+  "Flex":"moderate"
 };
 
 function imgStrip(exName){
@@ -248,16 +252,20 @@ function imgStrip(exName){
 
 var SESSION_STATE = {cat: null, editing: false, editAssign: null, pin: ""};
 
-// Day-option cycle order per tap. Includes the 4 categories + Soccer, Mornings, Rest.
-var DAY_OPTIONS = ["Chest & Tricep","Back & Bicep","Legs","Olympic & Shoulder","Flex/Make-up","Soccer","Mornings","Rest"];
+// Day-option cycle order per tap. The 4 lift categories + Soccer, Rest, Flex.
+var DAY_OPTIONS = ["Chest & Triceps","Back & Bicep","Shoulder & Olympic","Legs","Soccer","Rest","Flex"];
 var DEFAULT_ASSIGN = { // Mon=0 through Sun=6 (Mon-first week per user spec)
-  0:"Chest & Tricep", 1:"Back & Bicep", 2:"Legs", 3:"Olympic & Shoulder",
-  4:"Flex/Make-up",   5:"Soccer",       6:"Rest"
+  0:"Chest & Triceps", 1:"Back & Bicep", 2:"Legs", 3:"Shoulder & Olympic",
+  4:"Flex",   5:"Soccer",       6:"Rest"
 };
 var DAY_LABEL_SHORT = {
-  "Chest & Tricep":"Chest+Tri", "Back & Bicep":"Back+Bi", "Legs":"Legs",
-  "Olympic & Shoulder":"Oly+Sh", "Flex/Make-up":"Flex", "Soccer":"Soccer",
-  "Mornings":"Mornings", "Rest":"Rest"
+  "Chest & Triceps":"Chest+Tri",
+  "Back & Bicep":"Back+Bi",
+  "Shoulder & Olympic":"Sh+Oly",
+  "Legs":"Legs",
+  "Soccer":"Soccer",
+  "Rest":"Rest",
+  "Flex":"Flex"
 };
 var DOW_LABEL = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
@@ -450,7 +458,7 @@ function renderCalendar(){
   h += '</div>';
   var doneCount = Object.keys(sug.doneCats).length;
   var liftsWhoop = (WORKOUTS && WORKOUTS.liftsThisWeek) || 0;
-  h += '<div class="wksum">Done this week: <b>'+doneCount+' of 4 categories</b>. WHOOP shows <b>'+liftsWhoop+' lifts logged</b> (cross-check).';
+  h += '<div class="wksum">Done this week: <b>'+doneCount+' of '+CAT_ORDER.length+' lift days</b>. WHOOP shows <b>'+liftsWhoop+' lifts logged</b> (cross-check).';
   if(sug.missed.length){
     h += ' <span class="warn">Missed: '+esc(sug.missed.map(function(m){return DOW_LABEL[m.dow]+' '+m.cat;}).join(", "))+'.</span>';
   }
