@@ -227,6 +227,14 @@ var CATEGORIES=D.CATEGORIES, MORNINGS=D.MORNINGS, CAT_ORDER=D.CAT_ORDER, WORKOUT
 var IMG_BASE=D.IMG_BASE, EX_IMGS=D.EX_IMGS;
 var esc=R.esc, citeChip=R.citeChip, meta=R.meta, phaseLabel=R.phaseLabel, toast=R.toast;
 
+var TRAININGPLAN = D.TRAININGPLAN || [];
+var TRAINING_FN = "https://uuvsvtpfcexhqojlrsxy.supabase.co/functions/v1/training-update";
+var LOAD_BY_OPTION = {
+  "Chest & Tricep":"moderate", "Back & Bicep":"moderate", "Legs":"high",
+  "Olympic & Shoulder":"moderate", "Flex/Make-up":"moderate", "Soccer":"high",
+  "Mornings":"low", "Rest":"rest"
+};
+
 function imgStrip(exName){
   var paths = EX_IMGS[exName];
   if(!paths || !paths.length) return "";
@@ -238,7 +246,7 @@ function imgStrip(exName){
        + '</div>';
 }
 
-var SESSION_STATE = {cat: null};
+var SESSION_STATE = {cat: null, editing: false, editAssign: null, pin: ""};
 
 // Day-option cycle order per tap. Includes the 4 categories + Soccer, Mornings, Rest.
 var DAY_OPTIONS = ["Chest & Tricep","Back & Bicep","Legs","Olympic & Shoulder","Flex/Make-up","Soccer","Mornings","Rest"];
@@ -281,6 +289,18 @@ function saveWeek(key, state){
 function cycleDay(current){
   var i = DAY_OPTIONS.indexOf(current);
   return DAY_OPTIONS[(i<0?0:(i+1)) % DAY_OPTIONS.length];
+}
+
+function planAssign(){
+  var byDow = {};
+  (TRAININGPLAN||[]).forEach(function(r){ if(r && r.dow) byDow[r.dow] = r; });
+  var out = {};
+  for(var i=0;i<7;i++){
+    var row = byDow[DOW_LABEL[i]];
+    var t = row && row.training_type ? row.training_type : "Rest";
+    out[i] = t;
+  }
+  return out;
 }
 
 function exBlock(ex, kind, spec, rank){
@@ -373,15 +393,42 @@ function renderCalendar(){
   var now = new Date();
   var mon = mondayOf(now);
   var key = isoWeekKey(mon);
-  var week = loadWeek(key);
+  var stored = loadWeek(key);
+  var assign = SESSION_STATE.editing && SESSION_STATE.editAssign
+    ? SESSION_STATE.editAssign
+    : planAssign();
+  var week = {assign: assign, done: stored.done || {}};
   SESSION_STATE.weekKey = key;
   SESSION_STATE.week = week;
   var sug = computeSuggestion(week);
   var todayDow = sug.todayDow;
   var missedDows = {}; sug.missed.forEach(function(m){ missedDows[m.dow] = true; });
 
+  var savedPin = "";
+  try { savedPin = localStorage.getItem("overload-editor-pin") || ""; } catch(_){}
+
   var h = '<div class="wkcal">';
-  h += '<div class="wkcalh"><b>This week · '+esc(key)+'</b><span>tap done · long-press to change</span></div>';
+  h += '<div class="wkcalh"><b>This week · '+esc(key)+'</b>';
+  if(SESSION_STATE.editing){
+    h += '<span>tap a day to change it</span>';
+  } else {
+    h += '<span>tap done</span>';
+  }
+  h += '</div>';
+  if(SESSION_STATE.editing){
+    h += '<div class="exspec" style="align-items:center;gap:8px;margin:6px 0 10px">';
+    h +=   '<div class="spec" style="flex:1;min-width:0"><span>PIN</span>' +
+           '<input data-wk-pin type="password" autocomplete="off" inputmode="numeric" value="'+esc(savedPin)+'" ' +
+           'style="border:0;background:transparent;color:var(--ink);font:inherit;font-weight:600;width:100%;padding:0;outline:none"></div>';
+    h +=   '<button class="chip" data-action="save-week" type="button" ' +
+           'style="background:var(--ink);color:var(--bg);border-color:var(--ink)">Save</button>';
+    h +=   '<button class="chip" data-action="cancel-week" type="button">Cancel</button>';
+    h += '</div>';
+  } else {
+    h += '<div style="display:flex;justify-content:flex-end;margin:6px 0 10px">';
+    h +=   '<button class="chip" data-action="edit-week" type="button">Edit</button>';
+    h += '</div>';
+  }
   h += '<div class="wkgrid">';
   for(var i=0;i<7;i++){
     var d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+i);
@@ -452,19 +499,65 @@ function toggleDayDone(dow){
   w.done[dow] = !w.done[dow];
   saveWeek(k, w);
 }
-function cycleDayAssign(dow){
-  if(!SESSION_STATE.week) return;
-  var w = SESSION_STATE.week, k = SESSION_STATE.weekKey;
-  var current = w.assign[dow] || DEFAULT_ASSIGN[dow];
-  w.assign[dow] = cycleDay(current);
-  // Reset done when cycling assignment: a fresh option is not yet done.
-  w.done[dow] = false;
-  saveWeek(k, w);
+
+function beginEdit(){
+  SESSION_STATE.editAssign = Object.assign({}, planAssign());
+  SESSION_STATE.editing = true;
+}
+function cancelEdit(){
+  SESSION_STATE.editing = false;
+  SESSION_STATE.editAssign = null;
+}
+function cycleEditDay(dow){
+  if(!SESSION_STATE.editing) return;
+  if(!SESSION_STATE.editAssign) SESSION_STATE.editAssign = planAssign();
+  var current = SESSION_STATE.editAssign[dow] || "Rest";
+  SESSION_STATE.editAssign[dow] = cycleDay(current);
+}
+function saveWeekPlan(pin){
+  var editAssign = SESSION_STATE.editAssign || planAssign();
+  var updates = [];
+  for(var i=0;i<7;i++){
+    var opt = editAssign[i] || "Rest";
+    updates.push({
+      dow: DOW_LABEL[i],
+      training_type: opt,
+      load: LOAD_BY_OPTION[opt] || "moderate"
+    });
+  }
+  return fetch(TRAINING_FN, {
+    method: "POST",
+    headers: {"content-type": "application/json"},
+    body: JSON.stringify({pin: pin, updates: updates})
+  }).then(function(resp){
+    return resp.json().catch(function(){return {};}).then(function(body){
+      if(resp.status === 200 && body && body.ok){
+        // Mutate the shared TRAININGPLAN in place so the strip and any meal
+        // renderers pick up the new plan until the next build refreshes.
+        var byDow = {};
+        (TRAININGPLAN||[]).forEach(function(r){ if(r && r.dow) byDow[r.dow] = r; });
+        updates.forEach(function(u){
+          byDow[u.dow] = {dow:u.dow, training_type:u.training_type, load:u.load};
+        });
+        TRAININGPLAN.length = 0;
+        DOW_LABEL.forEach(function(d){
+          TRAININGPLAN.push(byDow[d] || {dow:d, training_type:"Rest", load:"rest"});
+        });
+        D.TRAININGPLAN = TRAININGPLAN;
+        SESSION_STATE.editing = false;
+        SESSION_STATE.editAssign = null;
+      }
+      return {status: resp.status, body: body};
+    });
+  });
 }
 
 window.__OVERLOAD_RENDER__.renderSession = renderSession;
 window.__OVERLOAD_RENDER__.toggleDayDone = toggleDayDone;
-window.__OVERLOAD_RENDER__.cycleDayAssign = cycleDayAssign;
+window.__OVERLOAD_RENDER__.beginEdit     = beginEdit;
+window.__OVERLOAD_RENDER__.cancelEdit    = cancelEdit;
+window.__OVERLOAD_RENDER__.cycleEditDay  = cycleEditDay;
+window.__OVERLOAD_RENDER__.saveWeekPlan  = saveWeekPlan;
 window.__OVERLOAD_STATE__ = SESSION_STATE;
 })();
 
@@ -566,8 +659,6 @@ window.__OVERLOAD_RENDER__.renderMethod = renderMethod;
 var D=window.__OVERLOAD_PART1__, R=window.__OVERLOAD_RENDER__;
 var NUTRITION = D.NUTRITION || {today:null,trends:null,generatedAt:null};
 var SUGGESTIONS = D.SUGGESTIONS || {meals:{}};
-var TRAININGPLAN = D.TRAININGPLAN || [];
-var TRAINING_FN = "https://uuvsvtpfcexhqojlrsxy.supabase.co/functions/v1/training-update";
 var esc=R.esc;
 
 var CHARTS = {};
@@ -871,86 +962,9 @@ function renderNutritionPlan(){
   return h;
 }
 
-var DOW_ORDER = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-var LOAD_OPTIONS = ["rest","low","moderate","high"];
-
-function renderNutritionWeekEditor(){
-  var byDow = {};
-  (TRAININGPLAN||[]).forEach(function(r){ if(r && r.dow) byDow[r.dow] = r; });
-  var savedPin = "";
-  try { savedPin = localStorage.getItem("overload-editor-pin") || ""; } catch(_){}
-
-  var h = '';
-  h += '<div class="sec-title">Edit week</div>';
-  h += '<div class="note"><b>Changes apply at the next 7 AM build.</b> Today\'s meals are already set.</div>';
-
-  DOW_ORDER.forEach(function(dow){
-    var row = byDow[dow] || {training_type:"Rest", load:"rest"};
-    var t = row.training_type || "Rest";
-    var l = (row.load || "rest").toLowerCase();
-    h += '<div class="excard" data-wk-dow="'+esc(dow)+'">';
-    h +=   '<div class="exname">'+esc(dow)+'</div>';
-    h +=   '<div class="exspec" style="align-items:center">';
-    h +=     '<div class="spec" style="flex:1;min-width:0"><span>Type</span>' +
-             '<input data-wk-type type="text" maxlength="60" value="'+esc(t)+'" ' +
-             'style="border:0;background:transparent;color:var(--ink);font:inherit;font-weight:600;width:100%;padding:0;outline:none"></div>';
-    h +=     '<div class="spec"><span>Load</span><select data-wk-load ' +
-             'style="border:0;background:transparent;color:var(--ink);font:inherit;font-weight:600;padding:0;outline:none">';
-    LOAD_OPTIONS.forEach(function(opt){
-      h +=       '<option value="'+opt+'"'+(opt===l?' selected':'')+'>'+opt+'</option>';
-    });
-    h +=     '</select></div>';
-    h +=     '<button class="chip" data-action="wk-rest" type="button" style="padding:6px 10px;font-size:12px">Rest</button>';
-    h +=   '</div>';
-    h += '</div>';
-  });
-
-  h += '<div class="excard" style="margin-top:14px">';
-  h +=   '<div class="exname">Save</div>';
-  h +=   '<div class="exmech">PIN is stored on this device only.</div>';
-  h +=   '<div class="exspec" style="align-items:center">';
-  h +=     '<div class="spec" style="flex:1"><span>PIN</span>' +
-           '<input data-wk-pin type="password" autocomplete="off" inputmode="numeric" value="'+esc(savedPin)+'" ' +
-           'style="border:0;background:transparent;color:var(--ink);font:inherit;font-weight:600;width:100%;padding:0;outline:none"></div>';
-  h +=     '<button class="chip" data-action="save-week" type="button" ' +
-           'style="background:var(--ink);color:var(--bg);border-color:var(--ink)">Save week</button>';
-  h +=   '</div>';
-  h += '</div>';
-
-  h += '<p class="disc">Writes go through a PIN-gated Supabase Edge Function. No Supabase key is in this page.</p>';
-  return h;
-}
-
-function saveWeek(pin, updates){
-  return fetch(TRAINING_FN, {
-    method: "POST",
-    headers: {"content-type": "application/json"},
-    body: JSON.stringify({pin: pin, updates: updates})
-  }).then(function(resp){
-    return resp.json().catch(function(){return {};}).then(function(body){
-      if(resp.status === 200 && body && body.ok){
-        // Mirror the save into in-memory TRAININGPLAN so the editor stays coherent
-        // until the next build refreshes the baked data.
-        var byDow = {};
-        (TRAININGPLAN||[]).forEach(function(r){ if(r && r.dow) byDow[r.dow] = r; });
-        (updates||[]).forEach(function(u){
-          byDow[u.dow] = {dow:u.dow, training_type:u.training_type, load:u.load};
-        });
-        TRAININGPLAN = DOW_ORDER.map(function(d){
-          return byDow[d] || {dow:d, training_type:"Rest", load:"rest"};
-        });
-        D.TRAININGPLAN = TRAININGPLAN;
-      }
-      return {status: resp.status, body: body};
-    });
-  });
-}
-
-window.__OVERLOAD_RENDER__.renderNutritionToday      = renderNutritionToday;
-window.__OVERLOAD_RENDER__.renderNutritionTrends     = renderNutritionTrends;
-window.__OVERLOAD_RENDER__.renderNutritionPlan       = renderNutritionPlan;
-window.__OVERLOAD_RENDER__.renderNutritionWeekEditor = renderNutritionWeekEditor;
-window.__OVERLOAD_RENDER__.saveWeek                  = saveWeek;
+window.__OVERLOAD_RENDER__.renderNutritionToday  = renderNutritionToday;
+window.__OVERLOAD_RENDER__.renderNutritionTrends = renderNutritionTrends;
+window.__OVERLOAD_RENDER__.renderNutritionPlan   = renderNutritionPlan;
 window.__OVERLOAD_RENDER__.drawNutritionCharts   = drawCharts;
 window.__OVERLOAD_RENDER__.destroyNutritionCharts = destroyAllCharts;
 })();
@@ -967,13 +981,12 @@ var ICON = {
   method:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>',
   today:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 15h.01M12 15h.01M16 15h.01"/></svg>',
   trends:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 4 4 5-7"/></svg>',
-  mealplan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"/><rect x="5" y="5" width="14" height="17" rx="2"/><path d="M9 11h6M9 15h6M9 19h4"/></svg>',
-  weekedit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>'
+  mealplan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"/><rect x="5" y="5" width="14" height="17" rx="2"/><path d="M9 11h6M9 15h6M9 19h4"/></svg>'
 };
 
 var PAGES = {
   training:  [{k:"plan",   label:"Plan"},   {k:"session", label:"Session"}, {k:"block", label:"Block"}, {k:"method", label:"Method"}],
-  nutrition: [{k:"today",  label:"Today"},  {k:"trends",  label:"Trends"},  {k:"mealplan", label:"Plan"}, {k:"weekedit", label:"Edit"}]
+  nutrition: [{k:"today",  label:"Today"},  {k:"trends",  label:"Trends"},  {k:"mealplan", label:"Plan"}]
 };
 var DEFAULT_PAGE = {training: "plan", nutrition: "today"};
 
@@ -1005,7 +1018,6 @@ function renderPageBody(){
     if(R.destroyNutritionCharts) R.destroyNutritionCharts();
     if(page==="trends")        html = R.renderNutritionTrends();
     else if(page==="mealplan") html = R.renderNutritionPlan();
-    else if(page==="weekedit") html = R.renderNutritionWeekEditor();
     else                       html = R.renderNutritionToday();
   }
   app.innerHTML = html;
@@ -1087,40 +1099,55 @@ function bindNav(){
 // Kept for internal callers that still invoke render() (e.g. calendar clicks).
 function render(){ renderPageBody(); }
 
-var LONG_PRESS_MS = 500;
-var _pressTimer = null, _pressFired = false, _pressDay = null;
-function clearPress(){ if(_pressTimer){ clearTimeout(_pressTimer); _pressTimer=null; } }
-
 function bindApp(){
   var app=document.getElementById("app");
   if(!app) return;
 
-  app.addEventListener("pointerdown", function(e){
-    var day = e.target.closest("[data-day]");
-    if(!day) return;
-    _pressDay = parseInt(day.getAttribute("data-day"),10);
-    _pressFired = false;
-    clearPress();
-    _pressTimer = setTimeout(function(){
-      _pressFired = true;
-      R.cycleDayAssign(_pressDay);
-      render();
-      R.toast("Day cycled");
-    }, LONG_PRESS_MS);
-  });
-  app.addEventListener("pointerup", function(e){
-    clearPress();
-  });
-  app.addEventListener("pointercancel", clearPress);
-  app.addEventListener("pointerleave", clearPress);
-
   app.addEventListener("click", function(e){
     var day = e.target.closest("[data-day]");
     if(day){
-      if(_pressFired){ _pressFired = false; return; } // long-press already handled
       var dow = parseInt(day.getAttribute("data-day"),10);
-      R.toggleDayDone(dow);
+      if(S.editing){
+        R.cycleEditDay(dow);
+      } else {
+        R.toggleDayDone(dow);
+      }
       render();
+      return;
+    }
+    var editBtn = e.target.closest("[data-action=edit-week]");
+    if(editBtn){
+      R.beginEdit();
+      render();
+      return;
+    }
+    var cancelBtn = e.target.closest("[data-action=cancel-week]");
+    if(cancelBtn){
+      R.cancelEdit();
+      render();
+      return;
+    }
+    var saveBtn = e.target.closest("[data-action=save-week]");
+    if(saveBtn){
+      var pinEl = document.querySelector("[data-wk-pin]");
+      var pin = pinEl ? String(pinEl.value||"").trim() : "";
+      if(!pin){ R.toast("Enter your PIN"); return; }
+      try { localStorage.setItem("overload-editor-pin", pin); } catch(_){}
+      saveBtn.disabled = true;
+      R.saveWeekPlan(pin).then(function(res){
+        saveBtn.disabled = false;
+        if(res.status === 200 && res.body && res.body.ok){
+          R.toast("Week saved. Meals update at the next 7 AM build.");
+          render();
+        } else if(res.status === 401){
+          R.toast("Wrong PIN");
+        } else {
+          R.toast((res.body && res.body.error) || "Save failed");
+        }
+      }).catch(function(){
+        saveBtn.disabled = false;
+        R.toast("Network error");
+      });
       return;
     }
     var chip = e.target.closest("[data-cat]");
@@ -1142,48 +1169,6 @@ function bindApp(){
           document.body.removeChild(ta);
         }
       }
-      return;
-    }
-    var wkRestBtn = e.target.closest("[data-action=wk-rest]");
-    if(wkRestBtn){
-      var wkRow = wkRestBtn.closest("[data-wk-dow]");
-      if(wkRow){
-        var t = wkRow.querySelector("[data-wk-type]");
-        var l = wkRow.querySelector("[data-wk-load]");
-        if(t) t.value = "Rest";
-        if(l) l.value = "rest";
-      }
-      return;
-    }
-    var saveBtn = e.target.closest("[data-action=save-week]");
-    if(saveBtn){
-      var pinEl = document.querySelector("[data-wk-pin]");
-      var pin = pinEl ? String(pinEl.value||"").trim() : "";
-      if(!pin){ R.toast("Enter your PIN"); return; }
-      try { localStorage.setItem("overload-editor-pin", pin); } catch(_){}
-      var updates = [];
-      Array.prototype.forEach.call(document.querySelectorAll("[data-wk-dow]"), function(row){
-        var dow = row.getAttribute("data-wk-dow");
-        var typeEl = row.querySelector("[data-wk-type]");
-        var loadEl = row.querySelector("[data-wk-load]");
-        var typeVal = typeEl ? String(typeEl.value||"").trim() : "";
-        var loadVal = loadEl ? String(loadEl.value||"rest").trim() : "rest";
-        updates.push({dow: dow, training_type: typeVal || "Rest", load: loadVal});
-      });
-      saveBtn.disabled = true;
-      R.saveWeek(pin, updates).then(function(res){
-        saveBtn.disabled = false;
-        if(res.status === 200 && res.body && res.body.ok){
-          R.toast("Week saved. Applies at the next 7 AM build.");
-        } else if(res.status === 401){
-          R.toast("Wrong PIN");
-        } else {
-          R.toast((res.body && res.body.error) || "Save failed");
-        }
-      }).catch(function(){
-        saveBtn.disabled = false;
-        R.toast("Network error");
-      });
       return;
     }
   });
