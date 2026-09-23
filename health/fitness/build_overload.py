@@ -471,6 +471,9 @@ def build_nutrition_trends(daily_in, daily_out, body_rows, latest_weight_kg, day
     }
 
 
+LOAD_FACTOR = {"high": 0.4, "moderate": 0.8, "low": 1.0, "rest": 1.2}
+
+
 def build_running(sb, today, body):
     monday = today - timedelta(days=today.weekday())
     dates = [monday + timedelta(days=i) for i in range(7)]
@@ -491,15 +494,6 @@ def build_running(sb, today, body):
             except (TypeError, ValueError):
                 pass
 
-    week = []
-    for i, d in enumerate(dates):
-        iso = d.isoformat()
-        week.append({
-            "date":        iso,
-            "dow":         dow_labels[i],
-            "distance_km": by_date.get(iso),
-        })
-
     latest = body.get("latest") if body else None
     latest_weight_kg = None
     latest_bf = None
@@ -519,7 +513,69 @@ def build_running(sb, today, body):
         target_kcal = 250
     else:
         target_kcal = int(min(500, 300 + (bf - goal_bf) * 25))
-    target_km = round(target_kcal / max(1, kcal_per_km), 1)
+    base_km = round(target_kcal / max(1, kcal_per_km), 1)
+
+    recovery = None
+    recovery_rows = rest_query(sb, "whoop_recovery", lambda s:
+        s.table("whoop_recovery").select("recovery_date,recovery_score")
+         .order("recovery_date", desc=True).limit(1).execute()
+    )
+    if recovery_rows and recovery_rows[0].get("recovery_score") is not None:
+        try:
+            recovery = float(recovery_rows[0]["recovery_score"])
+        except (TypeError, ValueError):
+            recovery = None
+
+    strain_rows = rest_query(sb, "whoop_cycles", lambda s:
+        s.table("whoop_cycles").select("start_time,strain")
+         .order("start_time", desc=True).limit(3).execute()
+    )
+    strains = []
+    for r in strain_rows:
+        v = r.get("strain")
+        if v is None:
+            continue
+        try:
+            strains.append(float(v))
+        except (TypeError, ValueError):
+            pass
+    avg_strain = (sum(strains) / len(strains)) if strains else None
+
+    if recovery is not None and recovery >= 67:
+        readiness = 1.15
+    elif recovery is not None and recovery < 34:
+        readiness = 0.6
+    else:
+        readiness = 1.0
+    strain_mult = 0.85 if (avg_strain is not None and avg_strain >= 15) else 1.0
+
+    training_plan_rows = rest_query(sb, "training_plan", lambda s:
+        s.table("training_plan").select("dow,load").execute()
+    )
+    load_by_dow = {}
+    for row in training_plan_rows:
+        d = (row.get("dow") or "").strip()
+        if d in dow_labels:
+            load_by_dow[d] = (row.get("load") or "moderate").lower()
+
+    week = []
+    for i, d in enumerate(dates):
+        iso = d.isoformat()
+        dow = dow_labels[i]
+        load = load_by_dow.get(dow, "moderate")
+        factor = LOAD_FACTOR.get(load, 0.8)
+        sug = round(base_km * factor * readiness * strain_mult, 1)
+        if sug < 1.0:
+            sug = 0
+        actual = by_date.get(iso)
+        week.append({
+            "date":         iso,
+            "dow":          dow,
+            "suggested_km": sug,
+            "actual_km":    float(actual) if actual is not None else None,
+            "is_today":     (d == today),
+            "is_past":      (d < today),
+        })
 
     return {
         "week": week,
@@ -528,10 +584,12 @@ def build_running(sb, today, body):
             "body_fat_pct": round(bf, 1) if bf is not None else None,
             "kcal_per_km":  kcal_per_km,
             "target_kcal":  target_kcal,
-            "target_km":    target_km,
+            "target_km":    base_km,
             "goal_bf":      10,
             "weekly_runs":  3,
             "weekly_kcal":  target_kcal * 3,
+            "recovery":     recovery,
+            "avg_strain":   round(avg_strain, 1) if avg_strain is not None else None,
         },
     }
 

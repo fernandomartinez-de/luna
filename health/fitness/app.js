@@ -575,11 +575,19 @@ function _fmtKm(v){
   return (n % 1 === 0 ? n.toFixed(1) : String(n)) + " km";
 }
 
+function _runState(day){
+  var sug = day.suggested_km, act = day.actual_km;
+  if(sug === 0)                              return "rest";
+  if(act != null && act >= sug * 0.9)        return "done";
+  if(act != null && act > 0)                 return "partial";
+  if(day.is_past)                            return "missed";
+  return "open";
+}
+
 function renderRunningStrip(weekKey){
   var week = (RUNNING && RUNNING.week) || [];
   var sug = RUNNING && RUNNING.suggestion;
   var editing = !!SESSION_STATE.runEditing;
-  var todayIso = _todayLocalISO();
 
   if(!week.length && !sug){
     return '<div class="wkcal"><div class="wkcalh"><b>Running · '+esc(weekKey||"")+'</b><span>no run data yet</span></div>' +
@@ -591,7 +599,7 @@ function renderRunningStrip(weekKey){
 
   var h = '<div class="wkcal">';
   h += '<div class="wkcalh"><b>Running · '+esc(weekKey||"")+'</b>';
-  h += '<span>'+(editing ? "type distances, save when done" : "km logged per day")+'</span>';
+  h += '<span>'+(editing ? "type distances, save when done" : "target vs actual per day")+'</span>';
   h += '</div>';
 
   if(editing){
@@ -611,27 +619,41 @@ function renderRunningStrip(weekKey){
 
   h += '<div class="wkgrid">';
   week.forEach(function(day){
-    var isToday = (day.date === todayIso);
+    var isToday = !!day.is_today;
+    var state = _runState(day);
     var cls = "wkday" + (isToday ? " today" : "");
-    h += '<div class="'+cls+'" data-date="'+esc(day.date)+'">';
+    var badge = "";
+    var badgeStyle = "position:absolute;top:2px;right:4px;font-size:10px;font-weight:800;line-height:1";
+    if(state === "done"){
+      badge = '<span class="mark" style="'+badgeStyle+';color:var(--good-ink)">&#10003;</span>';
+    } else if(state === "partial"){
+      badge = '<span class="mark" style="'+badgeStyle+';color:var(--accent)">~</span>';
+    } else if(state === "missed"){
+      badge = '<span class="mark" style="'+badgeStyle+';color:#c14e4e">!</span>';
+    }
+    h += '<div class="'+cls+'" data-date="'+esc(day.date)+'" style="min-height:64px;justify-content:flex-start;padding:6px 4px">';
+    h +=   badge;
     h +=   '<span class="dow">'+esc(day.dow)+'</span>';
     if(editing){
-      var val = (day.distance_km == null) ? "" : String(day.distance_km);
-      h += '<input data-run-date="'+esc(day.date)+'" type="number" step="0.1" min="0" value="'+esc(val)+'" ' +
-           'style="width:100%;border:0;background:transparent;color:var(--ink);font:inherit;font-weight:700;font-size:11px;text-align:center;padding:0;outline:none">';
+      var val = (day.actual_km == null) ? "" : String(day.actual_km);
+      var ph = (day.suggested_km > 0) ? ("→"+day.suggested_km) : "rest";
+      h += '<input data-run-date="'+esc(day.date)+'" type="number" step="0.1" min="0" ' +
+           'value="'+esc(val)+'" placeholder="'+esc(ph)+'" ' +
+           'style="width:100%;border:0;background:transparent;color:var(--ink);font:inherit;font-weight:700;font-size:11px;text-align:center;padding:0;outline:none;margin-top:2px">';
     } else {
-      h += '<span class="lbl">'+esc(_fmtKm(day.distance_km))+'</span>';
+      var tgtTxt = (day.suggested_km === 0) ? "rest" : ("→ "+day.suggested_km+" km");
+      var actTxt = (day.actual_km != null) ? (day.actual_km+" km") : "—";
+      h += '<span class="lbl" style="font-size:9.5px;color:var(--faint);font-weight:600;margin-top:1px">'+esc(tgtTxt)+'</span>';
+      h += '<span class="lbl" style="margin-top:1px">'+esc(actTxt)+'</span>';
     }
     h += '</div>';
   });
   h += '</div>';
 
   if(sug){
-    var bfTxt = (sug.body_fat_pct != null) ? ", "+sug.body_fat_pct+"% bf" : "";
-    var msg = "Run target: ~"+sug.target_km+" km to burn ~"+sug.target_kcal+" kcal (~"+
-              sug.kcal_per_km+" kcal/km at "+sug.weight_kg+" kg"+bfTxt+"). ~"+
-              sug.weekly_runs+" runs/week is ~"+sug.weekly_kcal+" kcal. " +
-              "Scales with weight, eases toward "+sug.goal_bf+"% body fat. " +
+    var recTxt = (sug.recovery != null) ? " ("+Math.round(sug.recovery)+"%)" : "";
+    var msg = "Targets scale with your weight, WHOOP recovery"+recTxt+", recent strain, " +
+              "and each day's training load. ~"+sug.kcal_per_km+" kcal/km. " +
               "Rough estimate, not medical advice.";
     h += '<div class="suggest"><b>Run target</b> · '+esc(msg)+'</div>';
   } else {
@@ -669,7 +691,7 @@ function saveRuns(pin){
         runs.forEach(function(r){ byDate[r.date] = r.distance_km; });
         (RUNNING.week || []).forEach(function(day){
           if(Object.prototype.hasOwnProperty.call(byDate, day.date)){
-            day.distance_km = byDate[day.date];
+            day.actual_km = byDate[day.date];
           }
         });
         SESSION_STATE.runEditing = false;
