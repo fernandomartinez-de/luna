@@ -748,6 +748,9 @@
                 -webkit-tap-highlight-color: transparent;
                 overscroll-behavior-y: contain;
             }
+
+            div[style*="repeat(2, 1fr)"], div[style*="repeat(3, 1fr)"] { grid-template-columns: 1fr !important; }
+            .modal-content { max-width: 96vw !important; }
         }
     </style>
 </head>
