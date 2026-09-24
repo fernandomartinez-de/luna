@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Fernando's Finances</title>
     <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#0c0d11">
@@ -729,6 +729,24 @@
             .tab {
                 padding: 10px 16px;
                 font-size: 14px;
+            }
+
+            #charts > div[style*="1fr 1fr"] { grid-template-columns: 1fr !important; }
+            div[style*="minmax(400px"]      { grid-template-columns: 1fr !important; }
+            html, body { overflow-x: hidden; }
+            .container {
+                max-width: 100%;
+                overflow-x: hidden;
+                padding-left: calc(16px + env(safe-area-inset-left));
+                padding-right: calc(16px + env(safe-area-inset-right));
+            }
+            .header { padding-top: calc(24px + env(safe-area-inset-top)); }
+            canvas { max-width: 100% !important; }
+            input, select, textarea { font-size: 16px; }
+            body {
+                -webkit-text-size-adjust: 100%;
+                -webkit-tap-highlight-color: transparent;
+                overscroll-behavior-y: contain;
             }
         }
     </style>
