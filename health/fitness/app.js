@@ -9,6 +9,7 @@ var NUTRITION = (window.__DATA__ && window.__DATA__.nutrition) || {today:null,tr
 var SUGGESTIONS = (window.__DATA__ && window.__DATA__.suggestions) || {meals:{}};
 var TRAININGPLAN = (window.__DATA__ && window.__DATA__.trainingPlan) || [];
 var RUNNING = (window.__DATA__ && window.__DATA__.running) || {week:[],suggestion:null};
+var WHOOPDONE = (window.__DATA__ && window.__DATA__.whoopDone) || {};
 
 var CITE = {
   "Schoenfeld2010":{t:"The mechanisms of muscle hypertrophy and their application to resistance training.",a:"Schoenfeld BJ.",j:"J Strength Cond Res 2010;24(10):2857-2872.",u:"https://pubmed.ncbi.nlm.nih.gov/20847704/"},
@@ -160,7 +161,7 @@ var MORNINGS = {
 
 var CAT_ORDER = ["Chest & Triceps","Back & Bicep","Legs","Shoulder & Olympic"];
 
-window.__OVERLOAD_PART1__ = {PLAN:PLAN,BODY:BODY,WORKOUTS:WORKOUTS,STRENGTH:STRENGTH,NUTRITION:NUTRITION,SUGGESTIONS:SUGGESTIONS,TRAININGPLAN:TRAININGPLAN,RUNNING:RUNNING,CITE:CITE,MESO:MESO,CATEGORIES:CATEGORIES,MORNINGS:MORNINGS,CAT_ORDER:CAT_ORDER,IMG_BASE:IMG_BASE,EX_IMGS:EX_IMGS};
+window.__OVERLOAD_PART1__ = {PLAN:PLAN,BODY:BODY,WORKOUTS:WORKOUTS,STRENGTH:STRENGTH,NUTRITION:NUTRITION,SUGGESTIONS:SUGGESTIONS,TRAININGPLAN:TRAININGPLAN,RUNNING:RUNNING,WHOOPDONE:WHOOPDONE,CITE:CITE,MESO:MESO,CATEGORIES:CATEGORIES,MORNINGS:MORNINGS,CAT_ORDER:CAT_ORDER,IMG_BASE:IMG_BASE,EX_IMGS:EX_IMGS};
 })();
 
 (function(){
@@ -230,6 +231,7 @@ var esc=R.esc, citeChip=R.citeChip, meta=R.meta, phaseLabel=R.phaseLabel, toast=
 
 var TRAININGPLAN = D.TRAININGPLAN || [];
 var RUNNING = D.RUNNING || {week:[],suggestion:null};
+var WHOOPDONE = D.WHOOPDONE || {};
 var TRAINING_FN = "https://uuvsvtpfcexhqojlrsxy.supabase.co/functions/v1/training-update";
 var LOAD_BY_OPTION = {
   "Chest & Triceps":"moderate",
@@ -407,10 +409,22 @@ function renderCalendar(){
   var assign = SESSION_STATE.editing && SESSION_STATE.editAssign
     ? SESSION_STATE.editAssign
     : planAssign();
-  var week = {assign: assign, done: stored.done || {}};
+  var storedDone = stored.done || {};
+  var effectiveDone = {};
+  var dateStrByIdx = {};
+  for(var di=0; di<7; di++){
+    var dd = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+di);
+    var ds = dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');
+    dateStrByIdx[di] = ds;
+    var wd = WHOOPDONE[ds];
+    var a = assign[di];
+    var autoDone = !!(wd && ((CAT_ORDER.indexOf(a) >= 0 && wd.lifted) || (a === "Soccer" && wd.soccer)));
+    effectiveDone[di] = !!(storedDone[di] || autoDone);
+  }
+  var week = {assign: assign, done: storedDone};
   SESSION_STATE.weekKey = key;
   SESSION_STATE.week = week;
-  var sug = computeSuggestion(week);
+  var sug = computeSuggestion({assign: assign, done: effectiveDone});
   var todayDow = sug.todayDow;
   var missedDows = {}; sug.missed.forEach(function(m){ missedDows[m.dow] = true; });
 
@@ -441,16 +455,15 @@ function renderCalendar(){
   }
   h += '<div class="wkgrid">';
   for(var i=0;i<7;i++){
-    var d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+i);
     var a = week.assign[i] || DEFAULT_ASSIGN[i];
-    var isDone = !!week.done[i];
+    var isDone = !!effectiveDone[i];
     var isToday = (i === todayDow);
     var isMissed = missedDows[i];
     var cls = "wkday";
     if(isToday) cls += " today";
     if(isDone) cls += " done";
     else if(isMissed) cls += " missed";
-    h += '<button class="'+cls+'" data-day="'+i+'" data-date="'+d.toISOString().slice(0,10)+'" aria-label="Day '+DOW_LABEL[i]+' '+esc(a)+'">';
+    h += '<button class="'+cls+'" data-day="'+i+'" data-date="'+dateStrByIdx[i]+'" aria-label="Day '+DOW_LABEL[i]+' '+esc(a)+'">';
     h += '  <span class="dow">'+DOW_LABEL[i]+'</span>';
     h += '  <span class="lbl">'+esc(DAY_LABEL_SHORT[a]||a)+'</span>';
     if(isDone) h += '<span class="mark">&#10003;</span>';
@@ -644,7 +657,12 @@ function renderRunningStrip(weekKey){
       var tgtTxt = (day.suggested_km === 0) ? "rest" : ("→ "+day.suggested_km+" km");
       var actTxt = (day.actual_km != null) ? (day.actual_km+" km") : "—";
       h += '<span class="lbl" style="font-size:9.5px;color:var(--faint);font-weight:600;margin-top:1px">'+esc(tgtTxt)+'</span>';
-      h += '<span class="lbl" style="margin-top:1px">'+esc(actTxt)+'</span>';
+      if(day.actual_source === "whoop"){
+        h += '<span class="lbl" style="margin-top:1px">'+esc(actTxt) +
+             ' <span class="pill" style="padding:1px 5px;font-size:8px;letter-spacing:.08em;text-transform:uppercase">whoop</span></span>';
+      } else {
+        h += '<span class="lbl" style="margin-top:1px">'+esc(actTxt)+'</span>';
+      }
     }
     h += '</div>';
   });

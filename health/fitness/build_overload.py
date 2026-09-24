@@ -46,6 +46,13 @@ TOKEN_NUTRITION     = "__NUTRITION_DATA__"
 TOKEN_SUGGESTIONS   = "__SUGGESTIONS_DATA__"
 TOKEN_TRAININGPLAN  = "__TRAININGPLAN_DATA__"
 TOKEN_RUNNING       = "__RUNNING_DATA__"
+TOKEN_WHOOPDONE     = "__WHOOPDONE_DATA__"
+
+try:
+    from zoneinfo import ZoneInfo
+    ET_TZ = ZoneInfo("America/New_York")
+except Exception:
+    ET_TZ = timezone.utc
 
 DOW_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
@@ -474,9 +481,56 @@ def build_nutrition_trends(daily_in, daily_out, body_rows, latest_weight_kg, day
 LOAD_FACTOR = {"high": 0.4, "moderate": 0.8, "low": 1.0, "rest": 1.2}
 
 
-def build_running(sb, today, body):
+def _week_dates(today):
     monday = today - timedelta(days=today.weekday())
-    dates = [monday + timedelta(days=i) for i in range(7)]
+    return [monday + timedelta(days=i) for i in range(7)]
+
+
+def _et_date(ts):
+    dt = parse_ts(ts)
+    if not dt:
+        return None
+    try:
+        return dt.astimezone(ET_TZ).date()
+    except Exception:
+        return None
+
+
+def fetch_week_whoop_workouts(sb, dates):
+    """Fetch whoop_workouts covering the given ET-date week, buffered for TZ."""
+    start_utc = (datetime.combine(dates[0], datetime.min.time()).replace(tzinfo=ET_TZ)
+                 - timedelta(hours=6)).astimezone(timezone.utc)
+    end_utc = (datetime.combine(dates[6], datetime.max.time()).replace(tzinfo=ET_TZ)
+               + timedelta(hours=6)).astimezone(timezone.utc)
+    return rest_query(sb, "whoop_workouts_week", lambda s:
+        s.table("whoop_workouts").select("start_time,sport_name,calories_kcal,strain")
+         .gte("start_time", start_utc.isoformat())
+         .lte("start_time", end_utc.isoformat())
+         .execute()
+    )
+
+
+def build_whoop_done(whoop_rows, dates):
+    by = {}
+    for d in dates:
+        by[d.isoformat()] = {"lifted": False, "soccer": False}
+    for r in (whoop_rows or []):
+        d = _et_date(r.get("start_time"))
+        if not d:
+            continue
+        key = d.isoformat()
+        if key not in by:
+            continue
+        sport = (r.get("sport_name") or "").strip()
+        if sport in ("Weightlifting", "Powerlifting"):
+            by[key]["lifted"] = True
+        elif sport == "Soccer":
+            by[key]["soccer"] = True
+    return by
+
+
+def build_running(sb, today, body, whoop_rows=None):
+    dates = _week_dates(today)
     dow_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
     rows = rest_query(sb, "running_log", lambda s:
@@ -493,6 +547,9 @@ def build_running(sb, today, body):
                 by_date[d.isoformat()] = float(r["distance_km"])
             except (TypeError, ValueError):
                 pass
+
+    if whoop_rows is None:
+        whoop_rows = fetch_week_whoop_workouts(sb, dates)
 
     latest = body.get("latest") if body else None
     latest_weight_kg = None
@@ -558,6 +615,22 @@ def build_running(sb, today, body):
         if d in dow_labels:
             load_by_dow[d] = (row.get("load") or "moderate").lower()
 
+    whoop_kcal_by_date = {}
+    for r in (whoop_rows or []):
+        if (r.get("sport_name") or "").strip() != "Running":
+            continue
+        et_d = _et_date(r.get("start_time"))
+        if not et_d:
+            continue
+        kcal = r.get("calories_kcal")
+        if kcal is None:
+            continue
+        try:
+            key = et_d.isoformat()
+            whoop_kcal_by_date[key] = whoop_kcal_by_date.get(key, 0.0) + float(kcal)
+        except (TypeError, ValueError):
+            pass
+
     week = []
     for i, d in enumerate(dates):
         iso = d.isoformat()
@@ -567,14 +640,28 @@ def build_running(sb, today, body):
         sug = round(base_km * factor * readiness * strain_mult, 1)
         if sug < 1.0:
             sug = 0
-        actual = by_date.get(iso)
+        manual = by_date.get(iso)
+        whoop_est = None
+        if iso in whoop_kcal_by_date:
+            est = round(whoop_kcal_by_date[iso] / max(1, kcal_per_km), 1)
+            whoop_est = est if est > 0 else None
+        if manual is not None:
+            actual_km = float(manual)
+            actual_source = "manual"
+        elif whoop_est:
+            actual_km = whoop_est
+            actual_source = "whoop"
+        else:
+            actual_km = None
+            actual_source = None
         week.append({
-            "date":         iso,
-            "dow":          dow,
-            "suggested_km": sug,
-            "actual_km":    float(actual) if actual is not None else None,
-            "is_today":     (d == today),
-            "is_past":      (d < today),
+            "date":          iso,
+            "dow":           dow,
+            "suggested_km":  sug,
+            "actual_km":     actual_km,
+            "actual_source": actual_source,
+            "is_today":      (d == today),
+            "is_past":       (d < today),
         })
 
     return {
@@ -594,7 +681,7 @@ def build_running(sb, today, body):
     }
 
 
-def render(plan, body, workouts, strength, nutrition, suggestions, training_plan, running):
+def render(plan, body, workouts, strength, nutrition, suggestions, training_plan, running, whoop_done):
     if not TEMPLATE.exists():
         sys.exit(f"ERROR: template not found: {TEMPLATE}")
     tpl = TEMPLATE.read_text(encoding="utf-8")
@@ -607,6 +694,7 @@ def render(plan, body, workouts, strength, nutrition, suggestions, training_plan
         TOKEN_SUGGESTIONS:  suggestions,
         TOKEN_TRAININGPLAN: training_plan,
         TOKEN_RUNNING:      running,
+        TOKEN_WHOOPDONE:    whoop_done,
     }
     for token in tokens:
         if token not in tpl:
@@ -726,9 +814,12 @@ def main():
             }
     training_plan = [by_dow.get(d, {"dow": d, "training_type": "Rest", "load": "rest"}) for d in DOW_ORDER]
 
-    running = build_running(sb, today, body)
+    week_dates = _week_dates(today)
+    whoop_wk_rows = fetch_week_whoop_workouts(sb, week_dates)
+    running = build_running(sb, today, body, whoop_wk_rows)
+    whoop_done = build_whoop_done(whoop_wk_rows, week_dates)
 
-    out = render(plan, body, workouts, strength, nutrition, suggestions, training_plan, running)
+    out = render(plan, body, workouts, strength, nutrition, suggestions, training_plan, running, whoop_done)
     latest_bf = (body.get("latest") or {}).get("body_fat_pct") if body.get("latest") else None
     latest_wt = (body.get("latest") or {}).get("weight_kg") if body.get("latest") else None
     nt = nutrition["today"]
