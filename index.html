@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fernando · Personal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0d11; --card:#15171d; --line:#23262f;
+    --ink:#f3f4f6; --muted:#9aa0ab; --faint:#6b7280;
+    --ember:#e9532b; --ember-soft:rgba(233,83,43,.14);
+    --green:#3fae6b; --money-soft:rgba(63,174,107,.13);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:radial-gradient(1200px 600px at 50% -10%, #14161d 0%, var(--bg) 60%) fixed;
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;min-height:100%}
+  .wrap{width:100%;max-width:920px;margin:0 auto;padding:clamp(28px,6vw,72px) 20px 40px;flex:1;display:flex;flex-direction:column}
+  .head{margin-bottom:clamp(28px,5vw,48px)}
+  .kicker{font-family:'Space Grotesk',sans-serif;letter-spacing:.28em;text-transform:uppercase;font-size:12px;color:var(--faint);font-weight:600}
+  .greet{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(30px,7vw,52px);line-height:1.05;margin-top:10px;letter-spacing:-.01em}
+  .greet b{color:var(--ember)}
+  .sub{color:var(--muted);margin-top:12px;font-size:clamp(14px,2.6vw,16px);max-width:46ch}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,2.4vw,20px);margin-top:8px}
+  @media (max-width:640px){ .cards{grid-template-columns:1fr} }
+  .card{position:relative;display:flex;flex-direction:column;justify-content:space-between;min-height:220px;padding:24px;border-radius:20px;background:var(--card);border:1px solid var(--line);text-decoration:none;color:inherit;overflow:hidden;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+  .card:hover,.card:focus-visible{transform:translateY(-4px);outline:none}
+  .card.fit:hover{border-color:rgba(233,83,43,.5);box-shadow:0 18px 50px -20px rgba(233,83,43,.5)}
+  .card.money:hover{border-color:rgba(63,174,107,.5);box-shadow:0 18px 50px -20px rgba(63,174,107,.45)}
+  .badge{width:46px;height:46px;border-radius:12px;display:grid;place-items:center}
+  .fit .badge{background:var(--ember-soft);color:var(--ember)}
+  .money .badge{background:var(--money-soft);color:var(--green)}
+  .badge svg{width:24px;height:24px;stroke-width:2;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
+  .ctitle{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:23px;margin-top:20px;letter-spacing:-.01em}
+  .cdesc{color:var(--muted);font-size:14px;margin-top:6px;line-height:1.5}
+  .go{display:inline-flex;align-items:center;gap:7px;margin-top:18px;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;letter-spacing:.02em}
+  .fit .go{color:var(--ember)} .money .go{color:var(--green)}
+  .go svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.4;transition:transform .18s ease}
+  .card:hover .go svg{transform:translateX(4px)}
+  .foot{margin-top:auto;padding-top:34px;color:var(--faint);font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="head">
+      <div class="kicker">Personal</div>
+      <h1 class="greet" id="greet">Welcome back, <b>Fernando</b></h1>
+      <p class="sub">Your two dashboards, one door. Pick where you want to go.</p>
+    </header>
+    <section class="cards">
+      <a class="card fit" href="./health/fitness/index.html">
+        <div class="badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.5 6.5l11 11"/><path d="M4 8l-1.5 1.5a2.1 2.1 0 000 3L5 15"/><path d="M8 4L6.5 5.5a2.1 2.1 0 000 3"/><path d="M20 16l-1.5 1.5a2.1 2.1 0 01-3 0"/><path d="M16 20l1.5-1.5a2.1 2.1 0 000-3"/></svg></div>
+        <div><div class="ctitle">Fitness &amp; Nutrition</div><div class="cdesc">Training plan, meals, running, and daily WHOOP readouts.</div></div>
+        <span class="go">Open Overload <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+      <a class="card money" href="./finances/finances.html">
+        <div class="badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l3.5-3.5 3 3L21 7"/></svg></div>
+        <div><div class="ctitle">Expenses &amp; Investments</div><div class="cdesc">Spending, accounts, and your investment and retirement holdings.</div></div>
+        <span class="go">Open Finances <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+    </section>
+    <footer class="foot"><span class="dot"></span> Both dashboards refresh automatically each morning.</footer>
+  </main>
+  <script>(function(){try{var h=new Date().getHours();var g=h<5?"Still up":h<12?"Good morning":h<18?"Good afternoon":"Good evening";var el=document.getElementById("greet");if(el)el.innerHTML=g+", <b>Fernando</b>";}catch(_){}})();</script>
+</body>
+</html>

@@ -34,7 +34,28 @@
             margin-bottom: 48px;
             padding-bottom: 24px;
             border-bottom: 2px solid #4b5563;
+            position: relative;
         }
+
+        .menu-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: #2d3748;
+            border: 1px solid #4b5563;
+            color: #d1d5db;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: .04em;
+            text-decoration: none;
+            transition: color .15s ease, border-color .15s ease;
+        }
+        .menu-back:hover { color: #f3f4f6; border-color: #6b7280; }
 
         h1 {
             color: #f3f4f6;
@@ -708,6 +729,7 @@
 <body>
     <div class="container">
         <div class="header">
+            <a class="menu-back" href="../index.html" aria-label="Back to menu">&larr; Menu</a>
             <h1>💰 Finances</h1>
             <div class="last-updated" id="lastUpdated">Loading...</div>
         </div>
