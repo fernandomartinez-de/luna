@@ -96,53 +96,57 @@ var EX_IMGS = {
 // and never taken to failure - see Shoulder & Olympic note.
 var CATEGORIES = {
   "Chest & Triceps":{
+    note:"Your WHOOP session, as-is. Set counts are yours; reps and RPE follow the training block.",
     primaries:[
-      {n:"Flat Barbell Bench Press", m:"Heaviest loadable chest compound. High mechanical tension across the whole pec.", cue:"Bar path over lower chest, feet planted, controlled eccentric.", rest:180, cite:["Schoenfeld2010","Suchomel2016"]},
-      {n:"Incline DB Press",           m:"Loaded stretch on the sternal chest with a strong horizontal press pattern.", cue:"Elbows about 45 degrees from torso, touch just above the sternum.", rest:150, cite:["Wolf2023","Kassiano2023"]},
-      {n:"Close Grip Bench Press",     m:"Heaviest triceps compound. Loads long head with high mechanical tension.", cue:"Hands shoulder width, elbows track along ribs, tuck about 30 degrees.", rest:150, cite:["Schoenfeld2010"]}
+      {n:"Bench Press - Barbell", sets:5, rest:150},
+      {n:"Bench Press - Incline - Barbell", sets:5, rest:150}
     ],
     accessories:[
-      {n:"Cable or Machine Fly",              m:"Isolated stretch stimulus on the pec with steady tension end to end.", cue:"Slight elbow bend, stretch under control, do not lock at top.", rest:75, cite:["Kassiano2023"]},
-      {n:"Overhead Rope Cable Extension",     m:"Long head of triceps is fully stretched only overhead. Best long-head stimulus.", cue:"Elbows fixed by ears, ROM into a full stretch.", rest:90, cite:["Maeo2022"]},
-      {n:"Cable Pushdown",                    m:"High stimulus-to-fatigue, add hard sets cheaply at the end of the session.", cue:"Elbows pinned, do not lean into it. Squeeze the lockout.", rest:60, cite:["Refalo2023"]}
+      {n:"Machine Chest Flys", sets:5},
+      {n:"Machine Chest Press", sets:3},
+      {n:"Smith Machine Incline Bench Press", sets:3},
+      {n:"Dip", sets:3},
+      {n:"Triceps Pulldown - Rope", sets:3},
+      {n:"Tricep Extension - Standing", sets:3}
     ]
   },
   "Back & Bicep":{
+    note:"Your WHOOP session, as-is.",
     primaries:[
-      {n:"Weighted Pull-Up",           m:"Full-ROM vertical pull, big lat stimulus with a strong stretched position.", cue:"Pull elbows down and back, no kip, chin over the bar.", rest:180, cite:["Wolf2023","Suchomel2016"]},
-      {n:"Barbell Row (Pendlay)",      m:"Heaviest horizontal row. Loaded lats and mid-back at length.", cue:"Torso ~parallel, row to lower ribs, dead-stop each rep.", rest:180, cite:["Schoenfeld2010"]},
-      {n:"Incline DB Curl",            m:"Long-head biceps bias with a big stretch at the bottom.", cue:"Elbows behind torso, no swing, full extension each rep.", rest:90, cite:["Kassiano2023"]}
+      {n:"Bent Over Row - Barbell", sets:5, rest:150},
+      {n:"Lat Pull Down - Front", sets:4, rest:120}
     ],
     accessories:[
-      {n:"Lat Pulldown (neutral grip)", m:"Same vertical-pull pattern with graded load, better for high volume than pull-ups.", cue:"Bar to upper chest, drive elbows down and back.", rest:90, cite:["Kassiano2023"]},
-      {n:"Cable Pullover",              m:"Lengthened lat isolation. High stretch, low CNS cost.", cue:"Straight arms, pull with lats not triceps.", rest:75, cite:["Kassiano2023"]},
-      {n:"Bayesian Cable Curl",         m:"Constant-tension biceps at long muscle length.", cue:"Elbow slightly behind hip, arm fully straightens each rep.", rest:75, cite:["Kassiano2023"]}
+      {n:"Seated Row", sets:5},
+      {n:"Incline Row - Dumbbell", sets:3},
+      {n:"Seated Bayesian Curl", sets:3},
+      {n:"Hammer Curl - Dumbbell", sets:3},
+      {n:"Reverse Curls - Barbell", sets:3}
     ]
   },
   "Legs":{
+    note:"Your WHOOP session, as-is.",
     primaries:[
-      {n:"Back Squat",                 m:"Loaded quad stretch under full ROM. Biggest lower-body strength driver.", cue:"Break at knees and hips, chest tall, below parallel.", rest:210, cite:["Wolf2023","Suchomel2016"]},
-      {n:"Romanian Deadlift",          m:"Loaded hip hinge with a large hamstring stretch. Trains hams at length.", cue:"Push hips back, soft knees, bar close to legs, straight bar path.", rest:180, cite:["Schoenfeld2010","Maeo2021"]},
-      {n:"Bulgarian Split Squat",      m:"Long-length quad and glute stimulus, unilateral, big stimulus per set.", cue:"Long stance, torso upright for quads, front knee travels.", rest:120, cite:["Wolf2023"]}
+      {n:"Back Squat - Barbell", sets:5, rest:180}
     ],
     accessories:[
-      {n:"Leg Press (deep)",            m:"High load with less CNS cost than squats. Deep ROM key.", cue:"Feet lower on platform, knees track toes, thighs to chest.", rest:120, cite:["Kassiano2023"]},
-      {n:"Seated Leg Curl",             m:"Trains hamstrings at long length. Grows more than lying curl at equated volume.", cue:"Torso upright, drive heels down and under.", rest:90, cite:["Maeo2021"]},
-      {n:"Leg Extension (paused)",      m:"Isolated rectus femoris. Adds hard quad sets cheaply.", cue:"Full extension, brief hold at top, control down.", rest:75, cite:["Maeo2021"]},
-      {n:"Standing Calf Raise (deficit)", m:"Gastroc bias at long muscle length. Big stretch drives growth.", cue:"Full stretch at the bottom, pause 1 second.", rest:75, cite:["Kassiano2023"]}
+      {n:"Standing Leg Curl", sets:4},
+      {n:"Seated Machine Leg Curl", sets:4},
+      {n:"Seated Machine Leg Extension", sets:5},
+      {n:"Glute Abductor Machine", sets:4}
     ]
   },
   "Shoulder & Olympic":{
-    note:"Olympic lifts are for quality and speed, never taken close to failure. Use ~70-80% of clean 1RM across the mesocycle; treat the mesocycle sets/reps table as an upper bound on volume, and drop by half on deload weeks.",
+    note:"Your WHOOP session, as-is.",
     primaries:[
-      {n:"Power Clean",                 m:"Explosive hip extension and full-body triple extension. Preserves rate of force development from the track years.", cue:"Bar close to body, aggressive second pull, catch in a quarter squat.", rest:180, cite:["Suchomel2016"]},
-      {n:"Push Press",                  m:"Heaviest overhead pattern using leg drive. Powerful shoulder and tricep loader.", cue:"Short dip straight down, drive through heels, punch up and slightly back.", rest:180, cite:["Schoenfeld2010","Suchomel2016"]},
-      {n:"Standing Overhead Press",     m:"Strict overhead press. Biggest delt strength driver without leg drive.", cue:"Glutes tight, ribs down, full lockout with head through.", rest:150, cite:["Schoenfeld2010"]}
+      {n:"Overhead Press - Seated", sets:5, rest:150}
     ],
     accessories:[
-      {n:"Seated DB Shoulder Press",     m:"Slightly deeper ROM than barbell, easier to stabilize under fatigue.", cue:"Elbows just forward of ears, press up and slightly in.", rest:120, cite:["Schoenfeld2010"]},
-      {n:"Leaning DB Lateral Raise",     m:"Lateral delt at long muscle length. Leaning gives a bigger stretch.", cue:"Lean away from a support, lead with the elbow.", rest:75, cite:["Kassiano2023","Wolf2023"]},
-      {n:"Rear Delt Cable Fly",          m:"Isolated posterior delt without upper-trap dominance. Postural balance in a cut.", cue:"Thumbs up, drive elbows back not up.", rest:60, cite:["Schoenfeld2010"]}
+      {n:"Front Shoulder Raise - Dumbbell", sets:2},
+      {n:"Reverse Fly - Dumbbell", sets:4},
+      {n:"Cable Face Pulls", sets:4},
+      {n:"Lying Reverse Dumbbell Flys", sets:4},
+      {n:"Sideways Reverse Peck Deck", sets:4}
     ]
   }
 };
@@ -316,13 +320,14 @@ function planAssign(){
 }
 
 function exBlock(ex, kind, spec, rank){
+  var setsVal = (ex.sets != null ? ex.sets : spec.sets);
   var h='';
   h+='<div class="excard">';
   h+='  <div class="exname"><span class="rank">'+kind[0].toUpperCase()+rank+'.</span>'+esc(ex.n)+'</div>';
-  h+='  <div class="exmech">'+esc(ex.m)+'</div>';
-  h+='  <div class="excue">Cue: '+esc(ex.cue)+'</div>';
+  if(ex.m){  h+='  <div class="exmech">'+esc(ex.m)+'</div>'; }
+  if(ex.cue){ h+='  <div class="excue">Cue: '+esc(ex.cue)+'</div>'; }
   h+='  <div class="exspec">';
-  h+='    <div class="spec"><span>Sets</span>'+esc(String(spec.sets))+'</div>';
+  h+='    <div class="spec"><span>Sets</span>'+esc(String(setsVal))+'</div>';
   h+='    <div class="spec"><span>Reps</span>'+esc(String(spec.reps))+'</div>';
   h+='    <div class="spec"><span>RPE</span>'+esc(String(spec.rpe))+'</div>';
   h+='    <div class="spec"><span>Rest</span>'+Math.round((ex.rest||90)/60*10)/10+' min</div>';
@@ -337,11 +342,17 @@ function copyText(cat, catData, m){
   var lines = [];
   lines.push("OVERLOAD · "+cat+" · Wk "+m.wk+" · "+m.blockName+" ("+phaseLabel(m.phase)+")");
   lines.push("");
-  lines.push("PRIMARIES ("+m.pri.sets+"×"+m.pri.reps+" @ RPE "+m.pri.rpe+"):");
-  catData.primaries.forEach(function(ex,i){ lines.push("  "+(i+1)+". "+ex.n); });
+  lines.push("PRIMARIES ("+m.pri.reps+" reps @ RPE "+m.pri.rpe+"):");
+  catData.primaries.forEach(function(ex,i){
+    var s = (ex.sets != null ? ex.sets : m.pri.sets);
+    lines.push("  "+(i+1)+". "+ex.n+" · "+s+" sets");
+  });
   lines.push("");
-  lines.push("ACCESSORIES ("+m.acc.sets+"×"+m.acc.reps+" @ RPE "+m.acc.rpe+"):");
-  catData.accessories.forEach(function(ex,i){ lines.push("  "+(i+1)+". "+ex.n); });
+  lines.push("ACCESSORIES ("+m.acc.reps+" reps @ RPE "+m.acc.rpe+"):");
+  catData.accessories.forEach(function(ex,i){
+    var s = (ex.sets != null ? ex.sets : m.acc.sets);
+    lines.push("  "+(i+1)+". "+ex.n+" · "+s+" sets");
+  });
   if(catData.note){ lines.push(""); lines.push("Note: "+catData.note); }
   return lines.join("\n");
 }
@@ -502,13 +513,14 @@ function renderSession(){
   h+='<button class="chip" data-cat="__mornings" aria-selected="'+(cat==="__mornings"?"true":"false")+'">Mornings</button>';
   h+='</div>';
   if(cat==="__mornings"){ return h + renderMorningsCard(); }
-  var totalSets = catData.primaries.length*m.pri.sets + catData.accessories.length*m.acc.sets;
+  var totalSets = catData.primaries.reduce(function(s,e){return s+(e.sets||m.pri.sets);},0)
+                + catData.accessories.reduce(function(s,e){return s+(e.sets||m.acc.sets);},0);
   h+='<div class="dayhead"><div><h1>'+esc(cat)+'</h1><div class="meta">Week '+w+' · '+esc(m.blockName)+' · '+phaseLabel(m.phase)+'</div></div>';
   h+='<div class="vol"><b>'+totalSets+'</b><span>Hard sets</span></div></div>';
   if(catData.note){ h+='<div class="note"><b>Note.</b> '+esc(catData.note)+'</div>'; }
-  h+='<div class="rowlab">Primaries · '+m.pri.sets+'×'+m.pri.reps+' @ RPE '+m.pri.rpe+'</div>';
+  h+='<div class="rowlab">Primaries · '+m.pri.reps+' reps @ RPE '+m.pri.rpe+'</div>';
   catData.primaries.forEach(function(ex,i){ h += exBlock(ex, "P", m.pri, i+1); });
-  h+='<div class="rowlab acc">Accessories · '+m.acc.sets+'×'+m.acc.reps+' @ RPE '+m.acc.rpe+'</div>';
+  h+='<div class="rowlab acc">Accessories · '+m.acc.reps+' reps @ RPE '+m.acc.rpe+'</div>';
   catData.accessories.forEach(function(ex,i){ h += exBlock(ex, "A", m.acc, i+1); });
   var text = copyText(cat, catData, m);
   h+='<div class="copyblk"><div class="ct"><b>Copy to WHOOP Strength Trainer</b><button data-action="copy">Copy</button></div><pre id="copytext">'+esc(text)+'</pre></div>';
