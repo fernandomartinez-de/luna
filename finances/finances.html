@@ -29,11 +29,16 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background: rgba(31, 41, 55, 0.98);
-            backdrop-filter: blur(10px);
+            background: rgba(31, 41, 55, 0.95);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
             padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.36),
+                0 4px 16px rgba(0, 0, 0, 0.20),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .header {
@@ -65,11 +70,12 @@
         .menu-back:hover { color: #f3f4f6; border-color: #6b7280; }
 
         h1 {
-            color: #f3f4f6;
+            color: #f9fafb;
             margin-bottom: 8px;
             font-size: 32px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
+            font-weight: 600;
+            letter-spacing: -0.022em;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
         }
 
         .last-updated {
@@ -695,14 +701,18 @@
         @media (max-width: 768px) {
             body {
                 padding: 16px;
+                padding-top: calc(16px + env(safe-area-inset-top));
+                padding-bottom: calc(16px + env(safe-area-inset-bottom));
             }
 
             .container {
-                padding: 24px 16px;
+                padding: 24px 20px;
+                border-radius: 24px;
             }
 
             h1 {
-                font-size: 24px;
+                font-size: 26px;
+                font-weight: 600;
             }
 
             .category-header {
@@ -769,19 +779,41 @@
                 min-width: 100% !important;
                 max-width: 100% !important;
                 flex: 1 1 100% !important;
-                margin-bottom: 12px !important;
-                padding: 16px !important;
+                margin-bottom: 16px !important;
+                padding: 20px !important;
+                border-radius: 16px !important;
+                background: rgba(45, 55, 72, 0.88) !important;
+                backdrop-filter: blur(16px) saturate(160%) !important;
+                -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
+                box-shadow:
+                    0 4px 16px rgba(0, 0, 0, 0.16),
+                    0 1px 3px rgba(0, 0, 0, 0.08),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+                border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                min-height: 44px !important;
             }
 
             .investment-chart-container {
-                padding: 16px !important;
+                padding: 24px !important;
                 border-radius: 16px !important;
                 margin-bottom: 16px !important;
+                background: rgba(45, 55, 72, 0.92) !important;
+                backdrop-filter: blur(20px) saturate(180%) !important;
+                -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+                box-shadow:
+                    0 8px 32px rgba(0, 0, 0, 0.24),
+                    0 2px 8px rgba(0, 0, 0, 0.12),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+                border: 1px solid rgba(255, 255, 255, 0.08) !important;
             }
 
             .investment-chart-title {
-                font-size: 14px !important;
-                margin-bottom: 12px !important;
+                font-size: 17px !important;
+                font-weight: 600 !important;
+                letter-spacing: -0.022em !important;
+                margin-bottom: 20px !important;
+                color: #f9fafb !important;
+                font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif !important;
             }
 
             /* Force visualization grid to single column on mobile */
@@ -805,24 +837,80 @@
                 height: 220px !important;
             }
 
-            /* Asset Class Performance - stack gauges */
+            /* Asset Class Performance - stack gauges with iOS polish */
             #assetGaugesContainer {
                 flex-direction: column !important;
                 height: auto !important;
-                padding: 16px !important;
-                gap: 20px !important;
+                padding: 24px 20px !important;
+                gap: 24px !important;
             }
 
             #assetGaugesContainer > div {
                 width: 100% !important;
-                max-width: 200px !important;
+                max-width: 100% !important;
                 margin: 0 auto !important;
+                padding: 28px 24px !important;
+                background: rgba(55, 65, 81, 0.50) !important;
+                backdrop-filter: blur(16px) saturate(180%) !important;
+                -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+                border-radius: 20px !important;
+                border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                box-shadow:
+                    0 4px 20px rgba(0, 0, 0, 0.18),
+                    0 1px 4px rgba(0, 0, 0, 0.08),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
             }
 
-            /* Treemap - better mobile boxes */
+            #assetGaugesContainer > div > div[style*="width: 120px"] {
+                width: 160px !important;
+                height: 160px !important;
+                margin: 0 auto 16px !important;
+            }
+
+            #assetGaugesContainer canvas {
+                width: 160px !important;
+                height: 160px !important;
+            }
+
+            #assetGaugesContainer div[style*="font-size: 13px"] {
+                font-size: 16px !important;
+                font-weight: 600 !important;
+                letter-spacing: -0.02em !important;
+                color: #f3f4f6 !important;
+            }
+
+            #assetGaugesContainer div[style*="font-size: 12px"] {
+                font-size: 15px !important;
+                font-weight: 500 !important;
+                opacity: 0.75 !important;
+                color: #d1d5db !important;
+                margin-top: 4px !important;
+            }
+
+            #assetGaugesContainer div[style*="font-size: 18px"] {
+                font-size: 28px !important;
+                font-weight: 600 !important;
+                letter-spacing: -0.025em !important;
+                color: #fafafa !important;
+            }
+
+            /* Treemap - better mobile boxes with iOS style */
+            #treemapChart {
+                padding: 16px !important;
+                gap: 12px !important;
+            }
+
             #treemapChart > div {
-                min-width: 90px !important;
-                min-height: 90px !important;
+                min-width: 110px !important;
+                min-height: 110px !important;
+                border-radius: 16px !important;
+                box-shadow:
+                    0 4px 16px rgba(0, 0, 0, 0.20),
+                    0 1px 4px rgba(0, 0, 0, 0.10),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+                border: 1px solid rgba(255, 255, 255, 0.12) !important;
+                backdrop-filter: blur(8px) !important;
+                -webkit-backdrop-filter: blur(8px) !important;
             }
 
             /* Bubble chart container */
@@ -850,11 +938,30 @@
             .tabs {
                 gap: 8px !important;
                 border-radius: 14px !important;
+                padding: 6px !important;
+                background: rgba(31, 41, 55, 0.92) !important;
+                backdrop-filter: blur(20px) !important;
+                -webkit-backdrop-filter: blur(20px) !important;
+                box-shadow:
+                    0 2px 12px rgba(0, 0, 0, 0.12),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
             }
 
             .tab {
-                border-radius: 12px !important;
+                border-radius: 10px !important;
                 min-height: 44px !important; /* iOS touch target */
+                padding: 12px 20px !important;
+                font-size: 15px !important;
+                font-weight: 500 !important;
+                letter-spacing: -0.01em !important;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            }
+
+            .tab.active {
+                background: rgba(255, 255, 255, 0.16) !important;
+                box-shadow:
+                    0 2px 8px rgba(0, 0, 0, 0.12),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
             }
         }
     </style>
