@@ -680,6 +680,18 @@
             color: #a78bfa;
         }
 
+        /* Investment visualizations grid - desktop */
+        .investment-viz-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .investment-chart-full {
+            grid-column: 1 / -1;
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 16px;
@@ -772,17 +784,15 @@
                 margin-bottom: 12px !important;
             }
 
-            /* Force visualization grid to single column */
-            #investmentVisualizationsGrid,
-            div[style*="grid-template-columns: repeat(2, 1fr)"] {
+            /* Force visualization grid to single column on mobile */
+            .investment-viz-grid {
                 display: flex !important;
                 flex-direction: column !important;
                 gap: 16px !important;
             }
 
-            #investmentVisualizationsGrid > * {
-                width: 100% !important;
-                grid-column: 1 / -1 !important;
+            .investment-chart-full {
+                grid-column: auto !important;
             }
 
             /* Reduce chart heights on mobile */
@@ -796,11 +806,17 @@
             }
 
             /* Asset Class Performance - stack gauges */
-            .investment-chart-container div[style*="gap: 16px"][style*="padding: 20px"] {
+            #assetGaugesContainer {
                 flex-direction: column !important;
                 height: auto !important;
                 padding: 16px !important;
                 gap: 20px !important;
+            }
+
+            #assetGaugesContainer > div {
+                width: 100% !important;
+                max-width: 200px !important;
+                margin: 0 auto !important;
             }
 
             /* Treemap - better mobile boxes */
@@ -1100,7 +1116,7 @@
             </div>
 
             <!-- Asset Allocation Visualizations Grid -->
-            <div id="investmentVisualizationsGrid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 32px;">
+            <div id="investmentVisualizationsGrid" class="investment-viz-grid">
                 <!-- Treemap -->
                 <div class="investment-chart-container">
                     <div class="investment-chart-title">Asset Allocation (Treemap)</div>
@@ -1126,7 +1142,7 @@
                 <!-- Mini Gauges -->
                 <div class="investment-chart-container">
                     <div class="investment-chart-title">Asset Class Performance</div>
-                    <div style="display: flex; gap: 16px; padding: 20px; justify-content: space-around; align-items: center; height: 300px;">
+                    <div id="assetGaugesContainer" style="display: flex; gap: 16px; padding: 20px; justify-content: space-around; align-items: center; height: 300px;">
                         <div style="flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                             <div style="width: 120px; height: 120px; position: relative;">
                                 <canvas id="stocksGauge" width="120" height="120"></canvas>
@@ -1155,7 +1171,7 @@
                 </div>
 
                 <!-- Bubble Chart -->
-                <div class="investment-chart-container" style="grid-column: 1 / -1;">
+                <div class="investment-chart-container investment-chart-full">
                     <div class="investment-chart-title">Asset Performance vs. Size</div>
                     <div style="height: 300px; display: flex; align-items: center; justify-content: center; padding: 20px;">
                         <canvas id="bubbleChart"></canvas>
