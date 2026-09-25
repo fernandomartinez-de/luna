@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Fernando · Personal</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0c0d11">
@@ -11,69 +11,406 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Personal">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#0c0d11; --card:#15171d; --line:#23262f;
-    --ink:#f3f4f6; --muted:#9aa0ab; --faint:#6b7280;
-    --ember:#e9532b; --ember-soft:rgba(233,83,43,.14);
-    --green:#3fae6b; --money-soft:rgba(63,174,107,.13);
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
   }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
-  body{background:radial-gradient(1200px 600px at 50% -10%, #14161d 0%, var(--bg) 60%) fixed;
-    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;
-    -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;min-height:100%}
-  .wrap{width:100%;max-width:920px;margin:0 auto;padding:clamp(28px,6vw,72px) 20px 40px;flex:1;display:flex;flex-direction:column}
-  .head{margin-bottom:clamp(28px,5vw,48px)}
-  .kicker{font-family:'Space Grotesk',sans-serif;letter-spacing:.28em;text-transform:uppercase;font-size:12px;color:var(--faint);font-weight:600}
-  .greet{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(30px,7vw,52px);line-height:1.05;margin-top:10px;letter-spacing:-.01em}
-  .greet b{color:var(--ember)}
-  .sub{color:var(--muted);margin-top:12px;font-size:clamp(14px,2.6vw,16px);max-width:46ch}
-  .cards{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,2.4vw,20px);margin-top:8px}
-  @media (max-width:640px){ .cards{grid-template-columns:1fr} }
-  .card{position:relative;display:flex;flex-direction:column;justify-content:space-between;min-height:220px;padding:24px;border-radius:20px;background:var(--card);border:1px solid var(--line);text-decoration:none;color:inherit;overflow:hidden;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
-  .card:hover,.card:focus-visible{transform:translateY(-4px);outline:none}
-  .card.fit:hover{border-color:rgba(233,83,43,.5);box-shadow:0 18px 50px -20px rgba(233,83,43,.5)}
-  .card.money:hover{border-color:rgba(63,174,107,.5);box-shadow:0 18px 50px -20px rgba(63,174,107,.45)}
-  .badge{width:46px;height:46px;border-radius:12px;display:grid;place-items:center}
-  .fit .badge{background:var(--ember-soft);color:var(--ember)}
-  .money .badge{background:var(--money-soft);color:var(--green)}
-  .badge svg{width:24px;height:24px;stroke-width:2;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
-  .ctitle{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:23px;margin-top:20px;letter-spacing:-.01em}
-  .cdesc{color:var(--muted);font-size:14px;margin-top:6px;line-height:1.5}
-  .go{display:inline-flex;align-items:center;gap:7px;margin-top:18px;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;letter-spacing:.02em}
-  .fit .go{color:var(--ember)} .money .go{color:var(--green)}
-  .go svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.4;transition:transform .18s ease}
-  .card:hover .go svg{transform:translateX(4px)}
-  .foot{margin-top:auto;padding-top:34px;color:var(--faint);font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    color: #f9fafb;
+    min-height: 100vh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 32px 20px 40px;
+  }
+
+  /* Hero Section */
+  .hero {
+    margin-bottom: 32px;
+  }
+
+  .greeting {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #9ca3af;
+    margin-bottom: 12px;
+  }
+
+  .hero-title {
+    font-size: 34px;
+    font-weight: 600;
+    letter-spacing: -0.022em;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+
+  .hero-subtitle {
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #d1d5db;
+    max-width: 42ch;
+  }
+
+  /* Quick Stats Strip */
+  .quick-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+
+  .quick-stats::-webkit-scrollbar {
+    display: none;
+  }
+
+  .stat-pill {
+    flex-shrink: 0;
+    padding: 16px 20px;
+    border-radius: 16px;
+    background: rgba(45, 55, 72, 0.92);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.20),
+      0 1px 3px rgba(0, 0, 0, 0.10),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .stat-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #9ca3af;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: #f9fafb;
+  }
+
+  .stat-change {
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 4px;
+  }
+
+  .stat-change.positive {
+    color: #34d399;
+  }
+
+  /* Dashboard Cards */
+  .dashboard-cards {
+    display: grid;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  .dashboard-card {
+    position: relative;
+    padding: 28px 24px;
+    border-radius: 20px;
+    background: rgba(45, 55, 72, 0.92);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.24),
+      0 2px 8px rgba(0, 0, 0, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dashboard-card:active {
+    transform: scale(0.98);
+  }
+
+  .card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .card-icon.finance {
+    background: rgba(16, 185, 129, 0.15);
+  }
+
+  .card-icon.fitness {
+    background: rgba(239, 68, 68, 0.15);
+  }
+
+  .card-icon svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .card-icon.finance {
+    color: #10b981;
+  }
+
+  .card-icon.fitness {
+    color: #ef4444;
+  }
+
+  .card-title {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+
+  .card-description {
+    font-size: 15px;
+    line-height: 1.5;
+    color: #d1d5db;
+    margin-bottom: 20px;
+    flex: 1;
+  }
+
+  .card-stats {
+    display: flex;
+    gap: 24px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .card-stat-item {
+    flex: 1;
+  }
+
+  .card-stat-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #9ca3af;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .card-stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .card-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 16px;
+    color: #60a5fa;
+  }
+
+  .card-action svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+  }
+
+  .dashboard-card:active .card-action svg {
+    transform: translateX(4px);
+  }
+
+  /* Footer */
+  .footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #9ca3af;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
+  }
+
+  /* Mobile Optimizations */
+  @media (max-width: 640px) {
+    .container {
+      padding: 24px 16px 32px;
+    }
+
+    .hero-title {
+      font-size: 28px;
+    }
+
+    .hero-subtitle {
+      font-size: 16px;
+    }
+
+    .stat-pill {
+      padding: 14px 18px;
+    }
+
+    .stat-value {
+      font-size: 18px;
+    }
+
+    .dashboard-card {
+      padding: 24px 20px;
+      min-height: 180px;
+    }
+
+    .card-title {
+      font-size: 22px;
+    }
+  }
 </style>
 </head>
 <body>
-  <main class="wrap">
-    <header class="head">
-      <div class="kicker">Personal</div>
-      <h1 class="greet" id="greet">Welcome back, <b>Fernando</b></h1>
-      <p class="sub">Your two dashboards, one door. Pick where you want to go.</p>
+  <div class="container">
+    <!-- Hero Section -->
+    <header class="hero">
+      <div class="greeting">Personal</div>
+      <h1 class="hero-title" id="greeting">Welcome back, Fernando</h1>
+      <p class="hero-subtitle">Your personal command center. Track finances, fitness, and everything in between.</p>
     </header>
-    <section class="cards">
-      <a class="card fit" href="./health/fitness/index.html">
-        <div class="badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.5 6.5l11 11"/><path d="M4 8l-1.5 1.5a2.1 2.1 0 000 3L5 15"/><path d="M8 4L6.5 5.5a2.1 2.1 0 000 3"/><path d="M20 16l-1.5 1.5a2.1 2.1 0 01-3 0"/><path d="M16 20l1.5-1.5a2.1 2.1 0 000-3"/></svg></div>
-        <div><div class="ctitle">Fitness &amp; Nutrition</div><div class="cdesc">Training plan, meals, running, and daily WHOOP readouts.</div></div>
-        <span class="go">Open Overload <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+
+    <!-- Quick Stats Strip -->
+    <div class="quick-stats">
+      <div class="stat-pill">
+        <div class="stat-label">Net Worth</div>
+        <div class="stat-value">$1.14M</div>
+        <div class="stat-change positive">+$195K YTD</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-label">Last Workout</div>
+        <div class="stat-value">Today</div>
+      </div>
+    </div>
+
+    <!-- Dashboard Cards -->
+    <section class="dashboard-cards">
+      <!-- Finances Card -->
+      <a href="./finances/finances.html" class="dashboard-card">
+        <div class="card-icon finance">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 3v18h18"/>
+            <path d="M7 14l3.5-3.5 3 3L21 7"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="card-title">Finances</h2>
+          <p class="card-description">Investment portfolio, spending analytics, and net worth tracking.</p>
+        </div>
+        <div class="card-stats">
+          <div class="card-stat-item">
+            <div class="card-stat-label">Portfolio</div>
+            <div class="card-stat-value">$38.9K</div>
+          </div>
+          <div class="card-stat-item">
+            <div class="card-stat-label">This Month</div>
+            <div class="card-stat-value" style="color: #10b981;">+17%</div>
+          </div>
+        </div>
+        <div class="card-action">
+          Open Dashboard
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
       </a>
-      <a class="card money" href="./finances/finances.html">
-        <div class="badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l3.5-3.5 3 3L21 7"/></svg></div>
-        <div><div class="ctitle">Finances</div><div class="cdesc">Spending, accounts, and your investment and retirement holdings.</div></div>
-        <span class="go">Open Finances <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+
+      <!-- Fitness Card -->
+      <a href="./health/fitness/index.html" class="dashboard-card">
+        <div class="card-icon fitness">
+          <svg viewBox="0 0 24 24">
+            <path d="M6.5 6.5l11 11"/>
+            <path d="M4 8l-1.5 1.5a2.1 2.1 0 000 3L5 15"/>
+            <path d="M8 4L6.5 5.5a2.1 2.1 0 000 3"/>
+            <path d="M20 16l-1.5 1.5a2.1 2.1 0 01-3 0"/>
+            <path d="M16 20l1.5-1.5a2.1 2.1 0 000-3"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="card-title">Fitness & Nutrition</h2>
+          <p class="card-description">Training plans, nutrition tracking, and WHOOP performance data.</p>
+        </div>
+        <div class="card-stats">
+          <div class="card-stat-item">
+            <div class="card-stat-label">Strain</div>
+            <div class="card-stat-value">14.2</div>
+          </div>
+          <div class="card-stat-item">
+            <div class="card-stat-label">Recovery</div>
+            <div class="card-stat-value" style="color: #34d399;">82%</div>
+          </div>
+        </div>
+        <div class="card-action">
+          Open Overload
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
       </a>
     </section>
-    <footer class="foot"><span class="dot"></span> Both dashboards refresh automatically each morning.</footer>
-  </main>
-  <script>(function(){try{var h=new Date().getHours();var g=h<5?"Still up":h<12?"Good morning":h<18?"Good afternoon":"Good evening";var el=document.getElementById("greet");if(el)el.innerHTML=g+", <b>Fernando</b>";}catch(_){}})();</script>
-  <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){});});}</script>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <span class="status-dot"></span>
+      Both dashboards refresh automatically each morning.
+    </footer>
+  </div>
+
+  <!-- Dynamic Greeting Script -->
+  <script>
+    (function() {
+      try {
+        const hour = new Date().getHours();
+        let greeting;
+
+        if (hour < 5) greeting = "Still up";
+        else if (hour < 12) greeting = "Good morning";
+        else if (hour < 18) greeting = "Good afternoon";
+        else greeting = "Good evening";
+
+        const el = document.getElementById("greeting");
+        if (el) el.textContent = greeting + ", Fernando";
+      } catch (_) {}
+    })();
+  </script>
+
+  <!-- Service Worker -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function() {
+        navigator.serviceWorker.register("./sw.js").catch(function() {});
+      });
+    }
+  </script>
 </body>
 </html>
