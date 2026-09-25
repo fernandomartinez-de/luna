@@ -3988,7 +3988,7 @@
                 }
 
                 // Calculate new values
-                const portfolioData = calculatePortfolioValues(stockPrices, cryptoPrices, realEstateData);
+                const portfolioData = await calculatePortfolioValues(stockPrices, cryptoPrices, realEstateData);
 
                 // Update UI
                 updateDashboard(portfolioData);
@@ -4133,7 +4133,7 @@
             };
         }
 
-        function calculatePortfolioValues(stockPrices, cryptoPrices, realEstateData) {
+        async function calculatePortfolioValues(stockPrices, cryptoPrices, realEstateData) {
             // Calculate stock values
             let totalStocks = 0;
             let stocksCostBasis = 0;
