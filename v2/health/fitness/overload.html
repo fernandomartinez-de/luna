@@ -364,6 +364,143 @@ body {
   font-weight: 500;
 }
 
+/* Wger-style Exercise Library */
+.exercise-library {
+  display: flex;
+  gap: 24px;
+}
+
+.exercise-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 20px;
+  height: fit-content;
+  border: 1px solid #334155;
+  position: sticky;
+  top: 100px;
+}
+
+.filter-section {
+  margin-bottom: 24px;
+}
+
+.filter-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+  color: #cbd5e1;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.filter-option:hover {
+  color: #f1f5f9;
+}
+
+.filter-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #475569;
+  border-radius: 4px;
+  background: #0f172a;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-option.active .filter-checkbox {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.exercise-grid-container {
+  flex: 1;
+  min-width: 0;
+}
+
+.exercise-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.wger-exercise-card {
+  background: #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #334155;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.wger-exercise-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  border-color: #475569;
+}
+
+.wger-card-image {
+  width: 100%;
+  height: 140px;
+  background: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.wger-card-image svg {
+  width: 64px;
+  height: 64px;
+  color: #64748b;
+}
+
+.wger-card-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: #3b82f6;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wger-card-content {
+  padding: 12px;
+}
+
+.wger-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wger-card-equipment {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .container {
@@ -384,6 +521,19 @@ body {
 
   .goal-title {
     font-size: 24px;
+  }
+
+  .exercise-library {
+    flex-direction: column;
+  }
+
+  .exercise-sidebar {
+    width: 100%;
+    position: static;
+  }
+
+  .exercise-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   }
 }
 </style>
@@ -462,18 +612,176 @@ body {
 
     <!-- Session Tab -->
     <div id="session" class="tab-content">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Today's Session</div>
-          <span class="badge badge-primary">Chest & Triceps</span>
+      <div class="exercise-library">
+        <!-- Sidebar Filters -->
+        <div class="exercise-sidebar">
+          <div class="filter-section">
+            <div class="filter-title">Category</div>
+            <div class="filter-option active">
+              <div class="filter-checkbox"></div>
+              <span>Abs</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Arms</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Back</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Chest</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Legs</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Shoulders</span>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-title">Equipment</div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Barbell</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Dumbbell</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Cable</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Bodyweight</span>
+            </div>
+          </div>
         </div>
-        <div class="empty-state">
-          <div class="empty-state-icon">🏋️</div>
-          <div class="empty-state-text">No session data yet. Start tracking your workouts!</div>
+
+        <!-- Exercise Grid -->
+        <div class="exercise-grid-container">
+          <div class="exercise-grid">
+            <!-- Exercise Card 1 -->
+            <div class="wger-exercise-card">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Chest</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Bench Press</div>
+                <div class="wger-card-equipment">Barbell</div>
+              </div>
+            </div>
+
+            <!-- Exercise Card 2 -->
+            <div class="wger-exercise-card">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Legs</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Barbell Squat</div>
+                <div class="wger-card-equipment">Barbell</div>
+              </div>
+            </div>
+
+            <!-- Exercise Card 3 -->
+            <div class="wger-exercise-card">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Back</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Deadlift</div>
+                <div class="wger-card-equipment">Barbell</div>
+              </div>
+            </div>
+
+            <!-- Exercise Card 4 -->
+            <div class="wger-exercise-card">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Shoulders</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Shoulder Press</div>
+                <div class="wger-card-equipment">Dumbbell</div>
+              </div>
+            </div>
+
+            <!-- Exercise Card 5 -->
+            <div class="wger-exercise-card">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Arms</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Bicep Curl</div>
+                <div class="wger-card-equipment">Dumbbell</div>
+              </div>
+            </div>
+
+            <!-- Exercise Card 6 -->
+            <div class="wger-exercise-card">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Abs</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Cable Crunch</div>
+                <div class="wger-card-equipment">Cable</div>
+              </div>
+            </div>
+
+            <!-- Exercise Card 7 -->
+            <div class="wger-exercise-card">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Legs</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Leg Press</div>
+                <div class="wger-card-equipment">Machine</div>
+              </div>
+            </div>
+
+            <!-- Exercise Card 8 -->
+            <div class="wger-exercise-card">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Chest</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Incline Press</div>
+                <div class="wger-card-equipment">Dumbbell</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-
     <!-- Block Tab -->
     <div id="block" class="tab-content">
       <div class="card">
@@ -571,6 +879,13 @@ document.querySelectorAll('.sub-tab').forEach(tab => {
     // Update sub content within this section
     parent.querySelectorAll(':scope > .tab-content').forEach(c => c.classList.remove('active'));
     parent.querySelector(`#${target}`).classList.add('active');
+  });
+});
+
+// Filter toggles
+document.querySelectorAll('.filter-option').forEach(option => {
+  option.addEventListener('click', () => {
+    option.classList.toggle('active');
   });
 });
 </script>
