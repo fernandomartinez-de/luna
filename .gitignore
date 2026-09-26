@@ -80,5 +80,3 @@ tmp/
 finances/.env
 finances/.plaid_secrets.local
 finances/.plaid_investments_secrets.local
-
-vault/
