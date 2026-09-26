@@ -166,6 +166,10 @@
     background: rgba(239, 68, 68, 0.15);
   }
 
+  .card-icon.medical {
+    background: rgba(59, 130, 246, 0.15);
+  }
+
   .card-icon svg {
     width: 24px;
     height: 24px;
@@ -182,6 +186,10 @@
 
   .card-icon.fitness {
     color: #ef4444;
+  }
+
+  .card-icon.medical {
+    color: #3b82f6;
   }
 
   .card-title {
@@ -320,7 +328,7 @@
     <!-- Dashboard Cards -->
     <section class="dashboard-cards">
       <!-- Finances Card -->
-      <a href="./finances/finances.html" class="dashboard-card">
+      <a href="./finances.html" class="dashboard-card">
         <div class="card-icon finance">
           <svg viewBox="0 0 24 24">
             <path d="M3 3v18h18"/>
@@ -377,12 +385,40 @@
           <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </div>
       </a>
+
+      <!-- Medical Card -->
+      <a href="./medical.html" class="dashboard-card">
+        <div class="card-icon medical">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2v20M2 12h20"/>
+            <rect x="9" y="9" width="6" height="6" rx="1"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="card-title">Medical</h2>
+          <p class="card-description">Health metrics, lab results, and provider dashboards for oncology and nutrition.</p>
+        </div>
+        <div class="card-stats">
+          <div class="card-stat-item">
+            <div class="card-stat-label">Latest TSH</div>
+            <div class="card-stat-value">--</div>
+          </div>
+          <div class="card-stat-item">
+            <div class="card-stat-label">Weight</div>
+            <div class="card-stat-value">--</div>
+          </div>
+        </div>
+        <div class="card-action">
+          Open Medical
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+      </a>
     </section>
 
     <!-- Footer -->
     <footer class="footer">
       <span class="status-dot"></span>
-      Both dashboards refresh automatically each morning.
+      All dashboards refresh automatically each morning.
     </footer>
   </div>
 
