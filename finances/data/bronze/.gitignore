@@ -1,6 +1,0 @@
-# Ignore Excel files (bronze data)
-*.xlsx
-*.xls
-*.xlsm
-*.csv
-!.gitkeep
