@@ -1,0 +1,1231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Overload v2 · Cut to Abs</title>
+<link rel="manifest" href="../../../manifest.json">
+<meta name="theme-color" content="#0f172a">
+<link rel="apple-touch-icon" href="../../../assets/apple-touch-icon.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: #0f172a;
+  color: #e2e8f0;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Header */
+.header {
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.logo span {
+  color: #94a3b8;
+  font-weight: 400;
+  font-size: 14px;
+  margin-left: 8px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: #cbd5e1;
+}
+
+.btn:hover {
+  border-color: #475569;
+  background: #334155;
+}
+
+/* Main Tabs */
+.main-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 32px;
+  border-bottom: 2px solid #334155;
+}
+
+.main-tab {
+  padding: 12px 24px;
+  border: none;
+  background: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+}
+
+.main-tab:hover {
+  color: #cbd5e1;
+}
+
+.main-tab.active {
+  color: #60a5fa;
+  border-bottom-color: #60a5fa;
+}
+
+/* Sub Tabs */
+.sub-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.sub-tab {
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  font-size: 14px;
+  font-weight: 500;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sub-tab:hover {
+  border-color: #475569;
+}
+
+.sub-tab.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+/* Content Areas */
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Cards */
+.card {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  border: 1px solid #334155;
+  margin-bottom: 16px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.badge-secondary {
+  background: #334155;
+  color: #cbd5e1;
+}
+
+.badge-success {
+  background: #10b981;
+  color: white;
+}
+
+.badge-warning {
+  background: #f59e0b;
+  color: white;
+}
+
+/* Grid Layouts */
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.grid-3 {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+/* Stats Cards */
+.stat-card {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #334155;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #94a3b8;
+  font-weight: 500;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.stat-delta {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.stat-delta.positive {
+  color: #10b981;
+}
+
+.stat-delta.negative {
+  color: #ef4444;
+}
+
+/* Exercise Cards */
+.exercise-card {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #334155;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  transition: all 0.2s;
+}
+
+.exercise-card:hover {
+  box-shadow: 0 6px 8px rgba(0,0,0,0.4);
+  border-color: #475569;
+}
+
+.exercise-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.exercise-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.exercise-equipment {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+/* Plan Section */
+.goal-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.goal-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+}
+
+.goal-subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 20px;
+}
+
+.goal-meta {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.goal-stat {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.goal-stat strong {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+/* Progress Bar */
+.progress-bar {
+  background: #334155;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 16px 0;
+}
+
+.progress-fill {
+  background: #60a5fa;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #64748b;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+.empty-state-text {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Wger-style Exercise Library */
+.exercise-library {
+  display: flex;
+  gap: 24px;
+}
+
+.exercise-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 20px;
+  height: fit-content;
+  border: 1px solid #334155;
+  position: sticky;
+  top: 100px;
+}
+
+.workout-cart {
+  width: 320px;
+  flex-shrink: 0;
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #334155;
+  position: sticky;
+  top: 100px;
+  max-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+}
+
+.cart-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #334155;
+}
+
+.cart-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cart-count {
+  background: #3b82f6;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cart-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.cart-items {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.cart-items::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cart-items::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+.cart-items::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 2px;
+}
+
+.cart-item {
+  background: #0f172a;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #334155;
+}
+
+.cart-item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.cart-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
+  flex: 1;
+}
+
+.cart-item-remove {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.cart-item-remove:hover {
+  color: #dc2626;
+}
+
+.cart-item-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.cart-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cart-input-label {
+  font-size: 10px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cart-input {
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  padding: 6px;
+  color: #f1f5f9;
+  font-size: 13px;
+  width: 100%;
+}
+
+.cart-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.cart-footer {
+  border-top: 1px solid #334155;
+  padding-top: 16px;
+}
+
+.cart-button {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cart-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.cart-button:disabled {
+  background: #334155;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cart-clear {
+  width: 100%;
+  padding: 8px;
+  background: none;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s;
+}
+
+.cart-clear:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.filter-section {
+  margin-bottom: 24px;
+}
+
+.filter-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+  color: #cbd5e1;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.filter-option:hover {
+  color: #f1f5f9;
+}
+
+.filter-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #475569;
+  border-radius: 4px;
+  background: #0f172a;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-option.active .filter-checkbox {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.exercise-grid-container {
+  flex: 1;
+  min-width: 0;
+}
+
+.exercise-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.wger-exercise-card {
+  background: #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #334155;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.wger-exercise-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  border-color: #475569;
+}
+
+.wger-exercise-card.selected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.wger-exercise-card.selected .wger-card-badge {
+  background: #10b981;
+}
+
+.wger-card-image {
+  width: 100%;
+  height: 140px;
+  background: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.wger-card-image svg {
+  width: 64px;
+  height: 64px;
+  color: #64748b;
+}
+
+.wger-card-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: #3b82f6;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wger-card-content {
+  padding: 12px;
+}
+
+.wger-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wger-card-equipment {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .header {
+    padding: 12px 16px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .goal-card {
+    padding: 24px;
+  }
+
+  .goal-title {
+    font-size: 24px;
+  }
+
+  .exercise-library {
+    flex-direction: column;
+  }
+
+  .exercise-sidebar {
+    width: 100%;
+    position: static;
+  }
+
+  .workout-cart {
+    width: 100%;
+    position: static;
+    order: -1;
+    max-height: none;
+  }
+
+  .exercise-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-content">
+    <div class="logo">
+      OVERLOAD <span>v2 Preview</span>
+    </div>
+    <div class="header-actions">
+      <a href="../../../index.html" class="btn">← Home</a>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <!-- Main Tabs -->
+  <div class="main-tabs">
+    <button class="main-tab active" data-main="training">Training</button>
+    <button class="main-tab" data-main="nutrition">Nutrition</button>
+  </div>
+
+  <!-- Training Section -->
+  <div id="training" class="tab-content active">
+    <div class="sub-tabs">
+      <button class="sub-tab active" data-sub="plan">Plan</button>
+      <button class="sub-tab" data-sub="session">Session</button>
+      <button class="sub-tab" data-sub="block">Block</button>
+      <button class="sub-tab" data-sub="method">Method</button>
+    </div>
+
+    <!-- Plan Tab -->
+    <div id="plan" class="tab-content active">
+      <div class="goal-card">
+        <div class="goal-title">CUT TO ABS</div>
+        <div class="goal-subtitle">19-week transformation • Target: Early February</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 5%;"></div>
+        </div>
+        <div class="goal-meta">
+          <div class="goal-stat">
+            <strong>Week 1</strong>
+            of 19 total
+          </div>
+          <div class="goal-stat">
+            <strong>129</strong>
+            days remaining
+          </div>
+          <div class="goal-stat">
+            <strong>68.4kg</strong>
+            current weight
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-3">
+        <div class="stat-card">
+          <div class="stat-label">Lifts This Week</div>
+          <div class="stat-value">0</div>
+          <div class="stat-delta">0 of 6 planned</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Body Fat</div>
+          <div class="stat-value">12.5%</div>
+          <div class="stat-delta positive">+0.9% from start</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Muscle Mass</div>
+          <div class="stat-value">38.6kg</div>
+          <div class="stat-delta positive">+1.3kg gained</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Session Tab -->
+    <div id="session" class="tab-content">
+      <div class="exercise-library">
+        <!-- Sidebar Filters -->
+        <div class="exercise-sidebar">
+          <div class="filter-section">
+            <div class="filter-title">Category</div>
+            <div class="filter-option active">
+              <div class="filter-checkbox"></div>
+              <span>Abs</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Arms</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Back</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Chest</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Legs</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Shoulders</span>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-title">Equipment</div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Barbell</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Dumbbell</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Cable</span>
+            </div>
+            <div class="filter-option">
+              <div class="filter-checkbox"></div>
+              <span>Bodyweight</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Exercise Grid -->
+        <div class="exercise-grid-container">
+          <div class="exercise-grid">
+            <!-- Exercise Card 1 -->
+            <div class="wger-exercise-card" data-exercise="Bench Press" data-category="Chest" data-equipment="Barbell">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Chest</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Bench Press</div>
+                <div class="wger-card-equipment">Barbell</div>
+              </div>
+            </div>
+
+            <!-- Exercise Card 2 -->
+            <div class="wger-exercise-card" data-exercise="Barbell Squat" data-category="Legs" data-equipment="Barbell">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Legs</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Barbell Squat</div>
+                <div class="wger-card-equipment">Barbell</div>
+              </div>
+            </div>
+
+            <!-- Exercise Card 3 -->
+            <div class="wger-exercise-card" data-exercise="Deadlift" data-category="Back" data-equipment="Barbell">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Back</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Deadlift</div>
+                <div class="wger-card-equipment">Barbell</div>
+              </div>
+            </div>
+
+            <!-- Exercise Card 4 -->
+            <div class="wger-exercise-card" data-exercise="Shoulder Press" data-category="Shoulders" data-equipment="Dumbbell">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Shoulders</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Shoulder Press</div>
+                <div class="wger-card-equipment">Dumbbell</div>
+              </div>
+            </div>
+
+            <!-- Exercise Card 5 -->
+            <div class="wger-exercise-card" data-exercise="Bicep Curl" data-category="Arms" data-equipment="Dumbbell">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Arms</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Bicep Curl</div>
+                <div class="wger-card-equipment">Dumbbell</div>
+              </div>
+            </div>
+
+            <!-- Exercise Card 6 -->
+            <div class="wger-exercise-card" data-exercise="Cable Crunch" data-category="Abs" data-equipment="Cable">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Abs</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Cable Crunch</div>
+                <div class="wger-card-equipment">Cable</div>
+              </div>
+            </div>
+
+            <!-- Exercise Card 7 -->
+            <div class="wger-exercise-card" data-exercise="Leg Press" data-category="Legs" data-equipment="Machine">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Legs</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Leg Press</div>
+                <div class="wger-card-equipment">Machine</div>
+              </div>
+            </div>
+
+            <!-- Exercise Card 8 -->
+            <div class="wger-exercise-card" data-exercise="Incline Press" data-category="Chest" data-equipment="Dumbbell">
+              <div class="wger-card-image">
+                <span class="wger-card-badge">Chest</span>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div class="wger-card-content">
+                <div class="wger-card-title">Incline Press</div>
+                <div class="wger-card-equipment">Dumbbell</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Workout Cart -->
+        <div class="workout-cart">
+          <div class="cart-header">
+            <div class="cart-title">
+              <span>Today's Workout</span>
+              <span class="cart-count" id="cartCount">0</span>
+            </div>
+          </div>
+
+          <div id="cartEmpty" class="cart-empty">
+            Click exercises to add them to your workout
+          </div>
+
+          <div id="cartItems" class="cart-items" style="display: none;">
+            <!-- Cart items will be added here dynamically -->
+          </div>
+
+          <div class="cart-footer">
+            <button id="startWorkout" class="cart-button" disabled>Start Workout</button>
+            <button id="clearCart" class="cart-clear" style="display: none;">Clear All</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Block Tab -->
+    <div id="block" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Training Block Progress</div>
+        </div>
+        <div class="empty-state">
+          <div class="empty-state-icon">📊</div>
+          <div class="empty-state-text">Block tracking coming soon...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Method Tab -->
+    <div id="method" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Progressive Overload Method</div>
+        </div>
+        <div class="empty-state">
+          <div class="empty-state-icon">📈</div>
+          <div class="empty-state-text">Method analysis coming soon...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nutrition Section -->
+  <div id="nutrition" class="tab-content">
+    <div class="sub-tabs">
+      <button class="sub-tab active" data-sub="today">Today</button>
+      <button class="sub-tab" data-sub="trends">Trends</button>
+    </div>
+
+    <!-- Today Tab -->
+    <div id="today" class="tab-content active">
+      <div class="grid grid-2">
+        <div class="stat-card">
+          <div class="stat-label">Calories</div>
+          <div class="stat-value">0 / 1,600</div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Protein</div>
+          <div class="stat-value">0g / 137g</div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trends Tab -->
+    <div id="trends" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">60-Day Nutrition Trends</div>
+        </div>
+        <div class="empty-state">
+          <div class="empty-state-icon">📉</div>
+          <div class="empty-state-text">Start tracking meals to see your trends...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.main-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.main;
+
+    // Update main tabs
+    document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+
+    // Update content
+    document.querySelectorAll('.container > .tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(target).classList.add('active');
+  });
+});
+
+document.querySelectorAll('.sub-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.sub;
+    const parent = tab.closest('.tab-content');
+
+    // Update sub tabs within this section
+    parent.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+
+    // Update sub content within this section
+    parent.querySelectorAll(':scope > .tab-content').forEach(c => c.classList.remove('active'));
+    parent.querySelector(`#${target}`).classList.add('active');
+  });
+});
+
+// Filter toggles
+document.querySelectorAll('.filter-option').forEach(option => {
+  option.addEventListener('click', () => {
+    option.classList.toggle('active');
+  });
+});
+
+// Workout Cart
+let workoutCart = [];
+
+function updateCartUI() {
+  const cartCount = document.getElementById('cartCount');
+  const cartEmpty = document.getElementById('cartEmpty');
+  const cartItems = document.getElementById('cartItems');
+  const startButton = document.getElementById('startWorkout');
+  const clearButton = document.getElementById('clearCart');
+
+  cartCount.textContent = workoutCart.length;
+
+  if (workoutCart.length === 0) {
+    cartEmpty.style.display = 'block';
+    cartItems.style.display = 'none';
+    startButton.disabled = true;
+    clearButton.style.display = 'none';
+  } else {
+    cartEmpty.style.display = 'none';
+    cartItems.style.display = 'block';
+    startButton.disabled = false;
+    clearButton.style.display = 'block';
+
+    // Render cart items
+    cartItems.innerHTML = workoutCart.map((item, index) => `
+      <div class="cart-item">
+        <div class="cart-item-header">
+          <div class="cart-item-name">${item.name}</div>
+          <button class="cart-item-remove" onclick="removeFromCart(${index})">×</button>
+        </div>
+        <div class="cart-item-inputs">
+          <div class="cart-input-group">
+            <div class="cart-input-label">Sets</div>
+            <input type="number" class="cart-input" value="${item.sets || 3}" min="1"
+              onchange="updateCartItem(${index}, 'sets', this.value)">
+          </div>
+          <div class="cart-input-group">
+            <div class="cart-input-label">Reps</div>
+            <input type="number" class="cart-input" value="${item.reps || 10}" min="1"
+              onchange="updateCartItem(${index}, 'reps', this.value)">
+          </div>
+          <div class="cart-input-group">
+            <div class="cart-input-label">Weight</div>
+            <input type="number" class="cart-input" value="${item.weight || 0}" min="0" step="5"
+              onchange="updateCartItem(${index}, 'weight', this.value)">
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Update selected state on exercise cards
+  document.querySelectorAll('.wger-exercise-card').forEach(card => {
+    const exerciseName = card.dataset.exercise;
+    if (workoutCart.some(item => item.name === exerciseName)) {
+      card.classList.add('selected');
+    } else {
+      card.classList.remove('selected');
+    }
+  });
+}
+
+function addToCart(name, category, equipment) {
+  const existing = workoutCart.find(item => item.name === name);
+  if (existing) {
+    // Remove if already in cart (toggle)
+    workoutCart = workoutCart.filter(item => item.name !== name);
+  } else {
+    // Add to cart
+    workoutCart.push({
+      name,
+      category,
+      equipment,
+      sets: 3,
+      reps: 10,
+      weight: 0
+    });
+  }
+  updateCartUI();
+}
+
+function removeFromCart(index) {
+  workoutCart.splice(index, 1);
+  updateCartUI();
+}
+
+function updateCartItem(index, field, value) {
+  workoutCart[index][field] = parseInt(value) || 0;
+}
+
+// Add click handlers to exercise cards
+document.querySelectorAll('.wger-exercise-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const name = card.dataset.exercise;
+    const category = card.dataset.category;
+    const equipment = card.dataset.equipment;
+    addToCart(name, category, equipment);
+  });
+});
+
+// Start workout button
+document.getElementById('startWorkout').addEventListener('click', () => {
+  if (workoutCart.length > 0) {
+    alert(`Starting workout with ${workoutCart.length} exercises!\n\n` +
+      workoutCart.map(e => `${e.name}: ${e.sets}x${e.reps} @ ${e.weight}lbs`).join('\n'));
+    // Here you could save to Supabase, navigate to a workout tracking view, etc.
+  }
+});
+
+// Clear cart button
+document.getElementById('clearCart').addEventListener('click', () => {
+  if (confirm('Clear all exercises from your workout?')) {
+    workoutCart = [];
+    updateCartUI();
+  }
+});
+</script>
+
+</body>
+</html>
