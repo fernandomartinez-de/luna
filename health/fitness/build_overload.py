@@ -2,7 +2,7 @@
 """
 build_overload.py
 
-Renders health/fitness/index.html from template.html by reading body-composition
+Renders health/fitness/overload.html from template.html by reading body-composition
 history, WHOOP workout cadence (dates and sport only - no recovery, HRV, sleep,
 or strain surfaced), and recent strength-training history from Supabase, then
 injecting four JSON payloads into template tokens:
@@ -36,7 +36,7 @@ from suggestions import build_suggestions
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 TEMPLATE = SCRIPT_DIR / "template.html"
-OUTPUT = SCRIPT_DIR / "index.html"
+OUTPUT = SCRIPT_DIR / "overload.html"
 
 TOKEN_PLAN          = "__PLAN_DATA__"
 TOKEN_BODY          = "__BODY_DATA__"
