@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Overload v2 · Cut to Abs</title>
+<link rel="manifest" href="../../../manifest.json">
+<meta name="theme-color" content="#ffffff">
+<link rel="apple-touch-icon" href="../../../assets/apple-touch-icon.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: #f5f7fa;
+  color: #1a202c;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Header */
+.header {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.logo span {
+  color: #4a5568;
+  font-weight: 400;
+  font-size: 14px;
+  margin-left: 8px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: #4a5568;
+}
+
+.btn:hover {
+  border-color: #cbd5e0;
+  background: #f7fafc;
+}
+
+/* Main Tabs */
+.main-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 32px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.main-tab {
+  padding: 12px 24px;
+  border: none;
+  background: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: #718096;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+}
+
+.main-tab:hover {
+  color: #2d3748;
+}
+
+.main-tab.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
+/* Sub Tabs */
+.sub-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.sub-tab {
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sub-tab:hover {
+  border-color: #cbd5e0;
+}
+
+.sub-tab.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+/* Content Areas */
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Cards */
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.badge-secondary {
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+.badge-success {
+  background: #10b981;
+  color: white;
+}
+
+.badge-warning {
+  background: #f59e0b;
+  color: white;
+}
+
+/* Grid Layouts */
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.grid-3 {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+/* Stats Cards */
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #718096;
+  font-weight: 500;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.stat-delta {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.stat-delta.positive {
+  color: #10b981;
+}
+
+.stat-delta.negative {
+  color: #ef4444;
+}
+
+/* Exercise Cards */
+.exercise-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: all 0.2s;
+}
+
+.exercise-card:hover {
+  box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+  border-color: #cbd5e0;
+}
+
+.exercise-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.exercise-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.exercise-equipment {
+  font-size: 13px;
+  color: #718096;
+  margin-top: 4px;
+}
+
+/* Plan Section */
+.goal-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.goal-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+}
+
+.goal-subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 20px;
+}
+
+.goal-meta {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.goal-stat {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.goal-stat strong {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+/* Progress Bar */
+.progress-bar {
+  background: #e2e8f0;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 16px 0;
+}
+
+.progress-fill {
+  background: #3b82f6;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #718096;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+.empty-state-text {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .header {
+    padding: 12px 16px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .goal-card {
+    padding: 24px;
+  }
+
+  .goal-title {
+    font-size: 24px;
+  }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-content">
+    <div class="logo">
+      OVERLOAD <span>v2 Preview</span>
+    </div>
+    <div class="header-actions">
+      <a href="../../../index.html" class="btn">← Home</a>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <!-- Main Tabs -->
+  <div class="main-tabs">
+    <button class="main-tab active" data-main="training">Training</button>
+    <button class="main-tab" data-main="nutrition">Nutrition</button>
+  </div>
+
+  <!-- Training Section -->
+  <div id="training" class="tab-content active">
+    <div class="sub-tabs">
+      <button class="sub-tab active" data-sub="plan">Plan</button>
+      <button class="sub-tab" data-sub="session">Session</button>
+      <button class="sub-tab" data-sub="block">Block</button>
+      <button class="sub-tab" data-sub="method">Method</button>
+    </div>
+
+    <!-- Plan Tab -->
+    <div id="plan" class="tab-content active">
+      <div class="goal-card">
+        <div class="goal-title">CUT TO ABS</div>
+        <div class="goal-subtitle">19-week transformation • Target: Early February</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 5%;"></div>
+        </div>
+        <div class="goal-meta">
+          <div class="goal-stat">
+            <strong>Week 1</strong>
+            of 19 total
+          </div>
+          <div class="goal-stat">
+            <strong>129</strong>
+            days remaining
+          </div>
+          <div class="goal-stat">
+            <strong>68.4kg</strong>
+            current weight
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-3">
+        <div class="stat-card">
+          <div class="stat-label">Lifts This Week</div>
+          <div class="stat-value">0</div>
+          <div class="stat-delta">0 of 6 planned</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Body Fat</div>
+          <div class="stat-value">12.5%</div>
+          <div class="stat-delta positive">+0.9% from start</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Muscle Mass</div>
+          <div class="stat-value">38.6kg</div>
+          <div class="stat-delta positive">+1.3kg gained</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Session Tab -->
+    <div id="session" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Today's Session</div>
+          <span class="badge badge-primary">Chest & Triceps</span>
+        </div>
+        <div class="empty-state">
+          <div class="empty-state-icon">🏋️</div>
+          <div class="empty-state-text">No session data yet. Start tracking your workouts!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Block Tab -->
+    <div id="block" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Training Block Progress</div>
+        </div>
+        <div class="empty-state">
+          <div class="empty-state-icon">📊</div>
+          <div class="empty-state-text">Block tracking coming soon...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Method Tab -->
+    <div id="method" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Progressive Overload Method</div>
+        </div>
+        <div class="empty-state">
+          <div class="empty-state-icon">📈</div>
+          <div class="empty-state-text">Method analysis coming soon...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nutrition Section -->
+  <div id="nutrition" class="tab-content">
+    <div class="sub-tabs">
+      <button class="sub-tab active" data-sub="today">Today</button>
+      <button class="sub-tab" data-sub="trends">Trends</button>
+    </div>
+
+    <!-- Today Tab -->
+    <div id="today" class="tab-content active">
+      <div class="grid grid-2">
+        <div class="stat-card">
+          <div class="stat-label">Calories</div>
+          <div class="stat-value">0 / 1,600</div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Protein</div>
+          <div class="stat-value">0g / 137g</div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trends Tab -->
+    <div id="trends" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">60-Day Nutrition Trends</div>
+        </div>
+        <div class="empty-state">
+          <div class="empty-state-icon">📉</div>
+          <div class="empty-state-text">Start tracking meals to see your trends...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.main-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.main;
+
+    // Update main tabs
+    document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+
+    // Update content
+    document.querySelectorAll('.container > .tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(target).classList.add('active');
+  });
+});
+
+document.querySelectorAll('.sub-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.sub;
+    const parent = tab.closest('.tab-content');
+
+    // Update sub tabs within this section
+    parent.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+
+    // Update sub content within this section
+    parent.querySelectorAll(':scope > .tab-content').forEach(c => c.classList.remove('active'));
+    parent.querySelector(`#${target}`).classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>
