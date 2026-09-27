@@ -16,7 +16,7 @@ export default function BodyDiagram({ exercise }) {
           <Model
             data={data}
             type="anterior"
-            style={{ width: '14rem' }}
+            style={{ width: '100%' }}
             highlightedColors={highlightedColors}
             bodyColor="#334155"
           />
@@ -26,7 +26,7 @@ export default function BodyDiagram({ exercise }) {
           <Model
             data={data}
             type="posterior"
-            style={{ width: '14rem' }}
+            style={{ width: '100%' }}
             highlightedColors={highlightedColors}
             bodyColor="#334155"
           />

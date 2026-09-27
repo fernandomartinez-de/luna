@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient.js'
 
-export default function SaveWorkoutModal({ selectedExercises, onClose, onSaved }) {
+export default function SaveWorkoutModal({ exercises, onClose, onSaved }) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [rows, setRows] = useState(
+    exercises.map((ex) => ({ id: ex.id, name: ex.name, sets: 3, reps: 10 }))
+  )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+
+  const updateRow = (id, field, value) => {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)))
+  }
 
   const handleSave = async (e) => {
     e.preventDefault()
@@ -13,7 +20,6 @@ export default function SaveWorkoutModal({ selectedExercises, onClose, onSaved }
     setError(null)
 
     try {
-      // Create workout
       const { data: workout, error: workoutError } = await supabase
         .from('workouts')
         .insert({ name, description })
@@ -22,11 +28,12 @@ export default function SaveWorkoutModal({ selectedExercises, onClose, onSaved }
 
       if (workoutError) throw workoutError
 
-      // Create workout_exercises entries
-      const workoutExercises = selectedExercises.map((exerciseId, index) => ({
+      const workoutExercises = rows.map((r, index) => ({
         workout_id: workout.id,
-        exercise_id: exerciseId,
-        order_index: index
+        exercise_id: r.id,
+        order_index: index,
+        sets: Number(r.sets) || null,
+        reps: Number(r.reps) || null
       }))
 
       const { error: exercisesError } = await supabase
@@ -41,6 +48,12 @@ export default function SaveWorkoutModal({ selectedExercises, onClose, onSaved }
     } finally {
       setSaving(false)
     }
+  }
+
+  const numInput = {
+    width: '46px', textAlign: 'center', fontSize: '16px', padding: '4px',
+    borderRadius: '6px', border: '1px solid var(--surface-border)',
+    background: 'var(--surface-raised)', color: 'var(--tx-primary)'
   }
 
   return (
@@ -70,12 +83,27 @@ export default function SaveWorkoutModal({ selectedExercises, onClose, onSaved }
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add notes about this workout..."
-              rows={3}
+              rows={2}
             />
           </div>
 
-          <div className="modal-info">
-            {selectedExercises.length} exercise{selectedExercises.length !== 1 ? 's' : ''} selected
+          <div className="modal-field">
+            <label>Exercises · sets &amp; reps</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '40vh', overflowY: 'auto' }}>
+              {rows.map((r) => (
+                <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--surface-base)', border: '1px solid var(--surface-border)', borderRadius: '8px', padding: '8px 10px' }}>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: '13px', color: 'var(--tx-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--tx-muted)' }}>
+                    sets
+                    <input type="number" min="1" max="20" value={r.sets} onChange={(e) => updateRow(r.id, 'sets', e.target.value)} style={numInput} />
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--tx-muted)' }}>
+                    reps
+                    <input type="number" min="1" max="100" value={r.reps} onChange={(e) => updateRow(r.id, 'reps', e.target.value)} style={numInput} />
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
 
           {error && (
@@ -83,19 +111,10 @@ export default function SaveWorkoutModal({ selectedExercises, onClose, onSaved }
           )}
 
           <div className="modal-actions">
-            <button
-              type="button"
-              className="modal-button secondary"
-              onClick={onClose}
-              disabled={saving}
-            >
+            <button type="button" className="modal-button secondary" onClick={onClose} disabled={saving}>
               Cancel
             </button>
-            <button
-              type="submit"
-              className="modal-button primary"
-              disabled={saving}
-            >
+            <button type="submit" className="modal-button primary" disabled={saving}>
               {saving ? 'Saving...' : 'Save Workout'}
             </button>
           </div>

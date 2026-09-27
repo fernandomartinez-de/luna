@@ -2,6 +2,35 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 
+// Format a Date as YYYY-MM-DD from LOCAL calendar fields (not UTC).
+function toLocalDateStr(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+// Map a WHOOP sport_name to a matching glyph for the Recent Workout badge.
+function sportEmoji(sport) {
+  const s = (sport || '').toLowerCase()
+  if (s.includes('run')) return '🏃'
+  if (s.includes('walk')) return '🚶'
+  if (s.includes('soccer') || s.includes('football')) return '⚽'
+  if (s.includes('weight') || s.includes('lift') || s.includes('strength') || s.includes('power')) return '🏋️'
+  if (s.includes('golf')) return '⛳'
+  if (s.includes('hockey')) return '🏒'
+  if (s.includes('cycl') || s.includes('bike') || s.includes('ride') || s.includes('spin')) return '🚴'
+  if (s.includes('swim')) return '🏊'
+  if (s.includes('tennis')) return '🎾'
+  if (s.includes('basket')) return '🏀'
+  if (s.includes('yoga')) return '🧘'
+  if (s.includes('box')) return '🥊'
+  if (s.includes('row')) return '🚣'
+  if (s.includes('hik')) return '🥾'
+  if (s.includes('ski')) return '⛷️'
+  return '💪'
+}
+
 export default function HomePage() {
   const now = new Date()
   const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()]
@@ -16,6 +45,11 @@ export default function HomePage() {
   const [lastWorkout, setLastWorkout] = useState(null)
   const [nutritionToday, setNutritionToday] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0 })
   const [workoutDays, setWorkoutDays] = useState([])
+  const [strainRange, setStrainRange] = useState(14)
+  const [strainData, setStrainData] = useState([])
+  const [todayBurn, setTodayBurn] = useState(0)
+  const [muscleBalance, setMuscleBalance] = useState([])
+  const [completedCount, setCompletedCount] = useState(0)
 
   // Load data
   useEffect(() => {
@@ -24,7 +58,13 @@ export default function HomePage() {
     loadLastWorkout()
     loadNutritionToday()
     loadConsistencyData()
+    loadTodayCalories()
+    loadMuscleBalance()
   }, [])
+
+  useEffect(() => {
+    loadStrainData(strainRange)
+  }, [strainRange])
 
   async function loadWorkoutStats() {
     const startOfWeek = new Date()
@@ -92,25 +132,20 @@ export default function HomePage() {
   }
 
   async function loadNutritionToday() {
-    // Note: Using meal_plan table - adjust if your nutrition data is elsewhere
-    const startOfDay = new Date()
-    startOfDay.setHours(0, 0, 0, 0)
-    const endOfDay = new Date()
-    endOfDay.setHours(23, 59, 59, 999)
+    const d = new Date()
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
     const { data } = await supabase
-      .from('meal_plan')
-      .select('*')
-      .gte('created_at', startOfDay.toISOString())
-      .lte('created_at', endOfDay.toISOString())
+      .from('nutrition_log')
+      .select('calories_kcal, protein_g, carbs_g, fat_g')
+      .eq('logged_date', today)
 
-    if (data && data.length > 0) {
-      // Adjust field names based on your actual meal_plan schema
+    if (data) {
       const totals = data.reduce((acc, item) => ({
-        calories: acc.calories + (item.calories || 0),
-        protein: acc.protein + (item.protein || item.protein_g || 0),
-        carbs: acc.carbs + (item.carbs || item.carbs_g || 0),
-        fat: acc.fat + (item.fat || item.fat_g || 0)
+        calories: acc.calories + Number(item.calories_kcal || 0),
+        protein: acc.protein + Number(item.protein_g || 0),
+        carbs: acc.carbs + Number(item.carbs_g || 0),
+        fat: acc.fat + Number(item.fat_g || 0)
       }), { calories: 0, protein: 0, carbs: 0, fat: 0 })
       setNutritionToday(totals)
     }
@@ -137,10 +172,73 @@ export default function HomePage() {
 
     if (data) {
       // Extract unique workout dates (YYYY-MM-DD format)
-      const dates = data.map(w => new Date(w.start_time).toISOString().split('T')[0])
+      const dates = data.map(w => toLocalDateStr(new Date(w.start_time)))
       console.log('Workout dates for heatmap:', dates.slice(0, 10)) // Show first 10
       console.log('Total workout days:', dates.length)
       setWorkoutDays(dates)
+    }
+  }
+
+  async function loadMuscleBalance() {
+    const { data, error } = await supabase
+      .from('completed_workouts')
+      .select('workouts(workout_exercises(exercises(muscle_group)))')
+
+    if (error) {
+      console.error('Muscle balance error:', error)
+      return
+    }
+
+    const tally = {}
+    ;(data || []).forEach((cw) => {
+      const wes = cw.workouts && cw.workouts.workout_exercises ? cw.workouts.workout_exercises : []
+      wes.forEach((we) => {
+        const m = we.exercises && we.exercises.muscle_group
+        if (m) tally[m] = (tally[m] || 0) + 1
+      })
+    })
+    const arr = Object.entries(tally)
+      .map(([muscle, count]) => ({ muscle, count }))
+      .sort((a, b) => b.count - a.count)
+    setMuscleBalance(arr)
+    setCompletedCount((data || []).length)
+  }
+
+  async function loadTodayCalories() {
+    const { data, error } = await supabase
+      .from('whoop_cycles')
+      .select('calories_kcal')
+      .order('start_time', { ascending: false })
+      .limit(1)
+
+    if (error) {
+      console.error('Today calories error:', error)
+      return
+    }
+
+    if (data && data.length > 0 && data[0].calories_kcal != null) {
+      setTodayBurn(Math.round(Number(data[0].calories_kcal)))
+    }
+  }
+
+  async function loadStrainData(days) {
+    const { data, error } = await supabase
+      .from('whoop_cycles')
+      .select('start_time, strain')
+      .order('start_time', { ascending: false })
+      .limit(days)
+
+    if (error) {
+      console.error('Strain data error:', error)
+      return
+    }
+
+    if (data) {
+      const rows = data
+        .filter(d => d.strain != null)
+        .reverse()
+        .map(d => ({ date: new Date(d.start_time), strain: Number(d.strain) }))
+      setStrainData(rows)
     }
   }
 
@@ -203,10 +301,8 @@ export default function HomePage() {
               <path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"></path>
             </svg>
           </div>
-          <p style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--tx-primary)', lineHeight: 1, margin: 0 }}>{Math.round(nutritionToday.calories)}</p>
-          <div style={{ height: '4px', backgroundColor: 'var(--surface-muted)', borderRadius: '2px', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.min((nutritionToday.calories / 2000) * 100, 100)}%`, background: '#00b8d9', transition: 'width 0.3s ease' }}></div>
-          </div>
+          <p style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--tx-primary)', lineHeight: 1, margin: 0 }}>{todayBurn.toLocaleString()}</p>
+          <p style={{ fontSize: '10px', color: 'var(--tx-muted)', margin: 0 }}>kcal burned</p>
         </div>
         <div style={{ backgroundColor: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -226,7 +322,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Volume Trend */}
+      {/* Volume Trend -> WHOOP daily strain */}
       <div style={{ backgroundColor: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: '12px', padding: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -237,22 +333,50 @@ export default function HomePage() {
             <h2 style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--tx-secondary)' }}>Volume Trend</h2>
           </div>
           <div style={{ flexShrink: 0, display: 'flex', gap: '4px', backgroundColor: 'var(--surface-overlay)', borderRadius: '8px', padding: '4px' }}>
-            <button style={{ padding: '6px 12px', border: '1px solid var(--surface-border)', backgroundColor: 'var(--surface-raised)', borderRadius: '6px', fontSize: '12px', fontWeight: 500, color: 'var(--tx-primary)', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>7</button>
-            <button style={{ padding: '6px 12px', border: 'none', backgroundColor: 'transparent', borderRadius: '6px', fontSize: '12px', fontWeight: 500, color: 'var(--tx-muted)', cursor: 'pointer' }}>14</button>
-            <button style={{ padding: '6px 12px', border: 'none', backgroundColor: 'transparent', borderRadius: '6px', fontSize: '12px', fontWeight: 500, color: 'var(--tx-muted)', cursor: 'pointer' }}>30</button>
+            {[7, 14, 30].map((n) => {
+              const active = strainRange === n
+              return (
+                <button
+                  key={n}
+                  onClick={() => setStrainRange(n)}
+                  style={{ padding: '6px 12px', border: active ? '1px solid var(--surface-border)' : 'none', backgroundColor: active ? 'var(--surface-raised)' : 'transparent', borderRadius: '6px', fontSize: '12px', fontWeight: 500, color: active ? 'var(--tx-primary)' : 'var(--tx-muted)', cursor: 'pointer', boxShadow: active ? '0 1px 2px rgba(0,0,0,0.3)' : 'none' }}
+                >
+                  {n}
+                </button>
+              )
+            })}
           </div>
         </div>
-        <div style={{ height: '110px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--surface-base)', borderRadius: '8px', color: 'var(--tx-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
-          No workout data yet
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
-          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '10px', fontWeight: 600, color: i === 5 ? 'var(--brand-400)' : 'var(--tx-muted)' }}>{day}</span>
-              <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: i === 5 ? 'transparent' : 'rgba(28, 47, 80, 0.6)', border: i === 5 ? '2px solid var(--brand-500)' : '2px solid transparent', transition: 'all 0.2s ease' }}></div>
-            </div>
-          ))}
-        </div>
+        {strainData.length === 0 ? (
+          <div style={{ height: '110px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--surface-base)', borderRadius: '8px', color: 'var(--tx-muted)', fontSize: '0.85rem' }}>
+            No strain data yet
+          </div>
+        ) : (() => {
+          const maxStrain = Math.max(...strainData.map(s => s.strain), 1)
+          const avg = strainData.reduce((a, s) => a + s.strain, 0) / strainData.length
+          return (
+            <>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '110px' }}>
+                {strainData.map((d, i) => {
+                  const pct = Math.max((d.strain / maxStrain) * 100, 3)
+                  const color = d.strain >= 18 ? '#ef4444' : d.strain >= 14 ? '#f59e0b' : d.strain >= 10 ? '#00b8d9' : '#3b82f6'
+                  return (
+                    <div
+                      key={i}
+                      title={`${d.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} - strain ${d.strain.toFixed(1)}`}
+                      style={{ flex: 1, height: `${pct}%`, minHeight: '3px', background: color, borderRadius: '3px 3px 0 0', transition: 'height 0.3s ease', cursor: 'pointer' }}
+                    />
+                  )
+                })}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', fontSize: '10px', color: 'var(--tx-muted)' }}>
+                <span>{strainData[0].date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                <span>avg strain {avg.toFixed(1)}</span>
+                <span>{strainData[strainData.length - 1].date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+              </div>
+            </>
+          )
+        })()}
       </div>
 
       {/* Consistency Heatmap */}
@@ -266,50 +390,47 @@ export default function HomePage() {
           </div>
           <span style={{ fontSize: '12px', color: 'var(--tx-muted)' }}>12 weeks</span>
         </div>
-        <div style={{ display: 'flex', gap: '18px', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'stretch' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', fontWeight: 500, color: 'var(--tx-muted)' }}>
-            <span style={{ height: '24px', lineHeight: '24px' }}>M</span>
-            <span style={{ height: '24px', lineHeight: '24px' }}>T</span>
-            <span style={{ height: '24px', lineHeight: '24px' }}>W</span>
-            <span style={{ height: '24px', lineHeight: '24px' }}>T</span>
-            <span style={{ height: '24px', lineHeight: '24px' }}>F</span>
-            <span style={{ height: '24px', lineHeight: '24px' }}>S</span>
-            <span style={{ height: '24px', lineHeight: '24px' }}>S</span>
-          </div>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            {Array.from({ length: 12 }).map((_, weekIndex) => (
-              <div key={weekIndex} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {Array.from({ length: 7 }).map((_, dayIndex) => {
-                  const now = new Date()
-                  now.setHours(0, 0, 0, 0)
-                  const dayOfWeek = now.getDay()
-                  const daysFromMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-                  const monday = new Date(now)
-                  monday.setDate(now.getDate() - daysFromMon)
-                  const firstMonday = new Date(monday)
-                  firstMonday.setDate(monday.getDate() - (11 * 7))
-                  const currentDay = new Date(firstMonday)
-                  currentDay.setDate(firstMonday.getDate() + (weekIndex * 7) + dayIndex)
-                  const dayString = currentDay.toISOString().split('T')[0]
-                  const isWorkoutDay = workoutDays.includes(dayString)
-                  const isFutureDay = currentDay > now
-
-                  return (
-                    <div
-                      key={dayIndex}
-                      title={`${dayString}${isWorkoutDay ? ' - Workout' : ''}`}
-                      style={{
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '4px',
-                        background: isFutureDay ? 'rgba(22, 34, 64, 0.3)' : isWorkoutDay ? '#00b8d9' : 'rgba(22, 34, 64, 0.5)',
-                        cursor: 'pointer'
-                      }}
-                    />
-                  )
-                })}
-              </div>
+            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((label, i) => (
+              <span key={i} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>{label}</span>
             ))}
+          </div>
+          <div style={{ flex: 1, display: 'flex', gap: '6px' }}>
+            {(() => {
+              const today = new Date()
+              today.setHours(0, 0, 0, 0)
+              const dayOfWeek = today.getDay()
+              const daysFromMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+              const firstMonday = new Date(today)
+              firstMonday.setDate(today.getDate() - daysFromMon - (11 * 7))
+
+              return Array.from({ length: 12 }).map((_, weekIndex) => (
+                <div key={weekIndex} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {Array.from({ length: 7 }).map((_, dayIndex) => {
+                    const cellDate = new Date(firstMonday)
+                    cellDate.setDate(firstMonday.getDate() + (weekIndex * 7) + dayIndex)
+                    const dayString = toLocalDateStr(cellDate)
+                    const isWorkoutDay = workoutDays.includes(dayString)
+                    const isFutureDay = cellDate > today
+
+                    return (
+                      <div
+                        key={dayIndex}
+                        title={`${dayString}${isWorkoutDay ? ' - Workout' : ''}`}
+                        style={{
+                          width: '100%',
+                          aspectRatio: '1 / 1',
+                          borderRadius: '4px',
+                          background: isFutureDay ? 'rgba(22, 34, 64, 0.3)' : isWorkoutDay ? '#00b8d9' : 'rgba(22, 34, 64, 0.5)',
+                          cursor: 'pointer'
+                        }}
+                      />
+                    )
+                  })}
+                </div>
+              ))
+            })()}
           </div>
         </div>
       </div>
@@ -322,7 +443,10 @@ export default function HomePage() {
             <Link to="/workouts" style={{ fontSize: '12px', color: 'var(--brand-400)', textDecoration: 'none', transition: 'color 0.15s ease' }}>All →</Link>
           </div>
           {lastWorkout ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'center' }}>
+              <div style={{ width: '48px', height: '48px', margin: '0 auto', borderRadius: '50%', backgroundColor: 'var(--surface-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem' }}>
+                {sportEmoji(lastWorkout.sport_name)}
+              </div>
               <div>
                 <p style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--tx-primary)', margin: 0 }}>
                   {lastWorkout.sport_name || 'Workout'}
@@ -399,9 +523,9 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Muscle Balance */}
+      {/* Muscle Balance from completed workouts */}
       <div style={{ backgroundColor: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: '12px', padding: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-500)', flexShrink: 0 }}>
               <path d="M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z"></path>
@@ -412,39 +536,48 @@ export default function HomePage() {
             </svg>
             <h2 style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--tx-secondary)' }}>Muscle Balance</h2>
           </div>
-          <span style={{ fontSize: '12px', color: 'var(--tx-muted)' }}>49 workouts</span>
+          <span style={{ fontSize: '12px', color: 'var(--tx-muted)' }}>{completedCount} workout{completedCount !== 1 ? 's' : ''}</span>
         </div>
-        <p style={{ fontSize: '12px', color: 'var(--tx-muted)', marginTop: '0', marginBottom: '12px', fontStyle: 'italic' }}>Can't fit through doorways. Good.</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {[
-            { name: 'Shoulders', sets: 150, pct: 21, color: '#818cf8', top: true },
-            { name: 'Hamstrings', sets: 120, pct: 16, color: '#6ee7b7' },
-            { name: 'Chest', sets: 119, pct: 16, color: '#f87171' },
-            { name: 'Quadriceps', sets: 88, pct: 12, color: '#34d399' },
-            { name: 'Calves', sets: 88, pct: 12, color: '#4ade80' },
-            { name: 'Middle-Back', sets: 64, pct: 9, color: '#6366f1' },
-            { name: 'Triceps', sets: 51, pct: 7, color: '#a78bfa' },
-            { name: 'Lats', sets: 48, pct: 7, color: '#38bdf8' }
-          ].map((muscle, i) => (
-            <div key={i}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, backgroundColor: muscle.color }}></div>
-                <span style={{ fontSize: '12px', textTransform: 'capitalize', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: muscle.top ? 600 : 400, color: muscle.top ? 'var(--tx-primary)' : 'var(--tx-secondary)' }}>
-                  {muscle.name}
-                  {muscle.top && <span style={{ marginLeft: '4px', fontSize: '9px', fontWeight: 400, color: 'var(--tx-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>top</span>}
-                </span>
-                <svg width="56" height="24" style={{ flexShrink: 0, overflow: 'visible' }}>
-                  <path d="M0,12 L8,6 L16,18 L24,8 L32,14 L40,4 L48,16 L56,10" fill="none" stroke={muscle.color} strokeWidth={muscle.top ? "2" : "1.5"} strokeLinecap="round" strokeLinejoin="round" strokeOpacity={muscle.top ? "1" : "0.6"}></path>
-                  <circle cx="56" cy="10" r={muscle.top ? "2.5" : "1.5"} fill={muscle.color} fillOpacity={muscle.top ? "1" : "0.7"}></circle>
-                </svg>
-                <span style={{ fontSize: '12px', color: 'var(--tx-muted)', fontVariantNumeric: 'tabular-nums', width: '64px', textAlign: 'right', flexShrink: 0 }}>{muscle.sets} · {muscle.pct}%</span>
-              </div>
-              <div style={{ height: '4px', backgroundColor: 'var(--surface-muted)', borderRadius: '2px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${muscle.pct}%`, backgroundColor: muscle.color, opacity: muscle.top ? 1 : 0.6, transition: 'width 0.3s ease' }}></div>
+        {muscleBalance.length === 0 ? (
+          <p style={{ fontSize: '13px', color: 'var(--tx-muted)', margin: '4px 0' }}>No completed workouts yet. Log one on the Workouts tab.</p>
+        ) : (() => {
+          const COLORS = ['#818cf8', '#6ee7b7', '#f87171', '#34d399', '#4ade80', '#6366f1', '#a78bfa', '#38bdf8', '#f59e0b', '#00b8d9', '#e879f9', '#fb923c']
+          const total = muscleBalance.reduce((a, m) => a + m.count, 0) || 1
+          const max = Math.max(...muscleBalance.map((m) => m.count), 1)
+          const R = 42
+          const C = 2 * Math.PI * R
+          let acc = 0
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+              <svg width="112" height="112" viewBox="0 0 112 112" style={{ flexShrink: 0 }}>
+                <g transform="rotate(-90 56 56)">
+                  {muscleBalance.map((m, i) => {
+                    const len = (m.count / total) * C
+                    const el = (
+                      <circle key={m.muscle} cx="56" cy="56" r={R} fill="none" stroke={COLORS[i % COLORS.length]} strokeWidth="14" strokeDasharray={`${len} ${C - len}`} strokeDashoffset={-acc} />
+                    )
+                    acc += len
+                    return el
+                  })}
+                </g>
+              </svg>
+              <div style={{ flex: 1, minWidth: '160px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {muscleBalance.map((m, i) => (
+                  <div key={m.muscle}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', fontSize: '12px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: COLORS[i % COLORS.length], flexShrink: 0 }} />
+                      <span style={{ flex: 1, minWidth: 0, color: 'var(--tx-secondary)', textTransform: 'capitalize', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.muscle}</span>
+                      <span style={{ color: 'var(--tx-muted)', fontVariantNumeric: 'tabular-nums' }}>{m.count}</span>
+                    </div>
+                    <div style={{ height: '6px', backgroundColor: 'var(--surface-muted)', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${(m.count / max) * 100}%`, backgroundColor: COLORS[i % COLORS.length], borderRadius: '3px', transition: 'width 0.3s ease' }} />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
+          )
+        })()}
       </div>
 
       {/* Weight */}

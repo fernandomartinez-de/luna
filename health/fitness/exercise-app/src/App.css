@@ -38,7 +38,7 @@
 .app-main {
   flex: 1;
   padding: 24px 24px 100px 24px;
-  max-width: 1400px;
+  max-width: 560px;
   width: 100%;
   margin: 0 auto;
 }
@@ -366,12 +366,17 @@
 
 .body-diagram-figures {
   display: flex;
-  gap: 24px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 16px;
   justify-content: center;
-  flex-wrap: wrap;
+  align-items: flex-start;
 }
 
 .body-diagram-figure {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 15rem;
   display: flex;
   flex-direction: column;
   align-items: center;

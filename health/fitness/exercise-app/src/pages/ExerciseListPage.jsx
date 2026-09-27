@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../supabaseClient.js'
 import MuscleFilter from '../components/MuscleFilter.jsx'
 import LevelFilter from '../components/LevelFilter.jsx'
@@ -20,6 +20,8 @@ export default function ExerciseListPage() {
   const [buildMode, setBuildMode] = useState(false)
   const [selectedExercises, setSelectedExercises] = useState([])
   const [showSaveModal, setShowSaveModal] = useState(false)
+  const [savedWorkouts, setSavedWorkouts] = useState([])
+  const [showSaved, setShowSaved] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -65,20 +67,29 @@ export default function ExerciseListPage() {
     }
   }, [])
 
+  async function loadSavedWorkouts() {
+    const { data, error: err } = await supabase
+      .from('workouts')
+      .select('id, name, description, created_at, workout_exercises(count)')
+      .order('created_at', { ascending: false })
+    if (!err && data) setSavedWorkouts(data)
+  }
+
+  useEffect(() => {
+    loadSavedWorkouts()
+  }, [])
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return exercises.filter((e) => {
-      // Muscle group filter
       if (selected !== 'all') {
         const mg = String(e.muscle_group || '').toLowerCase()
         if (mg !== selected) return false
       }
-      // Level filter
       if (selectedLevel !== 'all') {
         const level = String(e.level || '').toLowerCase()
         if (level !== selectedLevel) return false
       }
-      // Search query
       if (q) {
         const name = String(e.name || '').toLowerCase()
         if (!name.includes(q)) return false
@@ -119,13 +130,11 @@ export default function ExerciseListPage() {
     setShowSaveModal(false)
     setBuildMode(false)
     setSelectedExercises([])
-    // Navigate to the workout detail page
     navigate(`/workout/${workout.id}`)
   }
 
   return (
     <>
-      {/* Build Workout Bar */}
       {buildMode && (
         <div className="build-workout-bar">
           <div className="build-workout-info">
@@ -151,6 +160,40 @@ export default function ExerciseListPage() {
         </div>
       )}
 
+      {!buildMode && (
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+          <button className="build-workout-trigger" style={{ flex: 1 }} onClick={handleBuildWorkout}>
+            + Build Workout
+          </button>
+          <button className="build-workout-trigger" style={{ flex: 1, opacity: showSaved ? 1 : 0.85 }} onClick={() => setShowSaved((v) => !v)}>
+            {showSaved ? 'Hide Saved' : 'Saved Workouts'} ({savedWorkouts.length})
+          </button>
+        </div>
+      )}
+
+      {!buildMode && showSaved && (
+        <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {savedWorkouts.length === 0 ? (
+            <div className="status-block">No saved workouts yet. Tap Build Workout to make one.</div>
+          ) : (
+            savedWorkouts.map((w) => {
+              const count = (w.workout_exercises && w.workout_exercises[0] && w.workout_exercises[0].count) || 0
+              return (
+                <Link key={w.id} to={`/workout/${w.id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', backgroundColor: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: '12px', padding: '14px 16px', textDecoration: 'none', color: 'inherit' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, color: 'var(--tx-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--tx-muted)', marginTop: '2px' }}>
+                      {count} exercise{count !== 1 ? 's' : ''}{w.created_at ? ` · ${new Date(w.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}
+                    </div>
+                  </div>
+                  <span style={{ color: 'var(--tx-muted)', flexShrink: 0, fontSize: '18px' }}>›</span>
+                </Link>
+              )
+            })
+          )}
+        </div>
+      )}
+
       <div className="list-toolbar">
         <div className="list-search">
           <span aria-hidden>🔍</span>
@@ -166,15 +209,6 @@ export default function ExerciseListPage() {
         </div>
         <MuscleFilter selected={selected} onChange={setSelected} />
         <LevelFilter selected={selectedLevel} onChange={setSelectedLevel} />
-
-        {!buildMode && (
-          <button
-            className="build-workout-trigger"
-            onClick={handleBuildWorkout}
-          >
-            Build Workout
-          </button>
-        )}
       </div>
 
       {error && (
@@ -232,7 +266,7 @@ export default function ExerciseListPage() {
 
       {showSaveModal && (
         <SaveWorkoutModal
-          selectedExercises={selectedExercises}
+          exercises={exercises.filter((e) => selectedExercises.includes(e.id))}
           onClose={() => setShowSaveModal(false)}
           onSaved={handleWorkoutSaved}
         />
