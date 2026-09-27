@@ -118,7 +118,7 @@ export default function ExerciseDetailPage() {
 
   return (
     <>
-      <Link to="/" className="detail-back">
+      <Link to="/exercises" className="detail-back">
         ← Back to all exercises
       </Link>
 
