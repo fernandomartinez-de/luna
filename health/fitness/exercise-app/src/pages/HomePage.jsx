@@ -255,67 +255,61 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Consistency */}
-      <div style={{ backgroundColor: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: '12px', padding: '20px' }}>
+      {/* Consistency Heatmap */}
+      <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: '12px', padding: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-500)', flexShrink: 0 }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-500)' }}>
               <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"></path>
             </svg>
             <h2 style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--tx-secondary)' }}>Consistency</h2>
           </div>
           <span style={{ fontSize: '12px', color: 'var(--tx-muted)' }}>12 weeks</span>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '10px', fontWeight: 500, color: 'var(--tx-muted)' }}>
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((label, i) => (
-              <span key={i} style={{ height: '13px', lineHeight: '13px' }}>{label}</span>
-            ))}
+        <div style={{ display: 'flex', gap: '18px', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', fontWeight: 500, color: 'var(--tx-muted)' }}>
+            <span style={{ height: '24px', lineHeight: '24px' }}>M</span>
+            <span style={{ height: '24px', lineHeight: '24px' }}>T</span>
+            <span style={{ height: '24px', lineHeight: '24px' }}>W</span>
+            <span style={{ height: '24px', lineHeight: '24px' }}>T</span>
+            <span style={{ height: '24px', lineHeight: '24px' }}>F</span>
+            <span style={{ height: '24px', lineHeight: '24px' }}>S</span>
+            <span style={{ height: '24px', lineHeight: '24px' }}>S</span>
           </div>
-          <div style={{ display: 'flex', gap: '3px', flex: 1 }}>
-            {(() => {
-              const today = new Date()
-              today.setHours(0, 0, 0, 0)
-              const currentDayOfWeek = today.getDay()
-              const daysFromMonday = currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1
-              const thisMonday = new Date(today)
-              thisMonday.setDate(today.getDate() - daysFromMonday)
-              const startMonday = new Date(thisMonday)
-              startMonday.setDate(thisMonday.getDate() - (11 * 7))
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {Array.from({ length: 12 }).map((_, weekIndex) => (
+              <div key={weekIndex} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {Array.from({ length: 7 }).map((_, dayIndex) => {
+                  const now = new Date()
+                  now.setHours(0, 0, 0, 0)
+                  const dayOfWeek = now.getDay()
+                  const daysFromMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+                  const monday = new Date(now)
+                  monday.setDate(now.getDate() - daysFromMon)
+                  const firstMonday = new Date(monday)
+                  firstMonday.setDate(monday.getDate() - (11 * 7))
+                  const currentDay = new Date(firstMonday)
+                  currentDay.setDate(firstMonday.getDate() + (weekIndex * 7) + dayIndex)
+                  const dayString = currentDay.toISOString().split('T')[0]
+                  const isWorkoutDay = workoutDays.includes(dayString)
+                  const isFutureDay = currentDay > now
 
-              const weeks = []
-              for (let w = 0; w < 12; w++) {
-                const weekDays = []
-                for (let d = 0; d < 7; d++) {
-                  const dayDate = new Date(startMonday)
-                  dayDate.setDate(startMonday.getDate() + (w * 7) + d)
-                  const dateStr = dayDate.toISOString().split('T')[0]
-                  const hasWorkout = workoutDays.includes(dateStr)
-                  const isFuture = dayDate > today
-
-                  weekDays.push(
+                  return (
                     <div
-                      key={d}
-                      title={`${dateStr}${hasWorkout ? ' - Workout' : ''}`}
+                      key={dayIndex}
+                      title={`${dayString}${isWorkoutDay ? ' - Workout' : ''}`}
                       style={{
-                        width: '13px',
-                        height: '13px',
-                        borderRadius: '2px',
-                        backgroundColor: isFuture ? 'rgba(22, 34, 64, 0.3)' : hasWorkout ? '#00b8d9' : 'rgba(22, 34, 64, 0.5)',
-                        transition: 'background-color 0.2s ease',
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '4px',
+                        background: isFutureDay ? 'rgba(22, 34, 64, 0.3)' : isWorkoutDay ? '#00b8d9' : 'rgba(22, 34, 64, 0.5)',
                         cursor: 'pointer'
                       }}
                     />
                   )
-                }
-                weeks.push(
-                  <div key={w} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    {weekDays}
-                  </div>
-                )
-              }
-              return weeks
-            })()}
+                })}
+              </div>
+            ))}
           </div>
         </div>
       </div>
