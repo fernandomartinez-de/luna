@@ -75,6 +75,7 @@ refreshed `index.html`.
     health/fitness/build_overload.py    Pulls body/workouts/strength, renders index.html
     health/fitness/app.js               Client-side rendering, mesocycle table, categories, method
     health/fitness/index.html           The built, served page (do not hand edit)
+    health/fitness/seed_exercises.py    One-time script to populate exercises table (876 exercises)
     health/fitness/requirements.txt     psycopg2-binary
     .github/workflows/build-fitness.yml Daily rebuild + commit
 
@@ -95,6 +96,50 @@ refreshed `index.html`.
     export SUPABASE_KEY="<anon-or-service-role-key>"
     pip install -r health/fitness/requirements.txt
     python health/fitness/build_overload.py
+
+## Seeding Exercises (One-time)
+
+The `exercises` table contains 876 exercises from free-exercise-db for the
+future workout builder.
+
+**To seed:**
+
+    cd ~/Personal/repos/personal
+    # Download free-exercise-db if not already present
+    git clone https://github.com/yuhonas/free-exercise-db.git free-exercise-db-main
+    
+    export SUPABASE_DB_URL='postgresql://postgres.[ref]:[password]@aws-0-us-east-1.pooler.supabase.com:6543/postgres'
+    python health/fitness/seed_exercises.py
+
+**What it does:**
+- Creates `public.exercises` table with schema (id, name, slug, muscle_group, equipment, category, instructions, images)
+- Loads 876 exercises from `free-exercise-db-main/dist/exercises.json`
+- Maps muscle groups to Overload taxonomy (chest, back, shoulders, biceps, triceps, quadriceps, hamstrings, glutes, calves, core)
+- Converts image paths to GitHub raw URLs
+- Upserts into Supabase (idempotent, safe to re-run)
+
+**Output:**
+```
+Loaded 876 exercises from free-exercise-db
+✓ Created exercises table with indexes
+✓ Inserted 876 exercises
+
+✓ Total exercises: 876
+Breakdown by muscle group:
+  back: 70
+  biceps: 25
+  calves: 15
+  chest: 45
+  core: 516
+  glutes: 40
+  hamstrings: 35
+  quadriceps: 60
+  shoulders: 40
+  triceps: 30
+```
+
+This table is read-only for the app; it will be used by a future workout builder
+to browse exercises by muscle group, equipment, and difficulty.
 
 ## Notes
 
