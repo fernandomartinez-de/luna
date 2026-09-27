@@ -5,7 +5,7 @@ export default function SaveWorkoutModal({ exercises, onClose, onSaved }) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [rows, setRows] = useState(
-    exercises.map((ex) => ({ id: ex.id, name: ex.name, sets: 3, reps: 10 }))
+    exercises.map((ex) => ({ id: ex.id, name: ex.name, sets: 3, reps: 10, weight: '' }))
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -33,7 +33,8 @@ export default function SaveWorkoutModal({ exercises, onClose, onSaved }) {
         exercise_id: r.id,
         order_index: index,
         sets: Number(r.sets) || null,
-        reps: Number(r.reps) || null
+        reps: Number(r.reps) || null,
+        weight: Number(r.weight) || null
       }))
 
       const { error: exercisesError } = await supabase
@@ -51,7 +52,7 @@ export default function SaveWorkoutModal({ exercises, onClose, onSaved }) {
   }
 
   const numInput = {
-    width: '46px', textAlign: 'center', fontSize: '16px', padding: '4px',
+    width: '44px', textAlign: 'center', fontSize: '16px', padding: '4px',
     borderRadius: '6px', border: '1px solid var(--surface-border)',
     background: 'var(--surface-raised)', color: 'var(--tx-primary)'
   }
@@ -71,7 +72,7 @@ export default function SaveWorkoutModal({ exercises, onClose, onSaved }) {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Push Day, Leg Day, Full Body"
+              placeholder="e.g., Legs A, Push Day, Full Body"
               required
               autoFocus
             />
@@ -88,18 +89,22 @@ export default function SaveWorkoutModal({ exercises, onClose, onSaved }) {
           </div>
 
           <div className="modal-field">
-            <label>Exercises · sets &amp; reps</label>
+            <label>Exercises · sets, reps &amp; weight (lb)</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '40vh', overflowY: 'auto' }}>
               {rows.map((r) => (
-                <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--surface-base)', border: '1px solid var(--surface-border)', borderRadius: '8px', padding: '8px 10px' }}>
+                <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--surface-base)', border: '1px solid var(--surface-border)', borderRadius: '8px', padding: '8px 10px' }}>
                   <span style={{ flex: 1, minWidth: 0, fontSize: '13px', color: 'var(--tx-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--tx-muted)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: 'var(--tx-muted)' }}>
                     sets
                     <input type="number" min="1" max="20" value={r.sets} onChange={(e) => updateRow(r.id, 'sets', e.target.value)} style={numInput} />
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--tx-muted)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: 'var(--tx-muted)' }}>
                     reps
                     <input type="number" min="1" max="100" value={r.reps} onChange={(e) => updateRow(r.id, 'reps', e.target.value)} style={numInput} />
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: 'var(--tx-muted)' }}>
+                    lb
+                    <input type="number" min="0" step="5" placeholder="0" value={r.weight} onChange={(e) => updateRow(r.id, 'weight', e.target.value)} style={{ ...numInput, width: '54px' }} />
                   </label>
                 </div>
               ))}

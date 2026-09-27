@@ -1,6 +1,21 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient.js'
+import LogWorkoutModal from '../components/LogWorkoutModal.jsx'
+
+function getSetArray(we) {
+  if (Array.isArray(we.set_details) && we.set_details.length > 0) {
+    return we.set_details.map((s) => ({
+      reps: s && s.reps != null && s.reps !== '' ? Number(s.reps) : 0,
+      weight: s && s.weight != null && s.weight !== '' ? Number(s.weight) : null
+    }))
+  }
+  const n = Math.max(Number(we.sets) || 0, 0)
+  if (n === 0) return []
+  const reps = Number(we.reps) || 0
+  const weight = we.weight != null && we.weight !== '' ? Number(we.weight) : null
+  return Array.from({ length: n }, () => ({ reps, weight }))
+}
 
 export default function WorkoutDetailPage() {
   const { id } = useParams()
@@ -10,166 +25,378 @@ export default function WorkoutDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [copying, setCopying] = useState(false)
+  const [showLog, setShowLog] = useState(false)
+
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [draft, setDraft] = useState({ name: '', description: '', rows: [], removedIds: [] })
+  const [editError, setEditError] = useState(null)
 
   useEffect(() => {
     let cancelled = false
-
-    async function loadWorkout() {
+    async function load() {
       setLoading(true)
       setError(null)
-
       try {
-        // Load workout
-        const { data: workoutData, error: workoutError } = await supabase
-          .from('workouts')
-          .select('*')
-          .eq('id', id)
-          .single()
-
-        if (workoutError) throw workoutError
-
-        // Load workout exercises with full exercise details
-        const { data: exercisesData, error: exercisesError } = await supabase
+        const { data: w, error: we } = await supabase.from('workouts').select('*').eq('id', id).single()
+        if (we) throw we
+        const { data: ex, error: ee } = await supabase
           .from('workout_exercises')
-          .select(`
-            *,
-            exercises (*)
-          `)
+          .select('*, exercises(*)')
           .eq('workout_id', id)
           .order('order_index', { ascending: true })
-
-        if (exercisesError) throw exercisesError
-
-        if (!cancelled) {
-          setWorkout(workoutData)
-          setExercises(exercisesData || [])
-        }
+        if (ee) throw ee
+        if (!cancelled) { setWorkout(w); setExercises(ex || []) }
       } catch (err) {
         if (!cancelled) setError(err.message || String(err))
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
-
-    loadWorkout()
-    return () => {
-      cancelled = true
-    }
+    load()
+    return () => { cancelled = true }
   }, [id])
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this workout?')) return
+  function beginEdit() {
+    setDraft({
+      name: workout.name || '',
+      description: workout.description || '',
+      removedIds: [],
+      rows: exercises.map((we) => ({
+        id: we.id,
+        exercise_name: (we.exercises && we.exercises.name) || 'Exercise',
+        setArr: getSetArray(we).map((s) => ({
+          reps: s.reps ? String(s.reps) : '',
+          weight: s.weight != null ? String(s.weight) : ''
+        }))
+      }))
+    })
+    setEditError(null)
+    setEditing(true)
+  }
 
-    setDeleting(true)
+  function removeExercise(rowId) {
+    if (!confirm('Remove this exercise from the workout?')) return
+    setDraft((prev) => ({
+      ...prev,
+      rows: prev.rows.filter((r) => r.id !== rowId),
+      removedIds: [...prev.removedIds, rowId]
+    }))
+  }
+
+  function cancelEdit() {
+    setEditing(false)
+    setEditError(null)
+  }
+
+  function updateSet(rowId, index, field, value) {
+    setDraft((prev) => ({
+      ...prev,
+      rows: prev.rows.map((r) => {
+        if (r.id !== rowId) return r
+        const nextArr = r.setArr.map((s, i) => (i === index ? { ...s, [field]: value } : s))
+        return { ...r, setArr: nextArr }
+      })
+    }))
+  }
+
+  function addSet(rowId) {
+    setDraft((prev) => ({
+      ...prev,
+      rows: prev.rows.map((r) => {
+        if (r.id !== rowId) return r
+        const last = r.setArr[r.setArr.length - 1]
+        const seed = last ? { reps: last.reps, weight: last.weight } : { reps: '', weight: '' }
+        return { ...r, setArr: [...r.setArr, seed] }
+      })
+    }))
+  }
+
+  function removeSet(rowId, index) {
+    setDraft((prev) => ({
+      ...prev,
+      rows: prev.rows.map((r) => (r.id !== rowId ? r : { ...r, setArr: r.setArr.filter((_, i) => i !== index) }))
+    }))
+  }
+
+  async function saveEdit() {
+    setSaving(true)
+    setEditError(null)
     try {
-      const { error: deleteError } = await supabase
+      const { error: wErr } = await supabase
         .from('workouts')
-        .delete()
+        .update({ name: draft.name, description: draft.description })
         .eq('id', id)
+      if (wErr) throw wErr
 
-      if (deleteError) throw deleteError
+      if (draft.removedIds.length > 0) {
+        const { error: dErr } = await supabase
+          .from('workout_exercises')
+          .delete()
+          .in('id', draft.removedIds)
+        if (dErr) throw dErr
+      }
 
-      navigate('/workouts')
+      for (const r of draft.rows) {
+        const cleanSets = r.setArr.map((s) => ({
+          reps: s.reps === '' ? null : Number(s.reps),
+          weight: s.weight === '' ? null : Number(s.weight)
+        }))
+        const first = cleanSets[0] || { reps: null, weight: null }
+        const { error: rErr } = await supabase
+          .from('workout_exercises')
+          .update({
+            sets: cleanSets.length || null,
+            reps: first.reps,
+            weight: first.weight,
+            set_details: cleanSets
+          })
+          .eq('id', r.id)
+        if (rErr) throw rErr
+      }
+
+      const { data: w2 } = await supabase.from('workouts').select('*').eq('id', id).single()
+      const { data: ex2 } = await supabase
+        .from('workout_exercises')
+        .select('*, exercises(*)')
+        .eq('workout_id', id)
+        .order('order_index', { ascending: true })
+      setWorkout(w2 || workout)
+      setExercises(ex2 || exercises)
+      setEditing(false)
     } catch (err) {
-      alert('Failed to delete workout: ' + (err.message || String(err)))
-      setDeleting(false)
+      setEditError(err.message || String(err))
+    } finally {
+      setSaving(false)
     }
   }
 
-  if (loading) {
-    return <div className="status-block">Loading workout...</div>
+  async function handleDelete() {
+    if (!confirm('Delete this workout?')) return
+    setDeleting(true)
+    const { error: err } = await supabase.from('workouts').delete().eq('id', id)
+    if (err) { alert('Failed to delete: ' + err.message); setDeleting(false); return }
+    navigate('/workouts')
   }
 
-  if (error) {
-    return (
-      <div className="status-block error">
-        Failed to load workout: {error}
-      </div>
-    )
+  async function handleCopy() {
+    setCopying(true)
+    try {
+      const { data: newW, error: nwErr } = await supabase
+        .from('workouts')
+        .insert({ name: `${workout.name} (Copy)`, description: workout.description || null })
+        .select()
+        .single()
+      if (nwErr) throw nwErr
+
+      if (exercises.length > 0) {
+        const payload = exercises.map((we) => ({
+          workout_id: newW.id,
+          exercise_id: (we.exercises && we.exercises.id) || we.exercise_id,
+          order_index: we.order_index,
+          sets: we.sets,
+          reps: we.reps,
+          weight: we.weight,
+          set_details: we.set_details
+        }))
+        const { error: cErr } = await supabase.from('workout_exercises').insert(payload)
+        if (cErr) throw cErr
+      }
+
+      navigate(`/workout/${newW.id}`)
+    } catch (err) {
+      alert('Failed to copy: ' + (err.message || String(err)))
+    } finally {
+      setCopying(false)
+    }
   }
 
-  if (!workout) {
-    return <div className="status-block">Workout not found.</div>
+  function handleLogged() {
+    setShowLog(false)
+    navigate('/workouts')
   }
 
-  const createdDate = new Date(workout.created_at).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  })
+  if (loading) return <div className="status-block">Loading workout...</div>
+  if (error) return <div className="status-block error">Failed to load: {error}</div>
+  if (!workout) return <div className="status-block">Workout not found.</div>
+
+  const perExerciseSets = exercises.map((we) => getSetArray(we))
+  const totalSets = perExerciseSets.reduce((a, arr) => a + arr.length, 0)
+  const totalVolume = perExerciseSets.reduce((a, arr) =>
+    a + arr.reduce((b, s) => b + (s.weight != null ? s.reps * s.weight : 0), 0), 0
+  )
+  const dateLong = new Date(workout.created_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+  const heroImg = exercises[0] && exercises[0].exercises && exercises[0].exercises.images ? exercises[0].exercises.images[0] : null
+
+  const card = { backgroundColor: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: '14px', padding: '16px' }
+  const thumb = (size) => ({ width: `${size}px`, height: `${size}px`, borderRadius: '10px', overflow: 'hidden', flexShrink: 0, background: 'var(--surface-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' })
+  const img = { width: '100%', height: '100%', objectFit: 'cover' }
+  const muscleTag = { fontSize: '11px', color: '#34d399', background: 'rgba(52, 211, 153, 0.15)', borderRadius: '6px', padding: '2px 8px', textTransform: 'capitalize', fontWeight: 600 }
+  const chip = { fontSize: '12px', color: 'var(--brand-400)', background: 'var(--surface-base)', border: '1px solid var(--surface-border)', borderRadius: '8px', padding: '5px 10px', fontWeight: 600, whiteSpace: 'nowrap' }
+  const stat = (label, value) => (
+    <div style={{ textAlign: 'center' }}>
+      <div style={{ fontSize: '10px', color: 'var(--tx-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{label}</div>
+      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--tx-primary)' }}>{value}</div>
+    </div>
+  )
+  const numInput = {
+    width: '52px', textAlign: 'center', fontSize: '15px', padding: '5px 4px',
+    borderRadius: '6px', border: '1px solid var(--surface-border)',
+    background: 'var(--surface-base)', color: 'var(--tx-primary)'
+  }
+  const editBtn = { border: '1px solid var(--surface-border)', background: 'var(--surface-raised)', color: 'var(--brand-400)', borderRadius: '8px', padding: '6px 12px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }
+  const primaryBtn = { border: 'none', background: 'var(--brand-500)', color: 'white', borderRadius: '8px', padding: '6px 14px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }
+  const ghostBtn = { border: '1px solid var(--surface-border)', background: 'transparent', color: 'var(--tx-secondary)', borderRadius: '8px', padding: '6px 12px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }
+  const addSetBtn = { border: '1px dashed var(--surface-border)', background: 'transparent', color: 'var(--brand-400)', borderRadius: '8px', padding: '6px 12px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', width: '100%' }
+  const setRow = { display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--surface-base)', border: '1px solid var(--surface-border)', borderRadius: '8px', padding: '6px 10px' }
+  const xSet = { border: 'none', background: 'transparent', color: 'var(--tx-muted)', cursor: 'pointer', fontSize: '16px', lineHeight: 1, padding: '2px 4px' }
 
   return (
-    <>
-      <Link to="/workouts" className="detail-back">
-        ← Back to workouts
-      </Link>
-
-      <div className="workout-detail-header">
-        <div>
-          <h1>{workout.name}</h1>
-          {workout.description && (
-            <p className="workout-detail-description">{workout.description}</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+        <Link to="/workouts" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--tx-secondary)', textDecoration: 'none', fontSize: '0.95rem', fontWeight: 500 }}>← Workouts</Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {editing ? (
+            <>
+              <button onClick={cancelEdit} disabled={saving} style={ghostBtn}>Cancel</button>
+              <button onClick={saveEdit} disabled={saving} style={primaryBtn}>{saving ? 'Saving...' : 'Save'}</button>
+            </>
+          ) : (
+            <>
+              <button onClick={beginEdit} style={editBtn}>✎ Edit</button>
+              <button onClick={handleCopy} disabled={copying} style={editBtn}>{copying ? 'Copying...' : '⧉ Copy'}</button>
+              <button onClick={() => setShowLog(true)} style={primaryBtn}>✓ Log</button>
+              <button onClick={handleDelete} disabled={deleting} title="Delete workout" style={{ border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontSize: '1.2rem', lineHeight: 1 }}>🗑</button>
+            </>
           )}
-          <div className="workout-detail-meta">
-            <span>{exercises.length} exercises</span>
-            <span>•</span>
-            <span>Created {createdDate}</span>
+        </div>
+      </div>
+
+      {editing && editError && (
+        <div className="status-block error">{editError}</div>
+      )}
+
+      <div style={card}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={thumb(64)}>
+            {heroImg ? <img src={heroImg} alt="" style={img} onError={(e) => { e.currentTarget.style.display = 'none' }} /> : <span style={{ color: 'var(--tx-muted)' }}>◐</span>}
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            {editing ? (
+              <input
+                type="text"
+                value={draft.name}
+                onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))}
+                placeholder="Workout name"
+                style={{ width: '100%', fontSize: '1.2rem', fontWeight: 700, color: 'var(--tx-primary)', background: 'var(--surface-base)', border: '1px solid var(--surface-border)', borderRadius: '8px', padding: '6px 10px' }}
+              />
+            ) : (
+              <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: 'var(--tx-primary)' }}>{workout.name}</h1>
+            )}
+            <div style={{ fontSize: '0.85rem', color: 'var(--tx-muted)', marginTop: '2px' }}>{dateLong}</div>
           </div>
         </div>
-        <button
-          className="workout-delete-button"
-          onClick={handleDelete}
-          disabled={deleting}
-        >
-          {deleting ? 'Deleting...' : 'Delete Workout'}
-        </button>
+        {editing ? (
+          <textarea
+            value={draft.description}
+            onChange={(e) => setDraft((p) => ({ ...p, description: e.target.value }))}
+            placeholder="Description (optional)"
+            rows={2}
+            style={{ marginTop: '12px', width: '100%', resize: 'vertical', fontFamily: 'inherit', fontSize: '0.85rem', color: 'var(--tx-primary)', background: 'var(--surface-base)', border: '1px solid var(--surface-border)', borderRadius: '8px', padding: '8px 10px' }}
+          />
+        ) : (
+          workout.description && <p style={{ fontSize: '0.85rem', color: 'var(--tx-secondary)', margin: '12px 0 0 0' }}>{workout.description}</p>
+        )}
+        <div style={{ borderTop: '1px solid var(--surface-border)', marginTop: '14px', paddingTop: '14px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
+          {stat('Exercises', exercises.length)}
+          {stat('Sets', totalSets)}
+          {stat('Volume', totalVolume > 0 ? `${totalVolume.toLocaleString()} lb` : '—')}
+        </div>
       </div>
 
-      <div className="workout-exercises-list">
-        {exercises.map((we, index) => {
-          const exercise = we.exercises
-          const firstImage = exercise?.images?.[0]
-          const level = exercise?.level ? String(exercise.level).toLowerCase() : ''
+      {exercises.map((we, exIdx) => {
+        if (editing && draft.removedIds.includes(we.id)) return null
+        const ex = we.exercises || {}
+        const sArr = perExerciseSets[exIdx]
+        const setCount = sArr.length
+        const vol = sArr.reduce((a, s) => a + (s.weight != null ? s.reps * s.weight : 0), 0)
+        const best = sArr.reduce((m, s) => (s.weight != null && s.weight > m ? s.weight : m), 0)
+        const exImg = ex.images ? ex.images[0] : null
+        const draftRow = editing ? draft.rows.find((r) => r.id === we.id) : null
 
-          return (
-            <div key={we.id} className="workout-exercise-item">
-              <div className="workout-exercise-order">{index + 1}</div>
-              <Link
-                to={`/exercise/${exercise.id}`}
-                className="workout-exercise-content"
-              >
-                <div className="workout-exercise-image">
-                  {firstImage ? (
-                    <img
-                      src={firstImage}
-                      alt={exercise.name}
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none'
-                      }}
-                    />
-                  ) : (
-                    <span className="workout-exercise-placeholder">◐</span>
+        const HeaderWrap = editing ? 'div' : Link
+        const headerProps = editing
+          ? { style: { display: 'flex', alignItems: 'center', gap: '12px' } }
+          : { to: `/exercise/${ex.id}`, style: { display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none', color: 'inherit' } }
+
+        return (
+          <div key={we.id} style={card}>
+            <HeaderWrap {...headerProps}>
+              <div style={thumb(48)}>
+                {exImg ? <img src={exImg} alt="" style={img} onError={(e) => { e.currentTarget.style.display = 'none' }} /> : <span style={{ color: 'var(--tx-muted)' }}>◐</span>}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, color: 'var(--tx-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name || 'Exercise'}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                  {ex.muscle_group && <span style={muscleTag}>{ex.muscle_group}</span>}
+                  {!editing && (
+                    <span style={{ fontSize: '12px', color: 'var(--tx-muted)' }}>{setCount} sets{vol > 0 ? ` · ${vol.toLocaleString()} lb` : ''}</span>
                   )}
                 </div>
-                <div className="workout-exercise-info">
-                  <div className="workout-exercise-name">{exercise.name}</div>
-                  <div className="workout-exercise-meta">
-                    {exercise.muscle_group && (
-                      <span className="pill muscle">{exercise.muscle_group}</span>
-                    )}
-                    {exercise.level && (
-                      <span className={`pill level-${level}`}>{exercise.level}</span>
-                    )}
-                    {exercise.equipment && (
-                      <span className="pill">{exercise.equipment}</span>
-                    )}
-                  </div>
+              </div>
+              {!editing && best > 0 && (
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: '9px', color: 'var(--tx-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Best</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--brand-400)' }}>{best} lb</div>
                 </div>
-              </Link>
-            </div>
-          )
-        })}
-      </div>
-    </>
+              )}
+              {!editing && <span style={{ color: 'var(--tx-muted)', flexShrink: 0, fontSize: '18px' }}>›</span>}
+            </HeaderWrap>
+
+            {editing ? (
+              <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2px' }}>
+                  <button type="button" onClick={() => removeExercise(we.id)} style={{ border: '1px solid var(--surface-border)', background: 'transparent', color: '#ef4444', borderRadius: '6px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
+                    − Remove exercise
+                  </button>
+                </div>
+                {draftRow && draftRow.setArr.map((s, i) => (
+                  <div key={i} style={setRow}>
+                    <span style={{ fontSize: '11px', color: 'var(--tx-muted)', width: '38px', flexShrink: 0 }}>Set {i + 1}</span>
+                    <input type="number" min="0" max="100" placeholder="reps" value={s.reps} onChange={(e) => updateSet(we.id, i, 'reps', e.target.value)} style={numInput} />
+                    <span style={{ fontSize: '11px', color: 'var(--tx-muted)' }}>×</span>
+                    <input type="number" min="0" step="5" placeholder="lb" value={s.weight} onChange={(e) => updateSet(we.id, i, 'weight', e.target.value)} style={{ ...numInput, width: '64px' }} />
+                    <span style={{ fontSize: '11px', color: 'var(--tx-muted)', flex: 1 }}>lb</span>
+                    <button type="button" onClick={() => removeSet(we.id, i)} title="Remove set" style={xSet}>×</button>
+                  </div>
+                ))}
+                <button type="button" onClick={() => addSet(we.id)} style={addSetBtn}>+ Add set</button>
+              </div>
+            ) : (
+              <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                {sArr.length === 0 ? (
+                  <span style={chip}>—</span>
+                ) : (
+                  sArr.map((s, i) => (
+                    <span key={i} style={chip}>{s.reps || '—'}{s.weight != null ? ` × ${s.weight} lb` : ' reps'}</span>
+                  ))
+                )}
+                <span style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--tx-muted)' }}>⏱ 90s</span>
+              </div>
+            )}
+          </div>
+        )
+      })}
+
+      {showLog && (
+        <LogWorkoutModal
+          workout={workout}
+          exercises={exercises}
+          onClose={() => setShowLog(false)}
+          onLogged={handleLogged}
+        />
+      )}
+    </div>
   )
 }

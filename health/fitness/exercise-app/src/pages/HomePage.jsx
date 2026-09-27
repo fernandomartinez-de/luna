@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
+import { currentProgramWeek, weekDateRange } from '../utils/program.js'
 
 // Format a Date as YYYY-MM-DD from LOCAL calendar fields (not UTC).
 function toLocalDateStr(d) {
@@ -45,6 +46,7 @@ export default function HomePage() {
   const [lastWorkout, setLastWorkout] = useState(null)
   const [nutritionToday, setNutritionToday] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0 })
   const [workoutDays, setWorkoutDays] = useState([])
+  const [workoutsByDay, setWorkoutsByDay] = useState({})
   const [strainRange, setStrainRange] = useState(14)
   const [strainData, setStrainData] = useState([])
   const [todayBurn, setTodayBurn] = useState(0)
@@ -67,26 +69,22 @@ export default function HomePage() {
   }, [strainRange])
 
   async function loadWorkoutStats() {
-    const startOfWeek = new Date()
-    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay())
-    startOfWeek.setHours(0, 0, 0, 0)
+    const wk = currentProgramWeek()
+    if (wk < 1) { setWeekSessions(0); return }
+    const range = weekDateRange(wk)
 
     const { data, error } = await supabase
-      .from('whoop_workouts')
-      .select('start_time')
-      .gte('start_time', startOfWeek.toISOString())
+      .from('completed_workouts')
+      .select('created_at')
+      .gte('created_at', range.start.toISOString())
+      .lte('created_at', range.end.toISOString())
 
     if (error) {
       console.error('Workout stats error:', error)
       return
     }
 
-    console.log('Workout stats:', data)
-
-    if (data) {
-      const uniqueDays = new Set(data.map(w => new Date(w.start_time).toDateString()))
-      setWeekSessions(uniqueDays.size)
-    }
+    if (data) setWeekSessions(data.length)
   }
 
   async function loadWeightData() {
@@ -152,14 +150,15 @@ export default function HomePage() {
   }
 
   async function loadConsistencyData() {
-    // Load last 84 days (12 weeks) of workouts
+    // Load last 60 days of workouts (9-week calendar covers the window)
     const endDate = new Date()
     const startDate = new Date()
-    startDate.setDate(startDate.getDate() - 84)
+    startDate.setDate(startDate.getDate() - 65)
 
     const { data, error } = await supabase
       .from('whoop_workouts')
-      .select('start_time')
+      .select('start_time, sport_name, strain')
+      .in('sport_name', ['Weightlifting', 'Golf', 'Running', 'Soccer'])
       .gte('start_time', startDate.toISOString())
       .lte('start_time', endDate.toISOString())
 
@@ -168,14 +167,19 @@ export default function HomePage() {
       return
     }
 
-    console.log('Consistency data:', data)
-
     if (data) {
-      // Extract unique workout dates (YYYY-MM-DD format)
       const dates = data.map(w => toLocalDateStr(new Date(w.start_time)))
-      console.log('Workout dates for heatmap:', dates.slice(0, 10)) // Show first 10
-      console.log('Total workout days:', dates.length)
+      const byDay = {}
+      data.forEach(w => {
+        const key = toLocalDateStr(new Date(w.start_time))
+        if (!byDay[key]) byDay[key] = []
+        byDay[key].push({
+          sport_name: w.sport_name,
+          strain: w.strain != null ? Number(w.strain) : null
+        })
+      })
       setWorkoutDays(dates)
+      setWorkoutsByDay(byDay)
     }
   }
 
@@ -291,8 +295,8 @@ export default function HomePage() {
               <path d="m9.6 14.4 4.8-4.8"></path>
             </svg>
           </div>
-          <p style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--tx-primary)', lineHeight: 1, margin: 0 }}>{weekSessions}</p>
-          <p style={{ fontSize: '10px', color: 'var(--tx-muted)', margin: 0 }}>sessions</p>
+          <p style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--tx-primary)', lineHeight: 1, margin: 0 }}>{Math.max(currentProgramWeek(), 1)}</p>
+          <p style={{ fontSize: '10px', color: 'var(--tx-muted)', margin: 0 }}>of 19</p>
         </div>
         <div style={{ backgroundColor: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -388,7 +392,7 @@ export default function HomePage() {
             </svg>
             <h2 style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--tx-secondary)' }}>Consistency</h2>
           </div>
-          <span style={{ fontSize: '12px', color: 'var(--tx-muted)' }}>12 weeks</span>
+          <span style={{ fontSize: '12px', color: 'var(--tx-muted)' }}>Last 2 months</span>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'stretch' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', fontWeight: 500, color: 'var(--tx-muted)' }}>
@@ -403,26 +407,47 @@ export default function HomePage() {
               const dayOfWeek = today.getDay()
               const daysFromMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1
               const firstMonday = new Date(today)
-              firstMonday.setDate(today.getDate() - daysFromMon - (11 * 7))
+              firstMonday.setDate(today.getDate() - daysFromMon - (8 * 7))
+              const windowStart = new Date(today)
+              windowStart.setDate(today.getDate() - 59)
 
-              return Array.from({ length: 12 }).map((_, weekIndex) => (
+              return Array.from({ length: 9 }).map((_, weekIndex) => (
                 <div key={weekIndex} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {Array.from({ length: 7 }).map((_, dayIndex) => {
                     const cellDate = new Date(firstMonday)
                     cellDate.setDate(firstMonday.getDate() + (weekIndex * 7) + dayIndex)
                     const dayString = toLocalDateStr(cellDate)
-                    const isWorkoutDay = workoutDays.includes(dayString)
+                    const entries = workoutsByDay[dayString] || []
+                    const isWorkoutDay = entries.length > 0
                     const isFutureDay = cellDate > today
+                    const isOutOfWindow = cellDate < windowStart
+
+                    const maxStrain = entries.reduce((m, e) => (e.strain != null && e.strain > m ? e.strain : m), 0)
+
+                    let background
+                    if (isFutureDay) background = 'rgba(22, 34, 64, 0.3)'
+                    else if (isOutOfWindow) background = 'rgba(22, 34, 64, 0.15)'
+                    else if (isWorkoutDay) {
+                      if (maxStrain >= 18) background = '#ef4444'
+                      else if (maxStrain >= 14) background = '#f59e0b'
+                      else if (maxStrain >= 10) background = '#00b8d9'
+                      else if (maxStrain > 0) background = 'rgba(0, 184, 217, 0.45)'
+                      else background = '#00b8d9'
+                    } else background = 'rgba(22, 34, 64, 0.5)'
+
+                    const tooltip = isWorkoutDay
+                      ? `${dayString}\n` + entries.map(e => `${e.sport_name}${e.strain != null ? ` · Strain ${e.strain.toFixed(1)}` : ''}`).join('\n')
+                      : dayString
 
                     return (
                       <div
                         key={dayIndex}
-                        title={`${dayString}${isWorkoutDay ? ' - Workout' : ''}`}
+                        title={tooltip}
                         style={{
                           width: '100%',
                           aspectRatio: '1 / 1',
                           borderRadius: '4px',
-                          background: isFutureDay ? 'rgba(22, 34, 64, 0.3)' : isWorkoutDay ? '#00b8d9' : 'rgba(22, 34, 64, 0.5)',
+                          background,
                           cursor: 'pointer'
                         }}
                       />

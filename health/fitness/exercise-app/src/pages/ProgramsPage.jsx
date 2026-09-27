@@ -1,7 +1,10 @@
 import { useState } from 'react'
+import { PROGRAM_START, currentProgramWeek, weekDateRange, fmtDateShort, fmtWeekRange } from '../utils/program.js'
 
 export default function ProgramsPage() {
   const [expandedBlock, setExpandedBlock] = useState(null)
+  const currentWeek = currentProgramWeek()
+  const startDate = new Date(PROGRAM_START + 'T00:00:00')
 
   const weekPlan = [
     { wk: 1, block: 'Accumulation', phase: 'Build', primary: '4×5-8 RPE 7', accessory: '3×10-15 RPE 8' },
@@ -62,6 +65,24 @@ export default function ProgramsPage() {
 
   return (
     <div style={{ maxWidth: '1000px' }}>
+      {/* Status Banner */}
+      <div style={{ backgroundColor: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: '12px', padding: '14px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--tx-muted)', fontWeight: 600, marginBottom: '4px' }}>Program starts</div>
+          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--tx-primary)' }}>
+            {startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--tx-muted)', fontWeight: 600, marginBottom: '4px' }}>
+            {currentWeek === 0 ? 'Starts soon' : `Week ${Math.min(currentWeek, 19)} of 19`}
+          </div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--brand-400)', fontWeight: 600 }}>
+            {currentWeek >= 1 && currentWeek <= 19 ? fmtWeekRange(currentWeek) : '—'}
+          </div>
+        </div>
+      </div>
+
       {/* Program Header */}
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--tx-primary)', marginBottom: '8px' }}>
@@ -81,6 +102,7 @@ export default function ProgramsPage() {
           <thead>
             <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
               <th style={{ padding: '10px 12px', textAlign: 'left', color: 'var(--tx-muted)', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.05em' }}>WK</th>
+              <th style={{ padding: '10px 12px', textAlign: 'left', color: 'var(--tx-muted)', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.05em' }}>DATES</th>
               <th style={{ padding: '10px 12px', textAlign: 'left', color: 'var(--tx-muted)', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.05em' }}>BLOCK</th>
               <th style={{ padding: '10px 12px', textAlign: 'left', color: 'var(--tx-muted)', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.05em' }}>PHASE</th>
               <th style={{ padding: '10px 12px', textAlign: 'left', color: 'var(--tx-muted)', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.05em' }}>PRIMARY</th>
@@ -88,9 +110,17 @@ export default function ProgramsPage() {
             </tr>
           </thead>
           <tbody>
-            {weekPlan.map((week, i) => (
-              <tr key={i} style={{ borderBottom: i < weekPlan.length - 1 ? '1px solid var(--surface-border)' : 'none' }}>
-                <td style={{ padding: '12px', color: 'var(--tx-primary)', fontWeight: 600 }}>{week.wk}</td>
+            {weekPlan.map((week, i) => {
+              const isCurrent = week.wk === currentWeek
+              const range = weekDateRange(week.wk)
+              return (
+              <tr key={i} style={{ borderBottom: i < weekPlan.length - 1 ? '1px solid var(--surface-border)' : 'none', backgroundColor: isCurrent ? 'rgba(0, 184, 217, 0.08)' : 'transparent' }}>
+                <td style={{ padding: '12px', color: isCurrent ? 'var(--brand-400)' : 'var(--tx-primary)', fontWeight: 700 }}>
+                  {week.wk}{isCurrent ? ' •' : ''}
+                </td>
+                <td style={{ padding: '12px', color: 'var(--tx-secondary)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                  {fmtDateShort(range.start)} - {fmtDateShort(range.end)}
+                </td>
                 <td style={{ padding: '12px', color: 'var(--tx-secondary)' }}>{week.block}</td>
                 <td style={{ padding: '12px' }}>
                   <span style={{
@@ -107,7 +137,8 @@ export default function ProgramsPage() {
                 <td style={{ padding: '12px', color: 'var(--tx-secondary)', fontVariantNumeric: 'tabular-nums' }}>{week.primary}</td>
                 <td style={{ padding: '12px', color: 'var(--tx-secondary)', fontVariantNumeric: 'tabular-nums' }}>{week.accessory}</td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       </div>
