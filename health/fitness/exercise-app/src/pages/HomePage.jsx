@@ -114,6 +114,7 @@ export default function HomePage() {
     const { data, error } = await supabase
       .from('whoop_workouts')
       .select('*')
+      .neq('sport_name', 'Walking')
       .order('start_time', { ascending: false })
       .limit(1)
 
