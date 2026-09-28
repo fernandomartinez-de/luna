@@ -128,7 +128,7 @@ function FilterBar({ classFilter, setClassFilter, asOfDate, pendingAsOf, setPend
   )
 }
 
-function deriveFromData(scDataAll, reDataAll, asOfDate) {
+function deriveFromData(scDataAll, reDataAll, asOfDate, livePrices = null) {
   const scData = asOfDate ? scDataAll.filter((r) => r.snapshot_date <= asOfDate) : scDataAll
   const reData = asOfDate ? reDataAll.filter((r) => r.snapshot_date <= asOfDate) : reDataAll
 
@@ -147,9 +147,23 @@ function deriveFromData(scDataAll, reDataAll, asOfDate) {
 
   if (latestSc) {
     scData.filter((r) => r.snapshot_date === latestSc).forEach((r) => {
-      const v = Number(r.total_value) || 0
+      let price = Number(r.price_per_unit) || 0
+      let v = Number(r.total_value) || 0
+      const qty = Number(r.quantity) || 0
       const cb = Number(r.cost_basis) || 0
-      const row = { name: r.asset_name, qty: Number(r.quantity) || 0, price: Number(r.price_per_unit) || 0, value: v, costBasis: cb, gain: v - cb, gainPct: cb > 0 ? ((v - cb) / cb) * 100 : 0 }
+
+      // Override with live prices if available
+      if (livePrices && !asOfDate) {
+        if (r.asset_type === 'Stock' && livePrices.stocks[r.asset_name]) {
+          price = livePrices.stocks[r.asset_name]
+          v = qty * price
+        } else if (r.asset_type === 'Crypto' && r.asset_name === 'Bitcoin' && livePrices.bitcoin) {
+          price = livePrices.bitcoin
+          v = qty * price
+        }
+      }
+
+      const row = { name: r.asset_name, qty, price, value: v, costBasis: cb, gain: v - cb, gainPct: cb > 0 ? ((v - cb) / cb) * 100 : 0 }
       if (r.asset_type === 'Stock') { stocks.push(row); stocksTotal += v; stocksCost += cb }
       else if (r.asset_type === 'Crypto') { crypto.push(row); cryptoTotal += v; cryptoCost += cb }
     })
@@ -177,8 +191,14 @@ function deriveFromData(scDataAll, reDataAll, asOfDate) {
     const storageRows = reData.filter((r) => r.asset_name === 'Storage Unit')
     const storageLatest = storageRows.length > 0 ? storageRows[storageRows.length - 1] : null
     if (zillowCondo && redfinCondo) {
-      const zVal = Number(zillowCondo.home_value) || 0
+      let zVal = Number(zillowCondo.home_value) || 0
       const rVal = Number(redfinCondo.home_value) || 0
+
+      // Override with live Zillow price if available
+      if (livePrices && !asOfDate && livePrices.zillow) {
+        zVal = livePrices.zillow
+      }
+
       const value = (zVal + rVal) / 2
       const mortgage = (Number(zillowCondo.mortgage_balance || 0) + Number(redfinCondo.mortgage_balance || 0)) / 2
       const equity = (Number(zillowCondo.net_equity || 0) + Number(redfinCondo.net_equity || 0)) / 2
@@ -187,7 +207,13 @@ function deriveFromData(scDataAll, reDataAll, asOfDate) {
       reTotal += value; reCost += cb
     } else if (zillowCondo || redfinCondo) {
       const row = zillowCondo || redfinCondo
-      const value = Number(row.home_value) || 0
+      let value = Number(row.home_value) || 0
+
+      // Override with live Zillow price if available
+      if (livePrices && !asOfDate && livePrices.zillow && row.data_source === 'Zillow') {
+        value = livePrices.zillow
+      }
+
       const mortgage = Number(row.mortgage_balance || 0)
       const equity = Number(row.net_equity || 0)
       const cb = Number(row.cost_basis) || 0
@@ -293,7 +319,7 @@ export default function InvestmentsTab() {
   function applyFilters() {
     const target = pendingAsOf || null
     setAsOfDate(target)
-    const { portfolio: p, portfolioHistory: ph, reHistoryDerived: rh } = deriveFromData(scHistoryData, reHistoryData, target)
+    const { portfolio: p, portfolioHistory: ph, reHistoryDerived: rh } = deriveFromData(scHistoryData, reHistoryData, target, target ? null : livePrices)
     setPortfolio(p)
     setPortfolioHistory(ph)
     setReHistory(rh)
@@ -304,8 +330,19 @@ export default function InvestmentsTab() {
   const [refreshError, setRefreshError] = useState(null)
   const [refreshNote, setRefreshNote] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
+  const [livePrices, setLivePrices] = useState(null) // Live prices fetched but not written to Supabase
 
   useEffect(() => { loadAll() }, [])
+
+  // Recompute when live prices change
+  useEffect(() => {
+    if (livePrices && scHistoryData.length > 0) {
+      const { portfolio: p, portfolioHistory: ph, reHistoryDerived: rh } = deriveFromData(scHistoryData, reHistoryData, asOfDate, asOfDate ? null : livePrices)
+      setPortfolio(p)
+      setPortfolioHistory(ph)
+      setReHistory(rh)
+    }
+  }, [livePrices])
 
   async function loadAll(silent) {
     if (!silent) setLoading(true)
@@ -323,7 +360,7 @@ export default function InvestmentsTab() {
       setScHistoryData(scData)
       setReHistoryData(reData)
 
-      const { portfolio: p, portfolioHistory: ph, reHistoryDerived: rh } = deriveFromData(scData, reData, null)
+      const { portfolio: p, portfolioHistory: ph, reHistoryDerived: rh } = deriveFromData(scData, reData, null, livePrices)
       setPortfolio(p)
       setPortfolioHistory(ph)
       setReHistory(rh)
@@ -334,7 +371,7 @@ export default function InvestmentsTab() {
     }
   }
 
-  // ---- Refresh: pull live prices and save today's snapshot ------------------
+  // ---- Refresh: pull live prices (display only, does NOT write to Supabase) --
   async function refreshPrices() {
     setRefreshing(true)
     setRefreshError(null)
@@ -346,28 +383,16 @@ export default function InvestmentsTab() {
       return
     }
 
-    const today = toLocalDateStr(new Date())
-
     try {
       // 1. Stocks via Finnhub
-      const stockRows = []
+      const stocks = {}
       for (const [symbol, h] of Object.entries(HOLDINGS.stocks)) {
         const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`)
         if (!res.ok) throw new Error(`Finnhub ${symbol} failed (${res.status})`)
         const d = await res.json()
         const price = Number(d.c)
         if (!price) throw new Error(`No price returned for ${symbol}`)
-        const value = h.shares * price
-        stockRows.push({
-          snapshot_date: today,
-          asset_type: 'Stock',
-          asset_name: symbol,
-          quantity: h.shares,
-          price_per_unit: price,
-          total_value: value,
-          cost_basis: h.costBasis,
-          unrealized_gain_loss: value - h.costBasis
-        })
+        stocks[symbol] = price
       }
 
       // 2. Crypto via CoinGecko
@@ -376,26 +401,9 @@ export default function InvestmentsTab() {
       const cg = await cgRes.json()
       const btcPrice = Number(cg && cg.bitcoin && cg.bitcoin.usd)
       if (!btcPrice) throw new Error('No Bitcoin price returned')
-      const btc = HOLDINGS.crypto.Bitcoin
-      const btcValue = btc.amount * btcPrice
-      const cryptoRow = {
-        snapshot_date: today,
-        asset_type: 'Crypto',
-        asset_name: 'Bitcoin',
-        quantity: btc.amount,
-        price_per_unit: btcPrice,
-        total_value: btcValue,
-        cost_basis: btc.costBasis,
-        unrealized_gain_loss: btcValue - btc.costBasis
-      }
 
-      // Save stocks + crypto as today's snapshot
-      const scUp = await supabase
-        .from('stocks_crypto_history')
-        .upsert([...stockRows, cryptoRow], { onConflict: 'snapshot_date,asset_name' })
-      if (scUp.error) throw scUp.error
-
-      // 3. Zillow property value (best effort, does not block the save above)
+      // 3. Zillow property value (best effort)
+      let zillowValue = null
       try {
         if (!ZILLOW.apiKey) throw new Error('no RapidAPI key set')
         const z = await fetch(`https://${ZILLOW.apiHost}/properties/detail?property_id=${ZILLOW.propertyId}`, {
@@ -407,34 +415,14 @@ export default function InvestmentsTab() {
         })
         if (!z.ok) throw new Error(`status ${z.status}`)
         const zd = await z.json()
-        const value = Number(zd.value || zd.zestimate || zd.price)
-        if (!value) throw new Error('no value in response')
-
-        const start = new Date(ZILLOW.mortgageStartDate)
-        const now = new Date()
-        const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
-        const mortgage = ZILLOW.initialMortgage - months * ZILLOW.monthlyPrincipalPayment
-        const reRow = {
-          snapshot_date: today,
-          asset_type: 'Real Estate',
-          asset_name: 'Condo',
-          home_value: value,
-          cost_basis: ZILLOW.costBasis,
-          mortgage_balance: mortgage,
-          net_equity: value - mortgage,
-          unrealized_gain_loss: value - ZILLOW.costBasis,
-          data_source: 'Zillow'
-        }
-        const reUp = await supabase
-          .from('real_estate_history')
-          .upsert(reRow, { onConflict: 'snapshot_date,asset_name,data_source' })
-        if (reUp.error) throw reUp.error
+        zillowValue = Number(zd.value || zd.zestimate || zd.price)
+        if (!zillowValue) throw new Error('no value in response')
       } catch (zErr) {
-        setRefreshNote(`Stocks and crypto updated. Zillow was skipped (${zErr.message}); kept last property value.`)
+        setRefreshNote(`Zillow was skipped (${zErr.message}); using last known value.`)
       }
 
-      // Re-read from Supabase so the whole tab reflects the new snapshot
-      await loadAll(true)
+      // Store live prices in state (NOT written to Supabase)
+      setLivePrices({ stocks, bitcoin: btcPrice, zillow: zillowValue })
       setLastUpdated(new Date())
     } catch (err) {
       setRefreshError(err.message || String(err))
