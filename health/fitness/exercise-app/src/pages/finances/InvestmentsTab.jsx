@@ -716,16 +716,16 @@ function RealEstateModal({ onClose, portfolio, reHistory, hover, setHover }) {
   const label = { fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--tx-muted)', margin: '0 0 10px 0' }
 
   const bigStat = (bg, borderColor, textColor, subLabel, value) => (
-    <div style={{ flex: 1, minWidth: 0, background: bg, border: `1px solid ${borderColor}`, borderRadius: '12px', padding: '14px 12px' }}>
+    <div style={{ flex: 1, minWidth: 0, background: bg, border: `1px solid ${borderColor}`, borderRadius: '12px', padding: '14px 10px', overflow: 'hidden' }}>
       <div style={{ fontSize: '11px', fontWeight: 600, color: textColor, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>{subLabel}</div>
-      <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#fff', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 'clamp(0.95rem, 3.6vw, 1.4rem)', fontWeight: 700, color: '#fff', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
     </div>
   )
 
   const miniStat = (title, value, valueColor, bg, border) => (
-    <div style={{ flex: 1, minWidth: 0, background: bg, border: `1px solid ${border}`, borderRadius: '10px', padding: '10px 12px', textAlign: 'center' }}>
+    <div style={{ flex: 1, minWidth: 0, background: bg, border: `1px solid ${border}`, borderRadius: '10px', padding: '10px 8px', textAlign: 'center', overflow: 'hidden' }}>
       <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--tx-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>{title}</div>
-      <div style={{ fontSize: '1rem', fontWeight: 700, color: valueColor, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+      <div style={{ fontSize: 'clamp(0.8rem, 3vw, 1rem)', fontWeight: 700, color: valueColor, fontVariantNumeric: 'tabular-nums', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
     </div>
   )
 
