@@ -253,16 +253,20 @@ Configured in **Settings → Secrets and variables → Actions**:
 
 ```mermaid
 graph TB
-    subgraph Sources["Data Sources"]
+    subgraph DS["Data Sources"]
+        PRICES[Finnhub / CoinGecko<br/>/ Zillow]
         CHASE[Chase]
         FIDELITY[Fidelity]
         WHOOP[WHOOP]
         RENPHO[Renpho]
-        PRICES[Finnhub / CoinGecko / Zillow]
         GDRIVE[Google Drive]
     end
 
-    subgraph Ingest["Scheduled Ingestion (GitHub Actions)"]
+    subgraph LYFTR["Lyftr v2 (React + Vite, local)"]
+        REFRESH[Refresh Prices<br/>button]
+    end
+
+    subgraph GHA["Scheduled Ingestion (GitHub Actions)"]
         PLAID_CHASE[plaid_sync.py<br/>Daily 13:00 UTC]
         PLAID_INV[plaid_investments_sync.py<br/>Weekdays 22:00 UTC]
         WHOOP_SYNC[whoop/sync.py<br/>Daily 08:00 UTC]
@@ -270,32 +274,27 @@ graph TB
         LABS_INGEST[ingest_labs_gdrive.py<br/>Weekly Mon 09:00 UTC]
     end
 
-    subgraph DB["Supabase (single project: uuvsvtpfcexhqojlrsxy)"]
-        SUPA[(Finance + Health tables)]
-    end
+    SUPA[(Supabase<br/>single project: uuvsvtpfcexhqojlrsxy<br/>Finance + Health tables)]
 
-    subgraph Builders["Dashboard Builders"]
+    subgraph BUILD["Dashboard Builders"]
         BUILD_FITNESS[build_overload.py<br/>Daily 12:00 UTC]
         BUILD_MEDICAL[build_dashboards.py<br/>Weekly Mon 10:00 UTC]
     end
 
-    subgraph Pages["GitHub Pages (v1 static)"]
-        LANDING[index.html]
+    subgraph GHP["GitHub Pages (v1 static)"]
         DASH_FINANCE[finances.html]
         DASH_FITNESS[overload.html]
         DASH_MEDICAL[medical.html]
+        LANDING[index.html]
     end
 
-    subgraph V2["Lyftr v2 (React + Vite, local)"]
-        LYFTR[exercise-app<br/>Finances / Medical / Workouts]
-        REFRESH[Refresh Prices button]
-    end
+    LYFTR_APP[exercise-app<br/>Finances / Medical / Workouts]
 
-    CHASE -->|Plaid| PLAID_CHASE
-    FIDELITY -->|Plaid| PLAID_INV
-    WHOOP -->|WHOOP API| WHOOP_SYNC
-    RENPHO -->|Renpho API| BODY_SYNC
-    GDRIVE -->|Drive API| LABS_INGEST
+    CHASE --> PLAID_CHASE
+    FIDELITY --> PLAID_INV
+    WHOOP --> WHOOP_SYNC
+    RENPHO --> BODY_SYNC
+    GDRIVE --> LABS_INGEST
 
     PLAID_CHASE --> SUPA
     PLAID_INV --> SUPA
@@ -303,27 +302,27 @@ graph TB
     BODY_SYNC --> SUPA
     LABS_INGEST --> SUPA
 
+    SUPA --> LYFTR_APP
+    SUPA --> DASH_FINANCE
     SUPA --> BUILD_FITNESS
     SUPA --> BUILD_MEDICAL
 
     BUILD_FITNESS --> DASH_FITNESS
     BUILD_MEDICAL --> DASH_MEDICAL
-    SUPA -->|browser reads| DASH_FINANCE
 
     DASH_FINANCE --> LANDING
     DASH_FITNESS --> LANDING
     DASH_MEDICAL --> LANDING
 
-    SUPA --> LYFTR
-    PRICES --> REFRESH
-    REFRESH --> SUPA
+    REFRESH --> PRICES
+    PRICES --> SUPA
 
     style LANDING fill:#10b981,color:#fff
     style DASH_FINANCE fill:#10b981,color:#fff
     style DASH_FITNESS fill:#ef4444,color:#fff
     style DASH_MEDICAL fill:#3b82f6,color:#fff
     style SUPA fill:#f59e0b,color:#000
-    style LYFTR fill:#8b5cf6,color:#fff
+    style LYFTR_APP fill:#8b5cf6,color:#fff
 ```
 
 ## Known Issues
