@@ -87,8 +87,7 @@ personal/
 │   ├── body/               # Renpho sync
 │   └── medical/            # Lab ingest + Drive housekeeping
 ├── docs/                   # Documentation (see docs/README.md)
-├── tools/document-scanner/ # Local Windows utility (not deployed)
-└── vault/                  # Personal Obsidian notes (gitignored)
+└── vault/                  # Personal Obsidian notes
 ```
 
 ## For maintainers
