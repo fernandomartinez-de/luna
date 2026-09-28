@@ -8,7 +8,7 @@
     "viewBox": [1250, 540],
     "views": [
       { "id": "main-flow", "label": "How data reaches the phone", "focus": ["plaid", "whoop", "renpho", "gdrive", "actions", "supabase", "lyftr"], "note": "Sources land in Supabase via scheduled GitHub Actions, then the phone app reads from there." },
-      { "id": "live-refresh", "label": "Live price refresh", "focus": ["prices", "lyftr", "supabase"], "note": "The Refresh Prices button in Lyftr calls Finnhub, CoinGecko, and Zillow directly from the browser and writes back to Supabase." },
+      { "id": "live-refresh", "label": "Live price refresh", "focus": ["prices", "lyftr"], "note": "Refresh Prices in Lyftr fetches Finnhub, CoinGecko, Zillow live for display only — nothing writes back to Supabase." },
       { "id": "consumer-side", "label": "Where I look at it", "focus": ["v1", "lyftr", "fernando"], "note": "v1 is the static HTML I print or share with providers; Lyftr is the app pinned to my home screen." }
     ]
   },
@@ -18,7 +18,7 @@
     { "id": "renpho",  "type": "external",  "label": "Renpho Scale",    "sublabel": "weight + body fat",            "pos": [30, 190],  "size": [170, 56] },
     { "id": "gdrive",  "type": "external",  "label": "Google Drive",    "sublabel": "lab PDFs",                     "pos": [30, 270],  "size": [170, 56] },
     { "id": "prices",  "type": "external",  "label": "Live Prices",     "sublabel": "Finnhub + CoinGecko + Zillow", "pos": [30, 380],  "size": [170, 56] },
-    { "id": "redfin",  "type": "external",  "label": "Redfin",          "sublabel": "manual monthly script",        "pos": [30, 460],  "size": [170, 56] },
+    { "id": "redfin",  "type": "external",  "label": "Redfin",          "sublabel": "manual table entry",        "pos": [30, 460],  "size": [170, 56] },
 
     { "id": "actions", "type": "backend",   "label": "GitHub Actions",  "sublabel": "9 scheduled workflows",        "tag": "cron",         "pos": [270, 160], "size": [190, 130] },
 
@@ -46,17 +46,17 @@
     { "id": "read-v1",    "from": "supabase", "to": "v1" },
     { "id": "read-v2",    "from": "supabase", "to": "lyftr",    "label": "read + write" },
 
-    { "id": "live-prices","from": "prices",   "to": "lyftr",    "label": "on-demand refresh",      "variant": "dashed" },
+    { "id": "live-prices","from": "prices",   "to": "lyftr",    "label": "display only (no write)",      "variant": "dashed" },
 
-    { "id": "redfin-in", "from": "redfin",   "to": "supabase", "label": "manual monthly",         "variant": "dashed" },
+    { "id": "redfin-in", "from": "redfin",   "to": "supabase", "label": "manual SQL insert",         "variant": "dashed" },
 
     { "id": "look-v1",    "from": "v1",       "to": "fernando" },
     { "id": "look-v2",    "from": "lyftr",    "to": "fernando" }
   ],
   "cards": [
-    { "dot": "cyan",    "title": "Data in",       "items": ["Plaid syncs Chase and Fidelity", "WHOOP and Renpho push daily", "Google Drive holds the raw lab PDFs", "Redfin is the one manual entry"] },
+    { "dot": "cyan",    "title": "Data in",       "items": ["Plaid syncs Chase and Fidelity", "WHOOP and Renpho push daily", "Google Drive holds the raw lab PDFs", "Redfin real estate estimate (manual table insert)"] },
     { "dot": "amber",   "title": "Storage",       "items": ["One Supabase Postgres database", "Every workflow writes here", "Both dashboards read from here"] },
     { "dot": "emerald", "title": "Automation",    "items": ["Nine GitHub Actions on a schedule", "Fetch, categorize, and re-publish", "No clicks needed day to day"] },
-    { "dot": "violet",  "title": "Dashboards",    "items": ["v1 static HTML for medical printouts", "Lyftr React app for daily phone use", "Live prices refresh from the app itself"] }
+    { "dot": "violet",  "title": "Dashboards",    "items": ["v1 static HTML for medical printouts", "Lyftr React app for daily phone use", "Refresh Prices button fetches live data for display"] }
   ]
 }
