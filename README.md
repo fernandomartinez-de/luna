@@ -23,11 +23,12 @@ I don't have to click anything. Every morning a set of small robots grabs the la
 
 Go to [fernandomartinez-de.github.io/personal](https://fernandomartinez-de.github.io/personal/) and you get a landing page with links to two versions of the same idea.
 
-**The old version (v1)** — plain web pages, one per topic. Good for printing and sharing with a doctor.
+**The old version (v1, archived under `V1/`)** — plain web pages, one per topic. Good for printing and sharing with a doctor.
 
-- [Finances](https://fernandomartinez-de.github.io/personal/finances/finances.html) — spending, investments, property value
-- [Fitness](https://fernandomartinez-de.github.io/personal/health/fitness/overload.html) — WHOOP data, workouts, running
-- [Medical](https://fernandomartinez-de.github.io/personal/health/medical/medical.html) — lab results, ready for oncologist or nutritionist
+- [v1 landing](https://fernandomartinez-de.github.io/personal/V1/) — hub for the static dashboards
+- [Finances](https://fernandomartinez-de.github.io/personal/V1/Finance/finances.html) — spending, investments, property value
+- [Fitness](https://fernandomartinez-de.github.io/personal/V1/Fitness/overload.html) — WHOOP data, workouts, running
+- [Medical](https://fernandomartinez-de.github.io/personal/V1/Medical/medical.html) — lab results, ready for oncologist or nutritionist
 
 **The new version (v2), called Lyftr** — a proper app, built to feel good on a phone.
 
@@ -173,17 +174,21 @@ python finances\scripts\fetch_zillow_property_value.py      # Condo value
 
 ```
 personal/
-├── index.html              # v1 landing page
-├── finances/               # v1 finances dashboard + Plaid scripts
+├── index.html              # Root redirect -> /lyftr/
+├── 404.html                # SPA fallback for the Lyftr React app
+├── V1/                     # Archived v1 static dashboards (still work)
+│   ├── index.html          # v1 landing page
+│   ├── Finance/            # finances.html
+│   ├── Fitness/            # overload.html + app.js + scripts/
+│   └── Medical/            # medical.html + martinez_*_dashboard.html + build_dashboards.py
+├── finances/scripts/       # Shared: Plaid sync scripts (Chase + Fidelity)
 ├── health/
-│   ├── fitness/
-│   │   ├── overload.html   # v1 fitness dashboard
-│   │   └── exercise-app/   # v2 Lyftr React app source
-│   ├── medical/            # Medical dashboards + lab ingestion
-│   ├── whoop/              # WHOOP sync scripts
-│   └── body/               # Renpho sync scripts
+│   ├── fitness/exercise-app/  # v2 Lyftr React app source
+│   ├── medical/            # Lab ingestion + Drive housekeeping (shared)
+│   ├── whoop/              # WHOOP sync scripts (shared)
+│   └── body/               # Renpho sync scripts (shared)
 ├── lyftr/                  # v2 built React app (auto-generated)
-├── docs/assets/            # Architecture diagram
+├── docs/assets/            # Architecture diagram + logo concepts
 └── vault/                  # Personal Obsidian notes (gitignored)
 ```
 
@@ -195,10 +200,8 @@ personal/
 | `pull-investments.yml` | Weekdays 22:00 | Fidelity holdings via Plaid |
 | `whoop-daily-sync.yml` | Daily 08:00 | WHOOP fitness data |
 | `pull-body.yml` | Daily 14:00 | Renpho body composition |
-| `build-fitness.yml` | Daily 12:00 | Rebuild Overload dashboard |
 | `build-lyftr-v2.yml` | On push to exercise-app | Build & deploy React app |
 | `medical-ingest-labs.yml` | Weekly Mon 09:00 | Ingest lab PDFs from Drive |
-| `medical-rebuild-dashboards.yml` | Weekly Mon 10:00 | Rebuild medical dashboards |
 | `medical-clean-drive.yml` | Monthly 1st 00:00 | Clean Google Drive files |
 
 ---
@@ -233,7 +236,7 @@ Everything lives in a single Supabase project (**`uuvsvtpfcexhqojlrsxy`**, proje
 
 | Table | Purpose | Written by | Read by |
 |-------|---------|------------|---------|
-| `lab_results` | Categorized lab values from PDFs (marcador, valor, unidad, ref_min/max, flag, panel), panel normalized to 11 canonical categories on ingest | `medical-ingest-labs.yml` (`ingest_labs_gdrive.py`, LLM extraction) | v2 Lyftr Oncologist/Nutritionist, `martinez_*_dashboard.html` via `medical-rebuild-dashboards.yml` |
+| `lab_results` | Categorized lab values from PDFs (marcador, valor, unidad, ref_min/max, flag, panel), panel normalized to 11 canonical categories on ingest | `medical-ingest-labs.yml` (`ingest_labs_gdrive.py`, LLM extraction) | v2 Lyftr Oncologist/Nutritionist. v1 `V1/Medical/martinez_*_dashboard.html` is archived (rebuild workflow removed) |
 | `inbody_results` | InBody bioimpedance scan snapshots (peso, mme, masa_grasa, pgc, agua, tmb, angulo_fase, score, grasa_visceral) | `medical-ingest-labs.yml` (parses InBody images in the same Drive folder) | v2 Lyftr Nutritionist (composition ring, scan comparison), medical dashboards |
 
 ### Nutrition
@@ -283,10 +286,9 @@ Everything lives in a single Supabase project (**`uuvsvtpfcexhqojlrsxy`**, proje
 - **`whoop-daily-sync.yml`** writes → `whoop_recovery`, `whoop_cycles`, `whoop_sleep`, `whoop_workouts`, `whoop_body`
 - **`pull-body.yml`** writes → `body_composition`
 - **`medical-ingest-labs.yml`** writes → `lab_results`, `inbody_results`
-- **`medical-rebuild-dashboards.yml`** reads → `lab_results`, `inbody_results`, `whoop_*`
 - **`medical-clean-drive.yml`** does not touch Supabase (Drive housekeeping only)
-- **`build-fitness.yml`** reads → `whoop_*`, `body_composition`, `strength_*`, `training_plan`, `running_log`, `completed_workouts`, `nutrition_log`
 - **`build-lyftr-v2.yml`** does not touch Supabase (compiles the React app; the app then reads/writes at runtime via the anon key)
+- ~~`medical-rebuild-dashboards.yml`~~, ~~`build-fitness.yml`~~ — retired when v1 was archived; the v1 dashboards under `V1/` are now static.
 
 Manual writes (no workflow): `plaid_accounts` (one-time link), `category_mapping` (SQL), `exercises` / `meal_templates` / `training_plan` / `running_log` / `app_config` (seed data), `real_estate_history` (Redfin manual script + Zillow via v2 Refresh Prices).
 
