@@ -39,4 +39,4 @@ jobs:
           PLAID_ITEM_ID:      ${{ secrets.PLAID_ITEM_ID }}
           SUPABASE_URL:       ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY:       ${{ secrets.SUPABASE_KEY }}
-        run: python finances/plaid_sync.py
+        run: python finances/scripts/plaid_sync.py
