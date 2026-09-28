@@ -52,7 +52,7 @@ In plain words:
 Two things happen outside the daily automation:
 
 - **Live prices** for stocks, crypto, and the condo — I press a button in the app when I want them refreshed.
-- **Redfin** — the one thing I still enter by hand once a month, since Redfin blocks in-browser fetching.
+- **Redfin** — the one thing without an API. I run a script by hand once a month, which writes the number straight into Supabase alongside the automated Zillow value.
 
 ---
 
