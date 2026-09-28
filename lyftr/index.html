@@ -11,6 +11,23 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="manifest" href="manifest.webmanifest" />
     <title>Lyftr</title>
+    <script>
+      // Restore the URL the visitor originally asked for. The root
+      // /personal/404.html stashes the intended path in sessionStorage
+      // and redirects here; we replace history so react-router sees
+      // the real route on load.
+      (function () {
+        try {
+          var target = sessionStorage.getItem('lyftr:redirect');
+          if (target) {
+            sessionStorage.removeItem('lyftr:redirect');
+            if (target !== window.location.pathname + window.location.search + window.location.hash) {
+              window.history.replaceState(null, '', target);
+            }
+          }
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
     <script type="module" crossorigin src="/personal/lyftr/assets/index-vC1wqnrn.js"></script>
     <link rel="stylesheet" crossorigin href="/personal/lyftr/assets/index-CGp8gRWp.css">
   </head>
