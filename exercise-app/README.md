@@ -196,7 +196,7 @@ graph TB
 ## Setup
 
 ```powershell
-cd C:\Users\fmartine\Personal\repos\personal\health\fitness\exercise-app
+cd C:\Users\fmartine\Personal\repos\personal\exercise-app
 npm install
 ```
 

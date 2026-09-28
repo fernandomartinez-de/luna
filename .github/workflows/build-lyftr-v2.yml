@@ -7,7 +7,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'health/fitness/exercise-app/**'
+      - 'exercise-app/**'
   workflow_dispatch: {}
 
 permissions:
@@ -28,11 +28,11 @@ jobs:
           node-version: '18'
 
       - name: Install dependencies
-        working-directory: health/fitness/exercise-app
+        working-directory: exercise-app
         run: npm ci
 
       - name: Build React app
-        working-directory: health/fitness/exercise-app
+        working-directory: exercise-app
         env:
           VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_KEY }}
@@ -43,7 +43,7 @@ jobs:
       - name: Copy build to lyftr folder
         run: |
           mkdir -p lyftr
-          cp -r health/fitness/exercise-app/dist/* lyftr/
+          cp -r exercise-app/dist/* lyftr/
           # GitHub Pages SPA fallback: any deep-link 404 serves the SPA shell
           # so react-router can take over. See spa-github-pages pattern.
           cp lyftr/index.html lyftr/404.html

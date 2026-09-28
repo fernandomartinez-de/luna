@@ -80,13 +80,13 @@ personal/
 ├── index.html              # Redirects / to /lyftr/
 ├── 404.html                # SPA fallback for the Lyftr React app
 ├── V1/                     # Archived v1 static dashboards
-├── finances/scripts/       # Shared: Plaid sync scripts
-├── health/
-│   ├── fitness/exercise-app/  # Lyftr React source (v2)
-│   ├── medical/            # Lab ingest + Drive housekeeping
-│   ├── whoop/              # WHOOP sync
-│   └── body/               # Renpho sync
+├── exercise-app/           # Lyftr React source (v2)
 ├── lyftr/                  # Built React app (auto-generated)
+├── finances/               # Plaid sync scripts + finance docs
+├── health/
+│   ├── whoop/              # WHOOP sync
+│   ├── body/               # Renpho sync
+│   └── medical/            # Lab ingest + Drive housekeeping
 ├── docs/                   # Documentation (see docs/README.md)
 ├── tools/document-scanner/ # Local Windows utility (not deployed)
 └── vault/                  # Personal Obsidian notes (gitignored)
