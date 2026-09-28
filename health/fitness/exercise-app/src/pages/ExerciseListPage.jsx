@@ -5,6 +5,7 @@ import MuscleFilter from '../components/MuscleFilter.jsx'
 import LevelFilter from '../components/LevelFilter.jsx'
 import ExerciseCard from '../components/ExerciseCard.jsx'
 import SaveWorkoutModal from '../components/SaveWorkoutModal.jsx'
+import SquishSwitch from '../components/SquishSwitch/SquishSwitch.jsx'
 
 const PAGE_SIZE = 60
 
@@ -161,13 +162,22 @@ export default function ExerciseListPage() {
       )}
 
       {!buildMode && (
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
           <button className="build-workout-trigger" style={{ flex: 1 }} onClick={handleBuildWorkout}>
             + Build Workout
           </button>
-          <button className="build-workout-trigger" style={{ flex: 1, opacity: showSaved ? 1 : 0.85 }} onClick={() => setShowSaved((v) => !v)}>
-            {showSaved ? 'Hide Saved' : 'Saved Workouts'} ({savedWorkouts.length})
-          </button>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--surface-border)', background: 'var(--surface-raised)', cursor: 'pointer', flex: 1, justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--tx-primary)' }}>Saved ({savedWorkouts.length})</span>
+            <SquishSwitch
+              checked={showSaved}
+              onChange={setShowSaved}
+              ariaLabel="Toggle saved workouts"
+              width={44}
+              height={24}
+              trackColor="rgba(255,255,255,0.08)"
+              trackOnColor="var(--brand-500)"
+            />
+          </label>
         </div>
       )}
 

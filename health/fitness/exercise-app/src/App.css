@@ -4,6 +4,62 @@
   min-height: 100vh;
 }
 
+/* Galaxy background pages: content lifts above the fixed galaxy layer */
+.galaxy-bg .app-main {
+  position: relative;
+  z-index: 1;
+}
+.galaxy-bg .app-header {
+  background: rgba(5, 5, 9, 0.55);
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+.galaxy-bg .bottom-nav {
+  background: rgba(5, 5, 9, 0.6);
+  border-top-color: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+.rubber-nav-wrap {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  max-width: calc(100vw - 32px);
+  padding: 8px;
+  border-radius: 32px;
+  background: rgba(5, 5, 9, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.rubber-nav-wrap .rubber-segment {
+  background: transparent !important;
+}
+
+/* Convert inline card backgrounds into glass panels when Galaxy is active */
+.galaxy-bg [style*="--surface-raised"],
+.galaxy-bg [style*="surface-raised"] {
+  background-color: rgba(15, 18, 32, 0.42) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 6px 22px rgba(0, 0, 0, 0.3);
+}
+.galaxy-bg .status-block {
+  background-color: rgba(15, 18, 32, 0.42) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+.galaxy-bg [style*="--surface-base"] {
+  background-color: rgba(10, 12, 22, 0.55) !important;
+}
+
 .app-header {
   display: flex;
   align-items: center;

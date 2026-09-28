@@ -72,13 +72,16 @@ export default function FinancesOverviewPage() {
     let scDate = null
     if (scData && scData.length > 0) {
       scDate = scData[0].snapshot_date
-      const latest = scData.filter((r) => r.snapshot_date === scDate)
-      latest.forEach((r) => {
+      scData.filter((r) => r.snapshot_date === scDate).forEach((r) => {
         const v = Number(r.total_value) || 0
         if (r.asset_type === 'Stock') stocks += v
         else if (r.asset_type === 'Crypto') crypto += v
-        else if (r.asset_type === 'Retirement' || r.asset_type === 'Brokerage') retirement += v
       })
+      const retRows = scData.filter((r) => r.asset_type === 'Retirement' || r.asset_type === 'Brokerage')
+      if (retRows.length > 0) {
+        const retDate = retRows[0].snapshot_date
+        retRows.filter((r) => r.snapshot_date === retDate).forEach((r) => { retirement += Number(r.total_value) || 0 })
+      }
     }
     if (retirement === 0) retirement = RETIREMENT_FALLBACK
 
@@ -87,7 +90,8 @@ export default function FinancesOverviewPage() {
       reDate = reData[0].snapshot_date
       const zillowCondo = reData.find((r) => r.asset_name === 'Condo' && r.data_source === 'Zillow' && r.snapshot_date === reDate)
       const redfinCondo = reData.find((r) => r.asset_name === 'Condo' && r.data_source === 'Redfin' && r.snapshot_date === reDate)
-      const storage = reData.find((r) => r.asset_name === 'Storage Unit' && r.snapshot_date === reDate)
+      const storageRows = reData.filter((r) => r.asset_name === 'Storage Unit')
+      const storage = storageRows.length > 0 ? storageRows[0] : null
       if (zillowCondo && redfinCondo) realEstate += (Number(zillowCondo.home_value) + Number(redfinCondo.home_value)) / 2
       else if (zillowCondo) realEstate += Number(zillowCondo.home_value)
       else if (redfinCondo) realEstate += Number(redfinCondo.home_value)

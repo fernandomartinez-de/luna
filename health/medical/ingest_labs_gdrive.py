@@ -22,12 +22,26 @@ LAB_EXTRACT_PROMPT = """You are a medical lab result parser. Extract ALL numeric
 Return ONLY a valid JSON array. No markdown, no explanation. Start with [ and end with ].
 
 Each element:
-{"marcador":"standardized Spanish name","panel":"tiroideo|glucemico|vitaminas|lipidico|hemograma|otro","valor":0.0,"unidad":"unit","ref_min":0.0,"ref_max":0.0,"flag":"H|L|normal"}
+{"marcador":"standardized Spanish name","panel":"Thyroid|Complete Blood Count|Lipids|Glucose & Metabolic|Liver|Kidney|Electrolytes|Vitamins & Iron|Enzymes & Muscle|Inflammation|Other","valor":0.0,"unidad":"unit","ref_min":0.0,"ref_max":0.0,"flag":"H|L|normal"}
+
+Panel categorization guide (pick exactly ONE per marker, using these canonical names):
+- Thyroid: TSH, T3/T4 (free/total), thyroglobulin, anti-TG, anti-TPO, calcitonin
+- Complete Blood Count: RBC, hemoglobin, hematocrit, WBC, platelets, MCV/MCH/MCHC/RDW/MPV, and all differentials (neutrophils, lymphocytes, monocytes, eosinophils, basophils, reticulocytes)
+- Lipids: total cholesterol, LDL, HDL, VLDL, triglycerides, non-HDL
+- Glucose & Metabolic: glucose, HbA1c, insulin, C-peptide
+- Liver: ALT, AST, GGT, ALP, bilirubin (all fractions), albumin, total protein, transaminases
+- Kidney: creatinine, urea/BUN, uric acid, eGFR, cystatin C
+- Electrolytes: sodium, potassium, chloride, calcium, phosphorus, magnesium, CO2/bicarbonate
+- Vitamins & Iron: vitamin D (25-OH), B12, folate, iron, ferritin, transferrin, TIBC, iodine, zinc, selenium
+- Enzymes & Muscle: CPK/CK, LDH, amylase, lipase, myoglobin
+- Inflammation: CRP/PCR, ESR/VSG, procalcitonin
+- Other: anything that doesn't clearly fit above (hormones, tumor markers, one-offs)
 
 Rules:
 - valor must be a number, never a string
 - ref_min and ref_max must be numbers or null
 - flag must be exactly "H", "L", or "normal"
+- panel must be one of the 11 canonical names above, spelled exactly
 - Skip qualitative results (NEGATIVO, AMARILLO, AUSENTES, etc.)
 - Skip calculated ratios and indices
 
@@ -213,18 +227,136 @@ def parse_inbody_with_claude(image_bytes, mime_type, client):
         raw = raw[start:end+1]
     return json.loads(raw.strip())
 
+# ── Panel normalization ───────────────────────────────────────────────────────
+# Canonical panel categories — must match the React classifier in
+# health/fitness/exercise-app/src/pages/medical/OncologistView.jsx so that
+# Supabase stores the same category names the app displays.
+CANONICAL_PANELS = [
+    "Thyroid",
+    "Complete Blood Count",
+    "Lipids",
+    "Glucose & Metabolic",
+    "Liver",
+    "Kidney",
+    "Electrolytes",
+    "Vitamins & Iron",
+    "Enzymes & Muscle",
+    "Inflammation",
+    "Other",
+]
+
+def _match_thyroid(m, p):
+    return ("tiroide" in p or "thyroid" in p or "tsh" in m
+            or ("t3" in m and "bt3" not in m) or ("t4" in m and "vit" not in m)
+            or "tiroxina" in m or "thyroxine" in m
+            or "triyodo" in m or "triiodo" in m
+            or "tiroglobulin" in m or "thyroglobulin" in m
+            or "atg" in m or "tgab" in m
+            or "tpo" in m or "peroxidasa" in m or "calcitonin" in m)
+
+def _match_cbc(m, p):
+    return ("hemograma" in p or "biometria" in p or "hematica" in p
+            or "formula blanca" in p or "formula tromboc" in p or "cbc" in p
+            or "eritrocit" in m or "hemoglobin" in m or "hematocrit" in m
+            or "leucocit" in m or "plaqueta" in m
+            or m in ("vcm", "hcm", "chcm", "rdw", "mcv", "mch", "mchc", "mpv")
+            or "neutrofil" in m or "linfocit" in m or "monocit" in m
+            or "eosinofil" in m or "basofil" in m or "reticulocit" in m)
+
+def _match_lipids(m, p):
+    return ("lipid" in p or "colesterol" in m or "cholesterol" in m
+            or "ldl" in m or "hdl" in m or "vldl" in m
+            or "triglic" in m or "triglyc" in m or "non-hdl" in m)
+
+def _match_glucose(m, p):
+    return ("glucemi" in p or "metabol" in p
+            or "glucos" in m or "glicem" in m or "hba1c" in m
+            or "glicosilada" in m or "a1c" in m
+            or "insulin" in m or "peptido c" in m)
+
+def _match_liver(m, p):
+    return ("hepatic" in p or "liver" in p
+            or m in ("alt", "ast", "ggt", "alp")
+            or "bilirrub" in m or "bilirubin" in m
+            or "albumin" in m or "total protein" in m
+            or ("proteina" in m and "total" in m)
+            or "transaminas" in m)
+
+def _match_kidney(m, p):
+    return ("renal" in p or "kidney" in p
+            or "creatinin" in m or "urea" in m or m == "bun"
+            or "acido urico" in m or "uric acid" in m or "egfr" in m or "cistatina" in m)
+
+def _match_electrolytes(m, p):
+    return ("electrolit" in p or m in (
+        "sodio", "sodium", "potasio", "potassium",
+        "cloruro", "chloride", "calcio", "calcium",
+        "fosforo", "phosphorus", "magnesio", "magnesium",
+        "co2", "bicarbonato",
+    ))
+
+def _match_vitamins_iron(m, p):
+    return ("vitamin" in p or "vitamin" in m
+            or "25-oh" in m or "25(oh)" in m or "calcidiol" in m
+            or "folat" in m or "folic" in m or "folico" in m
+            or "b12" in m or "cobalamin" in m
+            or "hierro" in m or m == "iron" or m == "fe"
+            or "ferritin" in m or "transferrin" in m or "tibc" in m
+            or "yodo" in m or "iodine" in m
+            or "zinc" in m or "selenio" in m or "selenium" in m)
+
+def _match_enzymes(m, p):
+    return (m in ("cpk", "ck", "ldh")
+            or "amilas" in m or "amylas" in m
+            or "lipas" in m or "mioglobin" in m)
+
+def _match_inflammation(m, p):
+    return ("pcr" in m or "crp" in m or "vsg" in m or "esr" in m
+            or "sedimentacion" in m or "procalcitonin" in m)
+
+_MATCHERS = [
+    ("Thyroid", _match_thyroid),
+    ("Complete Blood Count", _match_cbc),
+    ("Lipids", _match_lipids),
+    ("Glucose & Metabolic", _match_glucose),
+    ("Liver", _match_liver),
+    ("Kidney", _match_kidney),
+    ("Electrolytes", _match_electrolytes),
+    ("Vitamins & Iron", _match_vitamins_iron),
+    ("Enzymes & Muscle", _match_enzymes),
+    ("Inflammation", _match_inflammation),
+]
+
+def normalize_panel(marker, raw_panel):
+    """Return one of CANONICAL_PANELS. Trusts the raw panel only if it is
+    already a canonical value; otherwise routes by marker name."""
+    if raw_panel in CANONICAL_PANELS:
+        return raw_panel
+    m = (marker or "").lower().strip()
+    p = (raw_panel or "").lower().strip()
+    for name, fn in _MATCHERS:
+        try:
+            if fn(m, p):
+                return name
+        except Exception:
+            continue
+    return "Other"
+
 # ── Insert ────────────────────────────────────────────────────────────────────
 def insert_labs(supabase, fecha, año, proveedor, archivo, rows, estimulada):
     inserted = 0
     for r in rows:
         try:
+            marcador_raw = str(r.get("marcador", ""))[:100]
+            panel_raw = r.get("panel")
+            panel_normalized = normalize_panel(marcador_raw, panel_raw)
             result = supabase.table('lab_results').insert({
                 'fecha': fecha.isoformat() if fecha else None,
                 'año': año,
                 'archivo': archivo,
                 'proveedor': proveedor,
-                'panel': r.get("panel", "otro"),
-                'marcador': str(r.get("marcador", ""))[:100],
+                'panel': panel_normalized,
+                'marcador': marcador_raw,
                 'valor': float(r.get("valor", 0)),
                 'unidad': r.get("unidad"),
                 'ref_min': r.get("ref_min"),
