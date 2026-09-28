@@ -4,435 +4,351 @@ Consolidated personal dashboard and automation repository deployed at **https://
 
 ## Overview
 
-Unified landing page with three main dashboards:
-- **💰 Finances** - Net worth tracking, expense analysis, investment portfolio
-- **💪 Fitness** - Training plans, WHOOP data, nutrition tracking (Overload)
-- **🏥 Medical** - Oncologist and nutritionist lab dashboards
+Unified landing page with three areas:
+- **Finances** Net worth, expenses, and investment portfolio
+- **Fitness** Training, WHOOP data, body composition (Overload v1 + Lyftr v2)
+- **Medical** Oncologist and nutritionist lab dashboards
 
-All dashboards update automatically via GitHub Actions workflows and deploy to GitHub Pages.
+Data is pulled into a single Supabase project by scheduled GitHub Actions. The static dashboards deploy to GitHub Pages.
+
+> **Security note:** This repository is **public**. Keep credentials out of it. API keys and tokens live in GitHub Secrets and in gitignored local files (`.env`, `.plaid_secrets.local`, `.plaid_investments_secrets.local`), never in committed code.
 
 ## Live Dashboards
 
 **Landing Page:** https://fernandomartinez-de.github.io/personal/
 
 **Direct Links:**
-- Finances: https://fernandomartinez-de.github.io/personal/finances/finances.html
-- Fitness (Overload): https://fernandomartinez-de.github.io/personal/health/fitness/overload.html
+- Finances (v1): https://fernandomartinez-de.github.io/personal/finances/finances.html
+- Fitness (Overload v1): https://fernandomartinez-de.github.io/personal/health/fitness/overload.html
 - Medical: https://fernandomartinez-de.github.io/personal/health/medical/medical.html
+
+The v2 "Lyftr" app (`health/fitness/exercise-app/`) is a React + Vite SPA run locally with `npm run dev`. It is not currently built or deployed by a GitHub Action.
 
 ## Repository Structure
 
 ```
 personal/
-├── index.html                    # Landing page with 3 dashboard cards
-├── manifest.json                 # PWA manifest
-├── sw.js                         # Service worker
-├── assets/                       # Icons and static assets
+├── index.html                      # v1 landing page (dashboard cards)
+├── manifest.json                   # PWA manifest
+├── sw.js                           # Service worker
+├── assets/                         # Icons (apple-touch, 192, 512)
 │
-├── finances/                     # Finance Dashboard
-│   ├── finances.html             # Dashboard page
-│   ├── scripts/
-│   │   ├── plaid_link.py         # One-time: Connect Chase via Plaid
-│   │   ├── plaid_sync.py         # Daily: Pull Chase transactions
-│   │   ├── plaid_investments_link.py    # One-time: Connect Fidelity
-│   │   ├── plaid_investments_sync.py    # Daily: Pull investment holdings
-│   │   ├── fetch_redfin_property_value.py  # Monthly: Property values
-│   │   ├── load_bronze.py        # Process raw data
-│   │   └── process_finances_inbox.py  # Manual statement processing
-│   └── requirements.txt
+├── finances/                       # Finances (v1 dashboard + Plaid pipeline)
+│   ├── finances.html               # v1 standalone finances dashboard
+│   ├── .env.example
+│   ├── requirements.txt
+│   └── scripts/
+│       ├── plaid_link.py                  # One-time: link Chase (Hosted Link)
+│       ├── plaid_sync.py                  # Daily: Chase txns -> expense_transactions
+│       ├── plaid_investments_link.py      # One-time: link Fidelity (Investments)
+│       ├── plaid_investments_sync.py      # Weekdays: Fidelity holdings -> stocks_crypto_history
+│       ├── fetch_zillow_property_value.py # Manual: Zillow Zestimate -> real_estate_history
+│       └── serve_dashboard.py             # Local static server for finances.html
 │
 ├── health/
-│   ├── fitness/                  # Fitness Dashboard (Overload)
-│   │   ├── overload.html         # Main dashboard
-│   │   ├── build_overload.py     # Build script (runs weekly)
-│   │   ├── template.html         # Dashboard template
+│   ├── fitness/
+│   │   ├── overload.html           # v1 Overload dashboard (deployed)
+│   │   ├── app.js                  # v1 Overload client logic
+│   │   ├── requirements.txt
+│   │   ├── Scripts/
+│   │   │   ├── build_overload.py   # Renders overload.html from Supabase
+│   │   │   └── suggestions.py      # Training suggestions (imported by build)
+│   │   └── exercise-app/           # v2 "Lyftr" React + Vite SPA
+│   │       ├── src/                # pages/, components/, utils/
+│   │       ├── public/medical/     # provider dashboards bundled for the app
+│   │       ├── supabase/           # create_workouts.sql, create_workout_logs.sql
+│   │       ├── index.html, package.json, vite.config.js
+│   │       └── .env.example
+│   │
+│   ├── medical/
+│   │   ├── medical.html            # Wrapper with Oncologist/Nutritionist tabs
+│   │   ├── martinez_oncologist_dashboard.html    # Auto-generated
+│   │   ├── martinez_nutritionist_dashboard.html  # Auto-generated
+│   │   ├── build_dashboards.py     # Dashboard generator
+│   │   ├── ingest_labs_gdrive.py   # Ingest lab PDFs from Google Drive
+│   │   ├── clean_medical_drive.py  # Monthly Drive cleanup
 │   │   └── requirements.txt
 │   │
-│   ├── medical/                  # Medical Dashboard
-│   │   ├── medical.html          # Wrapper with tabs (Oncologist/Nutritionist)
-│   │   ├── martinez_oncologist_dashboard.html    # Auto-generated weekly
-│   │   ├── martinez_nutritionist_dashboard.html  # Auto-generated weekly
-│   │   ├── build_dashboards.py   # Dashboard generator
-│   │   ├── ingest_labs_gdrive.py # Google Drive lab PDF ingestion
-│   │   ├── clean_medical_drive.py # Monthly Drive cleanup
+│   ├── whoop/
+│   │   ├── sync.py                 # Daily WHOOP -> Supabase
+│   │   ├── bootstrap.py            # One-time OAuth bootstrap
 │   │   └── requirements.txt
 │   │
-│   ├── whoop/                    # WHOOP Data Sync
-│   │   ├── sync.py               # Daily sync to Supabase
-│   │   ├── bootstrap.py          # Token refresh
-│   │   └── requirements.txt
-│   │
-│   └── body/                     # Body Composition
-│       ├── sync_renpho.py        # Daily Renpho sync
+│   └── body/
+│       ├── renpho_pull.py          # Daily Renpho -> body_composition
 │       └── requirements.txt
 │
-├── docs/                         # Document Automation
-│   ├── process_personal_inbox.py
+├── docs/                           # Document expiration scanner
 │   ├── scan_expirations.py
-│   ├── PROCESS_INBOX.bat
-│   └── SCAN_EXPIRATIONS.bat
+│   ├── SCAN_EXPIRATIONS.bat
+│   └── requirements.txt
 │
-├── travel/                       # Trip Planning
-│   ├── index.html
-│   └── japan/
-│
-└── vault/                        # Obsidian Vault (gitignored)
-    ├── workflows/                # Workflow documentation
-    ├── ops/                      # Operational notes
-    └── outputs/                  # Processing logs
+└── vault/                          # Obsidian vault (personal notes)
+    ├── workflows/                  # Workflow documentation
+    ├── life-admin/ identity/ family/ quick-ref/ ops/
+    └── ...
+```
+
+## v2 App (Lyftr)
+
+`health/fitness/exercise-app/` is the second-generation app: React 18, Vite 5, react-router, vanilla JS plus Chart.js style visuals, Supabase JS anon client, and React Bits animation components.
+
+**Pages:** Home, Hub, Exercises (list + detail), Workouts (list + detail), Programs, Weight, Food, Finances (Expenses + Investments tabs), Medical (Oncologist + Nutritionist views).
+
+**Notable features:**
+- Finances → Investments has a manual **Refresh Prices** button that writes a fresh snapshot to `stocks_crypto_history` (Finnhub stocks, CoinGecko crypto, Zillow via RapidAPI for property).
+- Medical page embeds the same provider dashboards as the v1 medical wrapper.
+- Reads/writes Supabase via the anon client using `VITE_*` env vars from `.env.local` (gitignored).
+
+**Run locally:**
+```powershell
+cd health\fitness\exercise-app
+npm install
+npm run dev        # Vite dev server on http://localhost:5173
 ```
 
 ## Data Sources
 
-### Supabase (Primary Database)
-**Finances Project:** `uuvsvtpfcexhqojlrsxy.supabase.co`
-- expense_transactions
-- stocks_crypto_history
-- real_estate_history
-- category_mapping
+### Supabase (single project)
 
-**Medical/Health Project:** `mwqnplwhktphfuewswfa.supabase.co`
-- whoop_recovery, whoop_cycles, whoop_sleep, whoop_workouts
-- body_composition
-- nutrition_log
-- strength_sessions, strength_exercises, strength_sets
-- labs
+All finance and health data lives in one Supabase project: **`uuvsvtpfcexhqojlrsxy`** ("Personal"). Every workflow uses the same `SUPABASE_URL` / `SUPABASE_KEY` pair. There is no separate health project.
+
+**Finance tables:** `expense_transactions`, `category_mapping`, `stocks_crypto_history`, `real_estate_history`, `plaid_accounts`, `plaid_sync_state`
+
+**Health tables:** `whoop_recovery`, `whoop_cycles`, `whoop_sleep`, `whoop_workouts`, `whoop_body`, `lab_results`, `body_composition`, `inbody_results`, `nutrition_log`, `strength_sessions`, `strength_exercises`, `strength_sets`, `training_plan`, `meal_plan`, `meal_templates`, `running_log`
+
+**v2 app tables:** `exercises`, `workouts`, `workout_exercises`, `completed_workouts`, `completed_workout_exercises`
+
+**Config:** `app_config`
 
 ### External APIs
-- **Plaid** - Chase transactions (daily) + Fidelity investments (daily weekdays)
-- **WHOOP** - Fitness & recovery data (daily)
-- **Renpho** - Body composition (daily)
-- **Redfin** - Property values (monthly)
-
-### Google Drive
-- Medical PDFs → Auto-ingested weekly
-- Personal documents → Manual filing
-- Financial statements → Manual backfill
+- **Plaid** Chase transactions (daily) and Fidelity investment holdings (weekdays)
+- **WHOOP** Recovery, sleep, workouts, cycles (daily)
+- **Renpho** Body composition (daily)
+- **Finnhub / CoinGecko / Zillow (RapidAPI)** Live stock, crypto, and property values (on demand via the dashboard Refresh Prices button; Zillow also available as a manual script)
+- **Google Drive** Medical lab PDFs (ingested weekly)
 
 ## Automated Workflows (GitHub Actions)
 
-| Workflow | Schedule | Purpose | Status |
-|----------|----------|---------|--------|
-| `pull-finances.yml` | Daily 8 AM UTC | Chase transactions via Plaid | ✅ Active |
-| `pull-investments.yml` | Weekdays 9 PM UTC | Fidelity holdings via Plaid | ⏳ Pending Investments product approval |
-| `pull-body.yml` | Daily 9 AM UTC | Renpho body composition | ✅ Active |
-| `build-fitness.yml` | Weekly Mon 10 AM UTC | Rebuild Overload dashboard | ✅ Active |
-| `whoop-daily-sync.yml` | Daily 8 AM UTC | WHOOP data sync | ✅ Active |
-| `whoop-bootstrap-token.yml` | Weekly Sun midnight | WHOOP token refresh | ✅ Active |
-| `medical-ingest-labs.yml` | Weekly Mon 9 AM UTC | Ingest lab PDFs from Drive | ✅ Active |
-| `medical-rebuild-dashboards.yml` | Weekly Mon 10 AM UTC | Rebuild medical dashboards | ✅ Active |
-| `medical-clean-drive.yml` | Monthly 1st midnight | Clean up medical Drive files | ✅ Active |
-| `redfin-property-sync.yml` | Monthly 1st 1 AM UTC | Update property values | ✅ Active |
+Eight workflows. All times are UTC (New York is UTC minus 4 during EDT).
+
+| Workflow | Schedule | Runs | Purpose | Status |
+|----------|----------|------|---------|--------|
+| `pull-finances.yml` | Daily 13:00 (`0 13 * * *`) | `finances/scripts/plaid_sync.py` | Chase transactions via Plaid | Active |
+| `pull-investments.yml` | Weekdays 22:00 (`0 22 * * 1-5`) | `finances/scripts/plaid_investments_sync.py` | Fidelity holdings via Plaid | Active (live since 2026-09-27) |
+| `pull-body.yml` | Daily 14:00 (`0 14 * * *`) | `health/body/renpho_pull.py` | Renpho body composition | Active |
+| `whoop-daily-sync.yml` | Daily 08:00 (`0 8 * * *`) | `health/whoop/sync.py` | WHOOP data sync | Active |
+| `build-fitness.yml` | Daily 12:00 (`0 12 * * *`) | `health/fitness/build_overload.py` | Rebuild Overload dashboard | Needs repair (see Known Issues) |
+| `medical-ingest-labs.yml` | Weekly Mon 09:00 (`0 9 * * 1`) | `health/medical/ingest_labs_gdrive.py` | Ingest lab PDFs from Drive | Active |
+| `medical-rebuild-dashboards.yml` | Weekly Mon 10:00 (`0 10 * * 1`) | `health/medical/build_dashboards.py` | Rebuild medical dashboards | Active |
+| `medical-clean-drive.yml` | Monthly 1st 00:00 (`0 0 1 * *`) | `health/medical/clean_medical_drive.py` | Clean medical Drive files | Active |
+
+WHOOP token refresh is handled inside `whoop-daily-sync.yml` (it writes a fresh `WHOOP_REFRESH_TOKEN` using `GH_PAT`); there is no separate token workflow. Property values are refreshed on demand from the dashboard, so there is no scheduled property workflow.
 
 ## Quick Start
 
 ### One-Time Setup
 
-#### 1. Connect Chase via Plaid
+**1. Connect Chase via Plaid**
 ```powershell
-cd finances
-python scripts\plaid_link.py
+cd finances\scripts
+python plaid_link.py
 ```
-Opens Plaid Hosted Link → Connect Chase → Exchange token → Save to `.plaid_secrets.local`
-Add `PLAID_ACCESS_TOKEN` to GitHub Secrets.
+Opens Plaid Hosted Link, connects Chase, exchanges the token, and writes it to `.plaid_secrets.local` (gitignored). Add `PLAID_ACCESS_TOKEN` and `PLAID_ITEM_ID` to GitHub Secrets.
 
-#### 2. Connect Fidelity via Plaid (Investments)
-**Prerequisites:**
-- Plaid Investments product enabled (request at dashboard.plaid.com)
-- Fidelity OAuth access enabled (automated approval)
-
+**2. Connect Fidelity via Plaid (Investments)**
 ```powershell
-cd finances
-python scripts\plaid_investments_link.py
+cd finances\scripts
+python plaid_investments_link.py
 ```
-Opens Plaid Hosted Link → Connect Fidelity → Select accounts → Save tokens
-Add `PLAID_FIDELITY_ACCESS_TOKEN` and `PLAID_FIDELITY_ITEM_ID` to GitHub Secrets.
+Requires the Plaid Investments product and Fidelity OAuth enabled. Writes `PLAID_FIDELITY_ACCESS_TOKEN` and `PLAID_FIDELITY_ITEM_ID` to `.plaid_investments_secrets.local` (gitignored). Add `PLAID_FIDELITY_ACCESS_TOKEN` to GitHub Secrets.
 
-#### 3. Bootstrap WHOOP Token
+**3. Bootstrap WHOOP token**
 ```powershell
 cd health\whoop
 python bootstrap.py
 ```
-Opens WHOOP OAuth → Authorize → Save refresh token
-Add `WHOOP_REFRESH_TOKEN` to GitHub Secrets.
+Add `WHOOP_REFRESH_TOKEN` to GitHub Secrets (thereafter auto refreshed by the daily workflow).
 
-#### 4. Configure Google Drive
-Create service account at https://console.cloud.google.com/
-Download JSON credentials → Add as GitHub Secret `GOOGLE_CREDENTIALS`
-Share Google Drive folders with service account email.
+**4. Google Drive service account**
+Create a service account, download the JSON, and add it as the `GOOGLE_CREDENTIALS` secret. Share the medical Drive folders with the service account email.
 
 ### Local Development
 
-#### Build Fitness Dashboard
+**Build the Overload (v1) dashboard**
 ```powershell
-$env:SUPABASE_URL="https://mwqnplwhktphfuewswfa.supabase.co"
-$env:SUPABASE_KEY="<key>"
-cd health\fitness
-pip install -r requirements.txt
-python build_overload.py
+$env:SUPABASE_URL="https://uuvsvtpfcexhqojlrsxy.supabase.co"
+$env:SUPABASE_KEY="<anon key>"
+pip install -r health\fitness\requirements.txt
+python health\fitness\Scripts\build_overload.py
 ```
-Outputs: `overload.html`
 
-#### Build Medical Dashboards
+**Build the medical dashboards**
 ```powershell
+$env:SUPABASE_URL="https://uuvsvtpfcexhqojlrsxy.supabase.co"
+$env:SUPABASE_KEY="<anon key>"
+pip install -r health\medical\requirements.txt
 cd health\medical
-pip install -r requirements.txt
 python build_dashboards.py
 ```
-Outputs: `martinez_oncologist_dashboard.html`, `martinez_nutritionist_dashboard.html`
 
-#### Manual Finance Sync
+**Manual Chase sync**
 ```powershell
-cd finances
-python scripts\plaid_sync.py
+cd finances\scripts
+python plaid_sync.py
 ```
 
-## Manual Workflows
-
-### Process Personal Documents
+**Manual property value (Zillow)**
 ```powershell
-cd docs
-# Double-click PROCESS_INBOX.bat or:
-python process_personal_inbox.py
+cd finances\scripts
+python fetch_zillow_property_value.py
 ```
-Drop documents in `vault/inbox/personal-docs/` → Auto-files to Google Drive with standard naming
-
-### Scan Document Expirations
-```powershell
-cd docs
-# Double-click SCAN_EXPIRATIONS.bat or:
-python scan_expirations.py
-```
-
-### Manual Finance Statement Filing
-```powershell
-cd finances
-python scripts\process_finances_inbox.py
-```
-Drop Excel statements in `vault/inbox/finances/` → Processes into Supabase
 
 ## GitHub Pages Deployment
 
-**Automatic deployment on push to `main`**
-
-The landing page (`index.html`) and all dashboards deploy automatically when changes are pushed.
-
-**Cache Busting:**
-After deployment, hard refresh: `Ctrl + Shift + R`
-
-**Service Worker:**
-PWA caches: index.html, manifest.json, icons
-Cache version: `personal-v2` (bump to invalidate)
+The landing page (`index.html`) and the static dashboards deploy automatically on push to `main`. After a deploy, hard refresh with `Ctrl + Shift + R`. The service worker caches `index.html`, `manifest.json`, and icons; bump the cache version in `sw.js` to invalidate.
 
 ## GitHub Secrets
 
-Required secrets in **Settings → Secrets → Actions**:
+Configured in **Settings → Secrets and variables → Actions**:
 
-### Plaid
+**Supabase**
+- `SUPABASE_URL`
+- `SUPABASE_KEY`
+
+**Plaid**
 - `PLAID_CLIENT_ID`
 - `PLAID_SECRET`
 - `PLAID_ACCESS_TOKEN` (Chase)
-- `PLAID_FIDELITY_ACCESS_TOKEN` (Fidelity investments)
-- `PLAID_FIDELITY_ITEM_ID`
+- `PLAID_ITEM_ID` (Chase)
+- `PLAID_FIDELITY_ACCESS_TOKEN` (Fidelity)
 
-### Supabase
-- `SUPABASE_URL` (finances project)
-- `SUPABASE_KEY`
-- `SUPABASE_URL_HEALTH` (medical/health project)
-- `SUPABASE_KEY_HEALTH`
-
-### WHOOP
+**WHOOP**
 - `WHOOP_CLIENT_ID`
 - `WHOOP_CLIENT_SECRET`
-- `WHOOP_REFRESH_TOKEN` (auto-updated weekly)
+- `WHOOP_REFRESH_TOKEN` (auto updated daily)
 
-### Google
-- `GOOGLE_CREDENTIALS` (service account JSON)
+**Renpho**
+- `RENPHO_EMAIL`
+- `RENPHO_PASSWORD`
 
-### GitHub
-- `GH_PAT` (for updating WHOOP refresh token)
+**Google / Anthropic / GitHub**
+- `GOOGLE_CREDENTIALS` (service account JSON, medical ingest and clean)
+- `ANTHROPIC_API_KEY` (medical ingest and clean)
+- `GH_PAT` (whoop workflow, to update the refresh token)
 
 ## Tech Stack
 
-- **Frontend:** HTML, CSS, JavaScript, Chart.js
-- **Backend:** Python (automation scripts)
-- **Database:** Supabase (PostgreSQL)
-- **APIs:** Plaid, WHOOP, Renpho, Redfin
-- **Storage:** Google Drive
+- **v1 Frontend:** HTML, CSS, vanilla JS, Chart.js
+- **v2 Frontend:** React 18, Vite 5, react-router, Chart.js, React Bits, Supabase JS
+- **Backend:** Python automation scripts
+- **Database:** Supabase (PostgreSQL), single project
+- **APIs:** Plaid, WHOOP, Renpho, Finnhub, CoinGecko, Zillow (RapidAPI)
+- **Storage:** Google Drive (medical PDFs)
 - **CI/CD:** GitHub Actions
-- **Deployment:** GitHub Pages
+- **Deployment:** GitHub Pages (v1 static assets)
 - **Notes:** Obsidian (vault)
 
-## Workflow Diagram
+## Architecture Diagram
 
 ```mermaid
 graph TB
-    subgraph "Data Sources"
-        CHASE[Chase Bank]
+    subgraph Sources["Data Sources"]
+        CHASE[Chase]
         FIDELITY[Fidelity]
         WHOOP[WHOOP]
         RENPHO[Renpho]
-        REDFIN[Redfin]
+        PRICES[Finnhub / CoinGecko / Zillow]
         GDRIVE[Google Drive]
     end
 
-    subgraph "Data Ingestion"
-        PLAID_CHASE[plaid_sync.py<br/>Daily 8 AM]
-        PLAID_INV[plaid_investments_sync.py<br/>Weekdays 9 PM]
-        WHOOP_SYNC[whoop sync.py<br/>Daily 8 AM]
-        BODY_SYNC[sync_renpho.py<br/>Daily 9 AM]
-        REDFIN_SYNC[fetch_redfin.py<br/>Monthly 1st]
-        LABS_INGEST[ingest_labs_gdrive.py<br/>Weekly Mon 9 AM]
+    subgraph Ingest["Scheduled Ingestion (GitHub Actions)"]
+        PLAID_CHASE[plaid_sync.py<br/>Daily 13:00 UTC]
+        PLAID_INV[plaid_investments_sync.py<br/>Weekdays 22:00 UTC]
+        WHOOP_SYNC[whoop/sync.py<br/>Daily 08:00 UTC]
+        BODY_SYNC[renpho_pull.py<br/>Daily 14:00 UTC]
+        LABS_INGEST[ingest_labs_gdrive.py<br/>Weekly Mon 09:00 UTC]
     end
 
-    subgraph "Supabase"
-        FINANCE_DB[(Finances DB<br/>uuvsvtpfcexhqojlrsxy)]
-        HEALTH_DB[(Health DB<br/>mwqnplwhktphfuewswfa)]
+    subgraph DB["Supabase (single project: uuvsvtpfcexhqojlrsxy)"]
+        SUPA[(Finance + Health tables)]
     end
 
-    subgraph "Dashboard Builders"
-        BUILD_FINANCE[finances.html<br/>Static]
-        BUILD_FITNESS[build_overload.py<br/>Weekly Mon 10 AM]
-        BUILD_MEDICAL[build_dashboards.py<br/>Weekly Mon 10 AM]
+    subgraph Builders["Dashboard Builders"]
+        BUILD_FITNESS[build_overload.py<br/>Daily 12:00 UTC]
+        BUILD_MEDICAL[build_dashboards.py<br/>Weekly Mon 10:00 UTC]
     end
 
-    subgraph "GitHub Pages"
-        LANDING[index.html<br/>Landing Page]
+    subgraph Pages["GitHub Pages (v1 static)"]
+        LANDING[index.html]
         DASH_FINANCE[finances.html]
         DASH_FITNESS[overload.html]
         DASH_MEDICAL[medical.html]
     end
 
-    subgraph "Manual Workflows"
-        DOCS[process_personal_inbox.py<br/>On-demand]
-        EXPIRATIONS[scan_expirations.py<br/>On-demand]
+    subgraph V2["Lyftr v2 (React + Vite, local)"]
+        LYFTR[exercise-app<br/>Finances / Medical / Workouts]
+        REFRESH[Refresh Prices button]
     end
 
-    CHASE -->|Plaid API| PLAID_CHASE
-    FIDELITY -->|Plaid API| PLAID_INV
+    CHASE -->|Plaid| PLAID_CHASE
+    FIDELITY -->|Plaid| PLAID_INV
     WHOOP -->|WHOOP API| WHOOP_SYNC
     RENPHO -->|Renpho API| BODY_SYNC
-    REDFIN -->|Scraping| REDFIN_SYNC
     GDRIVE -->|Drive API| LABS_INGEST
 
-    PLAID_CHASE --> FINANCE_DB
-    PLAID_INV --> FINANCE_DB
-    REDFIN_SYNC --> FINANCE_DB
-    WHOOP_SYNC --> HEALTH_DB
-    BODY_SYNC --> HEALTH_DB
-    LABS_INGEST --> HEALTH_DB
+    PLAID_CHASE --> SUPA
+    PLAID_INV --> SUPA
+    WHOOP_SYNC --> SUPA
+    BODY_SYNC --> SUPA
+    LABS_INGEST --> SUPA
 
-    FINANCE_DB --> BUILD_FINANCE
-    HEALTH_DB --> BUILD_FITNESS
-    HEALTH_DB --> BUILD_MEDICAL
+    SUPA --> BUILD_FITNESS
+    SUPA --> BUILD_MEDICAL
 
-    BUILD_FINANCE --> DASH_FINANCE
     BUILD_FITNESS --> DASH_FITNESS
     BUILD_MEDICAL --> DASH_MEDICAL
+    SUPA -->|browser reads| DASH_FINANCE
 
     DASH_FINANCE --> LANDING
     DASH_FITNESS --> LANDING
     DASH_MEDICAL --> LANDING
 
-    GDRIVE -.-> DOCS
-    GDRIVE -.-> EXPIRATIONS
+    SUPA --> LYFTR
+    PRICES --> REFRESH
+    REFRESH --> SUPA
 
-    style LANDING fill:#10b981
-    style DASH_FINANCE fill:#10b981
-    style DASH_FITNESS fill:#ef4444
-    style DASH_MEDICAL fill:#3b82f6
-    style FINANCE_DB fill:#f59e0b
-    style HEALTH_DB fill:#f59e0b
+    style LANDING fill:#10b981,color:#fff
+    style DASH_FINANCE fill:#10b981,color:#fff
+    style DASH_FITNESS fill:#ef4444,color:#fff
+    style DASH_MEDICAL fill:#3b82f6,color:#fff
+    style SUPA fill:#f59e0b,color:#000
+    style LYFTR fill:#8b5cf6,color:#fff
 ```
 
-## Standard Naming Convention
+## Known Issues
 
-All automated files follow: `YYYY-MM-DD_category_source_description.ext`
-
-**Examples:**
-- `2026-09-25_labs_quest_comprehensive-metabolic.pdf`
-- `2026-04-15_passport_usa.pdf`
-- `2025-01-31_w2_prestige.pdf`
-- `2026-09-13_expense_chase-checking.xlsx`
+- **`build-fitness.yml` needs repair.** The workflow runs `python health/fitness/build_overload.py`, but the script now lives at `health/fitness/Scripts/build_overload.py`, depends on a `template.html` that is not present in the repo, and writes `overload.html` beside the script rather than the deployed `health/fitness/overload.html`. The workflow also commits `health/fitness/index.html`, which does not exist. This build cannot succeed as written and should be reconciled (fix paths, restore `template.html`, and commit the correct output file).
 
 ## Maintenance
 
-### Daily (Automated)
-- Chase transaction sync
-- Fidelity investment sync (weekdays)
-- WHOOP data sync
-- Renpho body composition sync
-
-### Weekly (Automated)
-- WHOOP token refresh (Sunday midnight)
-- Medical lab PDF ingestion (Monday 9 AM)
-- Medical & fitness dashboard rebuilds (Monday 10 AM)
-
-### Monthly (Automated)
-- Property value sync (1st, 1 AM)
-- Medical Drive cleanup (1st, midnight)
-
-### Monthly (Manual)
-- Process personal documents inbox
-- Scan document expirations
-- Review dashboards for accuracy
+**Daily (automated):** Chase transactions, WHOOP, Renpho body composition, Overload rebuild.
+**Weekdays (automated):** Fidelity investment holdings.
+**Weekly (automated):** Lab PDF ingestion (Mon 09:00) and medical dashboard rebuild (Mon 10:00).
+**Monthly (automated):** Medical Drive cleanup (1st).
+**On demand:** Property values and live stock/crypto prices via the dashboard Refresh Prices button.
 
 ## Troubleshooting
 
-### Dashboard Not Updating
-1. Check GitHub Actions tab for workflow failures
-2. Verify secrets are current
-3. Check Supabase for data issues
-4. Hard refresh browser: `Ctrl + Shift + R`
-
-### Plaid Connection Issues
-```powershell
-# Re-link Chase
-cd finances
-python scripts\plaid_link.py
-
-# Re-link Fidelity
-python scripts\plaid_investments_link.py
-```
-
-### WHOOP Token Expired
-```powershell
-cd health\whoop
-python bootstrap.py
-```
-
-### Medical Dashboards Empty
-1. Check Google Drive for PDFs in Medical/ folder
-2. Run manual ingestion:
-```powershell
-cd health\medical
-python ingest_labs_gdrive.py
-python build_dashboards.py
-```
-
-## Related Projects
-
-**Kept Separate:**
-- `21st-mcp/` - MCP server development
-- `corporate-sales-analytics/` - SS&C work vault
-
-## Git Workflow
-
-```powershell
-cd C:\Users\fmartine\Personal\repos\personal
-git add .
-git commit -m "Description of changes"
-git push
-```
-
-GitHub Pages deploys automatically on push to `main`.
+**Dashboard not updating:** Check the Actions tab for failures, confirm secrets are current, verify Supabase has data, then hard refresh.
+**Plaid connection issues:** Re-run `plaid_link.py` (Chase) or `plaid_investments_link.py` (Fidelity).
+**WHOOP token expired:** Re-run `health/whoop/bootstrap.py`.
+**Medical dashboards empty:** Confirm PDFs are in the Drive medical folder, then run `ingest_labs_gdrive.py` and `build_dashboards.py`.
 
 ## Links
 
-- 🌐 [Live Dashboards](https://fernandomartinez-de.github.io/personal/)
-- 🐙 [GitHub Repository](https://github.com/fernandomartinez-de/personal)
-- 📊 [Supabase Finances](https://supabase.com/dashboard/project/uuvsvtpfcexhqojlrsxy)
-- 📊 [Supabase Health](https://supabase.com/dashboard/project/mwqnplwhktphfuewswfa)
-- 🔑 [GitHub Secrets](https://github.com/fernandomartinez-de/personal/settings/secrets/actions)
-- 📋 [Plaid Dashboard](https://dashboard.plaid.com/)
-- 💾 [Google Drive](https://drive.google.com/drive/my-drive)
+- Live dashboards: https://fernandomartinez-de.github.io/personal/
+- GitHub repository: https://github.com/fernandomartinez-de/personal
+- Supabase project: https://supabase.com/dashboard/project/uuvsvtpfcexhqojlrsxy
+- GitHub Secrets: https://github.com/fernandomartinez-de/personal/settings/secrets/actions
+- Plaid dashboard: https://dashboard.plaid.com/
