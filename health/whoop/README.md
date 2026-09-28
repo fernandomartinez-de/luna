@@ -1,16 +1,16 @@
-# whoop-pipeline
+# WHOOP Data Sync
 
-Automated data pipeline that syncs personal WHOOP wearable metrics into a Supabase PostgreSQL database on a daily schedule via GitHub Actions. Powers the biometric dashboards in [vital-signal-reports](https://github.com/fernandomartinez-de/vital-signal-reports).
+Automated data pipeline that syncs personal WHOOP wearable metrics into Supabase PostgreSQL database on a daily schedule via GitHub Actions. Powers the fitness and medical dashboards.
 
 ## How it fits together
 
-This repo is the top row of a two-repo pipeline; [`vital-signal-reports`](https://github.com/fernandomartinez-de/vital-signal-reports) is the other. Blue = *this* repo, purple = the shared database, gray = the other repo (reads only, never writes here).
+WHOOP data flows into the unified Supabase database alongside other health and finance data.
 
 ```mermaid
 flowchart LR
-    W(["WHOOP wristband"]) --> SY["sync.py<br/>daily, 11am UTC"]
-    SY --> DB[("Supabase")]
-    DB --> VSR["vital-signal-reports repo<br/>dashboards, daily"]
+    W(["WHOOP wristband"]) --> SY["sync.py<br/>Daily 08:00 UTC"]
+    SY --> DB[("Supabase<br/>uuvsvtpfcexhqojlrsxy")]
+    DB --> DASH["Dashboards<br/>GitHub Pages"]
 
     classDef thisrepo fill:#dbeafe,stroke:#2563eb,color:#1e3a8a;
     classDef db fill:#ede9fe,stroke:#7c3aed,color:#4c1d95;
@@ -18,10 +18,10 @@ flowchart LR
 
     class SY thisrepo;
     class DB db;
-    class W,VSR ext;
+    class W,DASH ext;
 ```
 
-`sync.py` authenticates with the WHOOP API (OAuth2, refresh token rotated in GitHub Secrets after every run so it never expires), pulls cycles/recovery/sleep/workouts/body data, and upserts it into Supabase — conflict-safe, so re-running never duplicates rows. `vital-signal-reports` only ever reads from that same database; nothing in this repo talks to it directly.
+`sync.py` authenticates with the WHOOP API (OAuth2, refresh token rotated in GitHub Secrets after every run so it never expires), pulls cycles/recovery/sleep/workouts/body data, and upserts it into Supabase — conflict-safe, so re-running never duplicates rows. Dashboards read from this same database.
 
 ## Data collected
 
@@ -33,14 +33,13 @@ flowchart LR
 | `whoop_workouts` | Sport name, strain, average HR, max HR, kilojoules, calories |
 | `whoop_body` | Height, weight, max HR, VO2 max |
 
-## Automation (this repo)
+## Automation
 
 | Workflow | Trigger | Does |
 |---|---|---|
-| `daily_sync.yml` | Daily, 11am UTC (+ manual) | Runs `sync.py` — pulls the latest WHOOP data and upserts it into Supabase. |
-| `bootstrap_token.yml` | Manual, one-shot | Runs `bootstrap.py` to exchange a fresh WHOOP OAuth2 authorization code for the initial refresh token. Only needed once per WHOOP app registration, or if the refresh token is ever lost. |
+| `whoop-daily-sync.yml` | Daily 08:00 UTC (+ manual) | Runs `health/whoop/sync.py` — pulls the latest WHOOP data and upserts it into Supabase. Token is auto-refreshed on each run. |
 
-`vital-signal-reports` has its own workflows in its own repo.
+**Bootstrap:** Run `health/whoop/bootstrap.py` manually to get the initial refresh token (one-time setup or if token is lost).
 
 ## Files
 

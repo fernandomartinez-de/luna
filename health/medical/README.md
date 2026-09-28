@@ -1,40 +1,40 @@
-# vital-signal-reports
+# Medical Dashboards
 
-Automated personal biometric dashboard pipeline. Two provider-facing HTML dashboards rebuild daily via GitHub Actions and are served live on GitHub Pages.
+Automated personal biometric dashboard pipeline. Two provider-facing HTML dashboards rebuild weekly via GitHub Actions and are served live on GitHub Pages.
 
 ## How it fits together
 
-Two independent GitHub repos feed one shared Supabase database. Blue = the other repo (`whoop-pipeline`), green = scripts in *this* repo, purple = the shared database.
+Unified pipeline in the personal repo feeding one Supabase database.
 
 ```mermaid
 flowchart LR
-    W(["WHOOP wristband"]) --> WP["whoop-pipeline repo<br/>daily sync, 11am UTC"]
-    WP --> DB[("Supabase")]
+    W(["WHOOP wristband"]) --> WS["whoop/sync.py<br/>Daily 08:00 UTC"]
+    WS --> DB[("Supabase<br/>uuvsvtpfcexhqojlrsxy")]
 
     U(["You + Mom sort files into folders"]) --> GD[("Google Drive<br/>Medical folder")]
-    GD <--> CL["clean_medical_drive.py<br/>nightly, renames files + quarantines"]
-    GD --> IN["ingest_labs_gdrive.py<br/>daily, extracts values"]
+    GD <--> CL["clean_medical_drive.py<br/>Monthly 1st 00:00 UTC"]
+    GD --> IN["ingest_labs_gdrive.py<br/>Weekly Mon 09:00 UTC"]
     IN --> DB
 
-    DB --> BD["build_dashboards.py<br/>daily"]
+    DB --> BD["build_dashboards.py<br/>Weekly Mon 10:00 UTC"]
     BD --> OUT(["Dashboards on GitHub Pages"])
 
-    classDef repo fill:#dbeafe,stroke:#2563eb,color:#1e3a8a;
     classDef thisrepo fill:#dcfce7,stroke:#16a34a,color:#14532d;
     classDef db fill:#ede9fe,stroke:#7c3aed,color:#4c1d95;
     classDef ext fill:#f3f4f6,stroke:#6b7280,color:#111827;
 
-    class WP repo;
-    class CL,IN,BD thisrepo;
+    class WS,CL,IN,BD thisrepo;
     class DB db;
     class W,U,OUT,GD ext;
 ```
 
-**Two rows above, two jobs:**
-- **Top row (WHOOP):** lives entirely in [`whoop-pipeline`](https://github.com/fernandomartinez-de/whoop-pipeline), a separate private repo. It syncs WHOOP → Supabase on its own daily schedule. Nothing here touches it.
-- **Bottom row (labs/imaging):** you and your mom drop files into Drive, sorted by hand into the right `{year}/{category}/` folder. `clean_medical_drive.py` now runs fully unattended every night WITH `--apply` — no one has to click anything. It reads each file's actual content and renames confidently-resolved files in place to match their real date/category/provider — it never moves those files between folders, that stays a human job; if a document itself is unclear, it trusts the folder it's already sitting in as a fallback signal for category. Anything it still can't confidently resolve gets moved into `Medical/_REVISAR` (prefixed `REVISAR_`) for a human to sort out by hand — that folder is the nightly safety net your mom checks and fixes; confirmed duplicates land there too, prefixed `DUP_`. `ingest_labs_gdrive.py` then runs automatically every night, trusting only correctly-named files, and inserts the extracted values into Supabase.
+**Data flows:**
+- **WHOOP row:** WHOOP wristband → `whoop/sync.py` (daily 08:00 UTC) → Supabase
+- **Labs/imaging row:** Google Drive medical folder → `clean_medical_drive.py` (monthly cleanup) → `ingest_labs_gdrive.py` (weekly Mon 09:00 UTC) → Supabase → `build_dashboards.py` (weekly Mon 10:00 UTC) → GitHub Pages
 
-Once both rows have landed in Supabase, `build_dashboards.py` runs automatically every evening, rebuilds the two Spanish dashboards, and GitHub Pages serves the latest version to your doctors.
+**File handling:** You and your mom drop files into Drive, sorted by `{year}/{category}/` folder. `clean_medical_drive.py` runs monthly (1st at midnight UTC), renames confidently-resolved files in place to match their real date/category/provider. Anything unclear gets moved into `Medical/_REVISAR` (prefixed `REVISAR_`) for manual sorting; confirmed duplicates land there too (prefixed `DUP_`). `ingest_labs_gdrive.py` runs weekly (Mon 09:00 UTC), trusting only correctly-named files, and inserts extracted values into Supabase.
+
+Once data lands in Supabase, `build_dashboards.py` runs weekly (Mon 10:00 UTC), rebuilds the two Spanish dashboards, and GitHub Pages serves them.
 
 ## Dashboards
 
@@ -45,22 +45,21 @@ Once both rows have landed in Supabase, `build_dashboards.py` runs automatically
 
 Live at: `https://fernandomartinez-de.github.io/vital-signal-reports/`
 
-## Automation (this repo)
+## Automation
 
 | Workflow | Trigger | Does |
 |---|---|---|
-| `clean-medical-drive.yml` | Daily, 7am UTC (applies automatically) + manual | Runs `clean_medical_drive.py`. The nightly schedule always runs with `--apply` — no manual click needed. A manual trigger is dry-run unless you check `apply`. Uploads `rename_log.csv` as an artifact. |
-| `ingest-labs.yml` | Daily, 8am UTC | Runs `ingest_labs_gdrive.py`. |
-| `rebuild-dashboards.yml` | Daily, 6pm UTC | Runs `build_dashboards.py`, commits the rebuilt dashboards. |
-
-`whoop-pipeline` has its own workflow in its own repo.
+| `whoop-daily-sync.yml` | Daily 08:00 UTC + manual | Runs `health/whoop/sync.py` to pull WHOOP data. |
+| `medical-clean-drive.yml` | Monthly 1st 00:00 UTC + manual | Runs `clean_medical_drive.py` with `--apply`. Manual trigger is dry-run unless you check `apply`. Uploads `rename_log.csv` as an artifact. |
+| `medical-ingest-labs.yml` | Weekly Mon 09:00 UTC + manual | Runs `ingest_labs_gdrive.py`. |
+| `medical-rebuild-dashboards.yml` | Weekly Mon 10:00 UTC + manual | Runs `build_dashboards.py`, commits the rebuilt dashboards. |
 
 ## Stack
 
 | Layer | Tool |
 |---|---|
-| Wearable sync | [`whoop-pipeline`](https://github.com/fernandomartinez-de/whoop-pipeline) — separate repo |
-| Database | Supabase (PostgreSQL), shared by both repos |
+| Wearable sync | WHOOP API via `health/whoop/sync.py` |
+| Database | Supabase PostgreSQL (uuvsvtpfcexhqojlrsxy) |
 | Lab/imaging source | Google Drive |
 | Automation | GitHub Actions |
 | Hosting | GitHub Pages |
