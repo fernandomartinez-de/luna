@@ -39,9 +39,9 @@ Both versions read from the same database, so the numbers agree.
 
 ## How it all fits together
 
-The interactive diagram below shows the whole system on one screen: where the data comes from, where it goes, and how it reaches the phone.
+[![Architecture diagram](docs/assets/architecture.png)](docs/assets/architecture.html)
 
-**[Open the interactive architecture diagram →](docs/assets/architecture.html)**
+*Click the image for the interactive version (pan, zoom, dark/light, guided views).*
 
 In plain words:
 
@@ -49,7 +49,10 @@ In plain words:
 - In the middle: **automated jobs** on GitHub grab data from those services on a schedule, and a single **Supabase database** stores it all.
 - On the right: **two dashboards** read from that database. I look at them.
 
-Live prices for stocks, crypto, and the condo aren't on a fixed schedule — I press a button in the app when I want them refreshed.
+Two things happen outside the daily automation:
+
+- **Live prices** for stocks, crypto, and the condo — I press a button in the app when I want them refreshed.
+- **Redfin** — the one thing I still enter by hand once a month, since Redfin blocks in-browser fetching.
 
 ---
 
