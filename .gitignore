@@ -80,3 +80,7 @@ tmp/
 finances/.env
 finances/.plaid_secrets.local
 finances/.plaid_investments_secrets.local
+
+health/fitness/exercise-app/vite/deps/
+
+.vite/
