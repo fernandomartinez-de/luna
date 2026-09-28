@@ -88,7 +88,7 @@ graph TB
 **Finance Tables:**
 - `expense_transactions` - Chase transactions (auto-synced daily)
 - `stocks_crypto_history` - Investment holdings (auto-synced weekdays)
-- `real_estate_history` - Property values (on-demand via Refresh Prices)
+- `real_estate_history` - Property values (on-demand via Zillow API using Refresh Prices button)
 
 **Health Tables:**
 - `whoop_*` - Recovery, sleep, workouts (auto-synced daily)
@@ -201,4 +201,7 @@ personal/
 - **Security:** This repo is public. All secrets are in GitHub Secrets or gitignored `.env` files.
 - **v2 Auto-Deploy:** Changes to `health/fitness/exercise-app/` automatically rebuild and deploy to `/lyftr/`.
 - **WHOOP Token:** Auto-refreshes daily via `whoop-daily-sync.yml` workflow.
-- **Property Values:** Refreshed on-demand via "Refresh Prices" button in Lyftr app.
+- **Real Estate Tracking:**
+  - All values (home value, mortgage balance, net equity) read from Supabase `real_estate_history` table
+  - **Zillow data:** Automated via "Refresh Prices" button (fetches via RapidAPI, writes to Supabase)
+  - **Redfin data:** Manual entry into Supabase table

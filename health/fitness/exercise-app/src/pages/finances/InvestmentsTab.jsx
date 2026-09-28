@@ -181,16 +181,18 @@ function deriveFromData(scDataAll, reDataAll, asOfDate) {
       const rVal = Number(redfinCondo.home_value) || 0
       const value = (zVal + rVal) / 2
       const mortgage = (Number(zillowCondo.mortgage_balance || 0) + Number(redfinCondo.mortgage_balance || 0)) / 2
+      const equity = (Number(zillowCondo.net_equity || 0) + Number(redfinCondo.net_equity || 0)) / 2
       const cb = Number(zillowCondo.cost_basis) || 0
-      realEstate.push({ name: 'Condo', value, mortgage, equity: value - mortgage, costBasis: cb, gain: value - cb, gainPct: cb > 0 ? ((value - cb) / cb) * 100 : 0, zillow: zVal, redfin: rVal, initialMortgage })
+      realEstate.push({ name: 'Condo', value, mortgage, equity, costBasis: cb, gain: value - cb, gainPct: cb > 0 ? ((value - cb) / cb) * 100 : 0, zillow: zVal, redfin: rVal, initialMortgage })
       reTotal += value; reCost += cb
     } else if (zillowCondo || redfinCondo) {
       const row = zillowCondo || redfinCondo
       const value = Number(row.home_value) || 0
       const mortgage = Number(row.mortgage_balance || 0)
+      const equity = Number(row.net_equity || 0)
       const cb = Number(row.cost_basis) || 0
       realEstate.push({
-        name: 'Condo', value, mortgage, equity: value - mortgage, costBasis: cb,
+        name: 'Condo', value, mortgage, equity, costBasis: cb,
         gain: value - cb, gainPct: cb > 0 ? ((value - cb) / cb) * 100 : 0,
         zillow: zillowCondo ? value : null,
         redfin: redfinCondo ? value : null,
