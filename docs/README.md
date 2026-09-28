@@ -16,11 +16,11 @@ Everything that explains the repo. If you're looking for the site itself, go to 
 | [maintainers.md](maintainers.md) | How to run the app locally, what workflows are scheduled, which secrets each one needs, and how service_role vs anon works |
 | [assets/architecture.html](assets/architecture.html) | The full system diagram — outside services, GitHub Actions, Supabase, the two dashboards, and Fernando |
 | [assets/docs-map.html](assets/docs-map.html) | The picture above — a smaller map of this folder itself |
-| [assets/lyftr-build.html](assets/lyftr-build.html) | How the Lyftr React source becomes the live site (embedded in `lyftr/README.md`) |
+| [assets/luna-build.html](assets/luna-build.html) | How the Luna React source becomes the live site (embedded in `luna/README.md`) |
 
 ## Assets
 
-`assets/` holds the two diagram sources and the Lyftr logo. Each diagram is stored as three files: `.json` (source-of-truth spec you edit), `.html` (interactive viewer, rebuilt from the spec), and `.png` (a snapshot embedded in the READMEs so GitHub can render it inline).
+`assets/` holds the two diagram sources and the Luna logo. Each diagram is stored as three files: `.json` (source-of-truth spec you edit), `.html` (interactive viewer, rebuilt from the spec), and `.png` (a snapshot embedded in the READMEs so GitHub can render it inline).
 
 ```
 docs/
@@ -30,8 +30,8 @@ docs/
 └── assets/
     ├── architecture.json / .html / .png   # full system diagram
     ├── docs-map.json    / .html / .png    # this folder's map
-    ├── lyftr-build.json / .html / .png    # Lyftr source -> built site pipeline
-    └── lyftr-logo.svg                     # Lyftr logo source (PNGs live in lyftr/app/public/)
+    ├── luna-build.json / .html / .png    # Luna source -> built site pipeline
+    └── luna-logo.svg                     # Luna logo source (PNGs live in luna/app/public/)
 ```
 
 ## Regenerating a diagram

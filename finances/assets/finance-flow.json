@@ -20,8 +20,8 @@
 
     { "id": "supa",   "type": "database", "label": "Supabase", "sublabel": "one Postgres database", "tag": "single hub", "pos": [560, 200], "size": [200, 100] },
 
-    { "id": "expenses",  "type": "frontend", "label": "Lyftr Expenses",    "sublabel": "phone app",   "pos": [820, 80],  "size": [200, 76] },
-    { "id": "invest",    "type": "frontend", "label": "Lyftr Investments", "sublabel": "phone app",   "pos": [820, 260], "size": [200, 76] }
+    { "id": "expenses",  "type": "frontend", "label": "Luna Expenses",    "sublabel": "phone app",   "pos": [820, 80],  "size": [200, 76] },
+    { "id": "invest",    "type": "frontend", "label": "Luna Investments", "sublabel": "phone app",   "pos": [820, 260], "size": [200, 76] }
   ],
   "connections": [
     { "id": "chase-in",   "from": "chase",    "to": "chase-sync",   "label": "Plaid /transactions/sync",     "variant": "emphasis", "labelDy": -25 },
@@ -42,6 +42,6 @@
     { "dot": "cyan",    "title": "Automatic", "items": ["Chase transactions daily via Plaid", "Fidelity holdings weekdays via Plaid"] },
     { "dot": "amber",   "title": "One database", "items": ["expense_transactions", "stocks_crypto_history", "real_estate_history"] },
     { "dot": "emerald", "title": "Manual", "items": ["Zillow: monthly fallback script", "Redfin: SQL insert once a month"] },
-    { "dot": "violet",  "title": "Read in Lyftr", "items": ["Expenses tab: spending + net remaining", "Investments tab: portfolio + real estate"] }
+    { "dot": "violet",  "title": "Read in Luna", "items": ["Expenses tab: spending + net remaining", "Investments tab: portfolio + real estate"] }
   ]
 }

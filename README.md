@@ -21,13 +21,13 @@ I don't have to click anything. Small robots grab the latest data from each serv
 
 ## The two versions
 
-**Lyftr (v2)** — a phone app you install to your home screen. Modern, mobile-first, everything in one place.
-[Open Lyftr →](https://fernandomartinez-de.github.io/personal/lyftr/)
+**Luna (v2)** — a phone app you install to your home screen. Modern, mobile-first, everything in one place.
+[Open Luna →](https://fernandomartinez-de.github.io/personal/luna/)
 
 **v1 dashboards (archived)** — plain web pages, one per topic. Print-friendly, good for handing to a doctor.
 [Open v1 →](https://fernandomartinez-de.github.io/personal/V1/)
 
-`fernandomartinez-de.github.io/personal/` auto-redirects to Lyftr. Both versions read from the same database, so the numbers agree.
+`fernandomartinez-de.github.io/personal/` auto-redirects to Luna. Both versions read from the same database, so the numbers agree.
 
 ---
 
@@ -51,14 +51,14 @@ Two exceptions to the "automated" story:
 
 ## Everyday use
 
-- **Morning:** open Lyftr. Recovery + sleep from last night, latest lab, portfolio value (behind a PIN), suggested workout.
+- **Morning:** open Luna. Recovery + sleep from last night, latest lab, portfolio value (behind a PIN), suggested workout.
 - **Doctor appointment:** open the v1 medical page — labs formatted the way an oncologist expects.
-- **Monthly finance review:** Lyftr → Finances → discretionary trend + category heatmap.
-- **New lab result:** dropped in Google Drive → auto-ingested on Monday morning → visible in Lyftr Monday afternoon.
+- **Monthly finance review:** Luna → Finances → discretionary trend + category heatmap.
+- **New lab result:** dropped in Google Drive → auto-ingested on Monday morning → visible in Luna Monday afternoon.
 
 ## Add to iPhone home screen
 
-Open the [Lyftr link](https://fernandomartinez-de.github.io/personal/lyftr/) in Safari → Share → **Add to Home Screen**. The app will show up alongside your other apps with a custom icon.
+Open the [Luna link](https://fernandomartinez-de.github.io/personal/luna/) in Safari → Share → **Add to Home Screen**. The app will show up alongside your other apps with a custom icon.
 
 Same on Android via Chrome menu → **Add to Home Screen**.
 
@@ -77,10 +77,10 @@ The repo is public — anyone can read the code — but:
 
 ```
 personal/
-├── index.html              # Redirects / to /lyftr/
-├── 404.html                # SPA fallback for the Lyftr React app
+├── index.html              # Redirects / to /luna/
+├── 404.html                # SPA fallback for the Luna React app
 ├── V1/                     # Archived v1 static dashboards
-├── lyftr/                  # Lyftr v2 — source lives in lyftr/app/, built output at lyftr/
+├── luna/                  # Luna v2 — source lives in luna/app/, built output at luna/
 ├── finances/               # Plaid sync scripts + finance docs
 ├── health/
 │   ├── whoop/              # WHOOP sync

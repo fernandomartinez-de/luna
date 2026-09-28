@@ -229,7 +229,7 @@ def parse_inbody_with_claude(image_bytes, mime_type, client):
 
 # ── Panel normalization ───────────────────────────────────────────────────────
 # Canonical panel categories — must match the React classifier in
-# lyftr/app/src/pages/medical/OncologistView.jsx so that
+# luna/app/src/pages/medical/OncologistView.jsx so that
 # Supabase stores the same category names the app displays.
 CANONICAL_PANELS = [
     "Thyroid",

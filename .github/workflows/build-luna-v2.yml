@@ -1,0 +1,60 @@
+name: Build Luna v2
+
+# Builds the React app and deploys to GitHub Pages at /luna/
+# Runs on push to main or manual trigger
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'luna/app/**'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-luna-v2
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: luna/app
+        run: npm ci
+
+      - name: Build React app
+        working-directory: luna/app
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_KEY }}
+          VITE_FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+          VITE_RAPIDAPI_KEY: ${{ secrets.ZILLOW_API_KEY }}
+        run: npm run build
+
+      - name: Copy build output into luna/ (alongside luna/app/ source)
+        run: |
+          # Copy dist contents into luna/, but explicitly not into luna/app/.
+          # Vite's dist doesn't contain an "app" directory, so cp -r is safe.
+          cp -r luna/app/dist/* luna/
+          # GitHub Pages SPA fallback: any deep-link 404 serves the SPA shell
+          # so react-router can take over.
+          cp luna/index.html luna/404.html
+
+      - name: Commit and push
+        run: |
+          git config user.name "luna-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # Stage everything under luna/ except the source subdir. Source in
+          # luna/app/ is committed via normal PRs, not by this bot.
+          git add -A luna/ ':(exclude)luna/app/**'
+          git diff --quiet --cached || git commit -m "chore: rebuild Luna v2 ($(date -u +%F))"
+          git push

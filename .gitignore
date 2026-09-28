@@ -81,7 +81,7 @@ finances/.env
 finances/.plaid_secrets.local
 finances/.plaid_investments_secrets.local
 
-lyftr/app/vite/deps/
-lyftr/app/dist/
+luna/app/vite/deps/
+luna/app/dist/
 
 .vite/

@@ -7,9 +7,9 @@
     "quality_profile": "standard",
     "viewBox": [1250, 540],
     "views": [
-      { "id": "main-flow", "label": "How data reaches the phone", "focus": ["plaid", "whoop", "renpho", "gdrive", "actions", "supabase", "lyftr"], "note": "Sources land in Supabase via scheduled GitHub Actions, then the phone app reads from there." },
-      { "id": "live-refresh", "label": "Live price refresh", "focus": ["prices", "lyftr"], "note": "Refresh Prices in Lyftr fetches Finnhub, CoinGecko, Zillow live for display only — nothing writes back to Supabase." },
-      { "id": "consumer-side", "label": "Where I look at it", "focus": ["v1", "lyftr", "fernando"], "note": "v1 is the static HTML I print or share with providers; Lyftr is the app pinned to my home screen." }
+      { "id": "main-flow", "label": "How data reaches the phone", "focus": ["plaid", "whoop", "renpho", "gdrive", "actions", "supabase", "luna"], "note": "Sources land in Supabase via scheduled GitHub Actions, then the phone app reads from there." },
+      { "id": "live-refresh", "label": "Live price refresh", "focus": ["prices", "luna"], "note": "Refresh Prices in Luna fetches Finnhub, CoinGecko, Zillow live for display only — nothing writes back to Supabase." },
+      { "id": "consumer-side", "label": "Where I look at it", "focus": ["v1", "luna", "fernando"], "note": "v1 is the static HTML I print or share with providers; Luna is the app pinned to my home screen." }
     ]
   },
   "components": [
@@ -25,12 +25,12 @@
     { "id": "supabase","type": "database",  "label": "Supabase",        "sublabel": "one Postgres database",        "tag": "single hub",   "pos": [540, 190], "size": [190, 92] },
 
     { "id": "v1",      "type": "frontend",  "label": "v1 Dashboards",   "sublabel": "static HTML pages",            "pos": [810, 80],  "size": [180, 72] },
-    { "id": "lyftr",   "type": "frontend",  "label": "Lyftr (v2 app)",  "sublabel": "React app on phone",           "pos": [810, 300], "size": [180, 72] },
+    { "id": "luna",   "type": "frontend",  "label": "Luna (v2 app)",  "sublabel": "React app on phone",           "pos": [810, 300], "size": [180, 72] },
 
     { "id": "fernando","type": "external",  "label": "Fernando",        "sublabel": "browser + phone",              "pos": [1060, 190], "size": [160, 92] }
   ],
   "boundaries": [
-    { "kind": "region", "label": "GitHub (public repo + Actions + Pages)", "wraps": ["actions", "v1", "lyftr"] }
+    { "kind": "region", "label": "GitHub (public repo + Actions + Pages)", "wraps": ["actions", "v1", "luna"] }
   ],
   "connections": [
     { "id": "plaid-in",   "from": "plaid",    "to": "actions",  "variant": "emphasis" },
@@ -41,22 +41,22 @@
     { "id": "write-db",   "from": "actions",  "to": "supabase", "variant": "emphasis" },
 
     { "id": "build-v1",   "from": "actions",  "to": "v1",       "label": "rebuild HTML",           "variant": "dashed", "labelDy": -47 },
-    { "id": "build-v2",   "from": "actions",  "to": "lyftr",    "label": "build React on push",    "variant": "dashed", "labelDy": 47 },
+    { "id": "build-v2",   "from": "actions",  "to": "luna",    "label": "build React on push",    "variant": "dashed", "labelDy": 47 },
 
     { "id": "read-v1",    "from": "supabase", "to": "v1" },
-    { "id": "read-v2",    "from": "supabase", "to": "lyftr",    "label": "read + write" },
+    { "id": "read-v2",    "from": "supabase", "to": "luna",    "label": "read + write" },
 
-    { "id": "live-prices","from": "prices",   "to": "lyftr",    "label": "display only (no write)",      "variant": "dashed" },
+    { "id": "live-prices","from": "prices",   "to": "luna",    "label": "display only (no write)",      "variant": "dashed" },
 
     { "id": "redfin-in", "from": "redfin",   "to": "supabase", "label": "manual SQL insert",         "variant": "dashed" },
 
     { "id": "look-v1",    "from": "v1",       "to": "fernando" },
-    { "id": "look-v2",    "from": "lyftr",    "to": "fernando" }
+    { "id": "look-v2",    "from": "luna",    "to": "fernando" }
   ],
   "cards": [
     { "dot": "cyan",    "title": "Data in",       "items": ["Plaid syncs Chase and Fidelity", "WHOOP and Renpho push daily", "Google Drive holds the raw lab PDFs", "Redfin real estate estimate (manual table insert)"] },
     { "dot": "amber",   "title": "Storage",       "items": ["One Supabase Postgres database", "Every workflow writes here", "Both dashboards read from here"] },
     { "dot": "emerald", "title": "Automation",    "items": ["Nine GitHub Actions on a schedule", "Fetch, categorize, and re-publish", "No clicks needed day to day"] },
-    { "dot": "violet",  "title": "Dashboards",    "items": ["v1 static HTML for medical printouts", "Lyftr React app for daily phone use", "Refresh Prices button fetches live data for display"] }
+    { "dot": "violet",  "title": "Dashboards",    "items": ["v1 static HTML for medical printouts", "Luna React app for daily phone use", "Refresh Prices button fetches live data for display"] }
   ]
 }

@@ -5,7 +5,7 @@ For working on the repo, not for reading the site.
 ## Local dev
 
 ```powershell
-cd lyftr\app
+cd luna\app
 npm install
 npm run dev        # http://localhost:5173
 ```
@@ -39,7 +39,7 @@ All schedules in UTC.
 | `pull-body.yml` | Daily 14:00 | Renpho body composition |
 | `medical-ingest-labs.yml` | Weekly Mon 09:00 | Ingest lab PDFs from Drive |
 | `medical-clean-drive.yml` | Monthly 1st | Clean processed Drive files |
-| `build-lyftr-v2.yml` | On push to `lyftr/app/` | Build & deploy the React app |
+| `build-luna-v2.yml` | On push to `luna/app/` | Build & deploy the React app |
 
 ## Secrets
 
@@ -53,7 +53,7 @@ Set in **Settings → Secrets and variables → Actions**:
 | `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ACCESS_TOKEN`, `PLAID_FIDELITY_ACCESS_TOKEN` | Plaid syncs |
 | `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET`, `WHOOP_REFRESH_TOKEN` | WHOOP sync |
 | `RENPHO_EMAIL`, `RENPHO_PASSWORD` | Renpho sync |
-| `FINNHUB_KEY`, `ZILLOW_API_KEY` | v2 Lyftr Refresh Prices (baked into JS bundle) |
+| `FINNHUB_KEY`, `ZILLOW_API_KEY` | v2 Luna Refresh Prices (baked into JS bundle) |
 | `GOOGLE_CREDENTIALS`, `ANTHROPIC_API_KEY` | Lab PDF ingest |
 | `GH_PAT` | WHOOP token auto-rotation |
 
@@ -83,8 +83,8 @@ env:
 ## Notes
 
 - **Public repo.** All secrets in GitHub secrets or gitignored `.env` files. Never commit real client data.
-- **v2 auto-deploy.** Any change to `lyftr/app/` triggers `build-lyftr-v2.yml`, which rebuilds the React bundle, copies it to `lyftr/`, and commits the build.
+- **v2 auto-deploy.** Any change to `luna/app/` triggers `build-luna-v2.yml`, which rebuilds the React bundle, copies it to `luna/`, and commits the build.
 - **WHOOP token** auto-refreshes daily via `whoop-daily-sync.yml`.
 - **Real estate:** Zillow refreshes via the app's Refresh Prices button; Redfin is manual (CORS blocks in-browser fetch), run `finances/scripts/fetch_redfin_property_value.py` monthly.
-- **SPA fallback.** GitHub Pages serves `/404.html` from repo root for any missing URL under `/personal/`. It redirects Lyftr paths back into the app shell; other 404s (v1 typos) show a small "Back to hub" page.
+- **SPA fallback.** GitHub Pages serves `/404.html` from repo root for any missing URL under `/personal/`. It redirects Luna paths back into the app shell; other 404s (v1 typos) show a small "Back to hub" page.
 - **v1 is archived.** Everything under `V1/` is frozen. If you need to revive the Overload dashboard rebuild, `build-fitness.yml` and `medical-rebuild-dashboards.yml` are recoverable from git history.

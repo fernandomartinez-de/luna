@@ -1,6 +1,6 @@
 # finances/
 
-Every script that gets money data into Supabase. The Lyftr Expenses and Investments tabs, and the archived v1 finances dashboard, all read from what these scripts write.
+Every script that gets money data into Supabase. The Luna Expenses and Investments tabs, and the archived v1 finances dashboard, all read from what these scripts write.
 
 ## Flow
 
@@ -33,7 +33,7 @@ finances/
 | `plaid_investments_sync.py` | GitHub Actions weekdays 22:00 UTC (`pull-investments.yml`) | `stocks_crypto_history` (Retirement + Brokerage rows only — Stocks/Crypto rows are untouched) |
 | `plaid_chase_link.py` | Manual, once, to authorize Chase | Populates `plaid_accounts` and returns the `PLAID_ACCESS_TOKEN` you paste into GitHub Secrets |
 | `plaid_investments_link.py` | Manual, once, to authorize Fidelity | Same, but returns `PLAID_FIDELITY_ACCESS_TOKEN` |
-| `fetch_zillow_property_value.py` | Manual, monthly | `real_estate_history` (Zillow row). Lyftr's Refresh Prices button does this automatically; the script is the fallback |
+| `fetch_zillow_property_value.py` | Manual, monthly | `real_estate_history` (Zillow row). Luna's Refresh Prices button does this automatically; the script is the fallback |
 
 ## Naming convention
 
@@ -61,7 +61,7 @@ insert into real_estate_history (snapshot_date, home_value, mortgage_balance, da
 values (current_date, <redfin_estimate>, <mortgage_balance>, 'Redfin');
 ```
 
-Both the Zillow row (from the automated fetcher) and this Redfin row live in the same table; Lyftr's Investments tab averages them for display.
+Both the Zillow row (from the automated fetcher) and this Redfin row live in the same table; Luna's Investments tab averages them for display.
 
 ## See also
 

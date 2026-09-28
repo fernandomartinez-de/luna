@@ -16,7 +16,7 @@
     { "id": "maint",   "type": "frontend",  "label": "maintainers.md",   "sublabel": "dev, workflows, secrets",      "pos": [660, 180], "size": [200, 78] },
 
     { "id": "supa",    "type": "database",  "label": "Supabase",         "sublabel": "one Postgres database",        "pos": [130, 360],  "size": [210, 88] },
-    { "id": "app",     "type": "frontend",  "label": "Lyftr + v1",       "sublabel": "the running apps",             "pos": [560, 360], "size": [210, 88] }
+    { "id": "app",     "type": "frontend",  "label": "Luna + v1",       "sublabel": "the running apps",             "pos": [560, 360], "size": [210, 88] }
   ],
   "connections": [
     { "id": "you-readme", "from": "you", "to": "readme", "label": "start here",        "variant": "emphasis", "fromSide": "bottom", "toSide": "top" },
@@ -31,6 +31,6 @@
   "cards": [
     { "dot": "cyan",    "title": "The narrative", "items": ["Root README — what and why, non-technical", "docs/README.md — index of this folder"] },
     { "dot": "amber",   "title": "The reference", "items": ["tables.md — schema + RLS notes", "maintainers.md — dev setup + workflows + secrets"] },
-    { "dot": "violet",  "title": "The picture",   "items": ["architecture.html — interactive system map", "lyftr-logo.svg — Lyftr logo source"] }
+    { "dot": "violet",  "title": "The picture",   "items": ["architecture.html — interactive system map", "luna-logo.svg — Luna logo source"] }
   ]
 }

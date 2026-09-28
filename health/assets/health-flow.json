@@ -20,7 +20,7 @@
 
     { "id": "supa",   "type": "database", "label": "Supabase", "sublabel": "one Postgres database", "tag": "single hub", "pos": [580, 200], "size": [200, 100] },
 
-    { "id": "lyftr",  "type": "frontend", "label": "Lyftr",    "sublabel": "phone app",             "pos": [860, 200], "size": [200, 100] }
+    { "id": "luna",  "type": "frontend", "label": "Luna",    "sublabel": "phone app",             "pos": [860, 200], "size": [200, 100] }
   ],
   "connections": [
     { "id": "whoop-in",   "from": "whoop",     "to": "whoop-sync",  "label": "WHOOP API",              "variant": "emphasis", "labelDy": -25 },
@@ -33,12 +33,12 @@
     { "id": "renpho-write", "from": "renpho-sync", "to": "supa" },
     { "id": "labs-write",   "from": "labs-ingest", "to": "supa", "variant": "emphasis" },
 
-    { "id": "read",   "from": "supa", "to": "lyftr", "label": "read" }
+    { "id": "read",   "from": "supa", "to": "luna", "label": "read" }
   ],
   "cards": [
     { "dot": "cyan",    "title": "Automatic",      "items": ["WHOOP daily", "Renpho daily", "Lab PDFs weekly"] },
     { "dot": "amber",   "title": "One database",   "items": ["whoop_recovery / cycles / sleep / workouts / body", "body_composition (Renpho)", "lab_results, inbody_results"] },
     { "dot": "violet",  "title": "Housekeeping",   "items": ["clean_medical_drive.py renames Drive PDFs into a canonical layout", "master_tracker.xlsx auto-committed each run"] },
-    { "dot": "emerald", "title": "Read in Lyftr",  "items": ["Home + Fitness — WHOOP + workouts", "Weight — Renpho", "Oncologist + Nutritionist — labs + InBody"] }
+    { "dot": "emerald", "title": "Read in Luna",  "items": ["Home + Fitness — WHOOP + workouts", "Weight — Renpho", "Oncologist + Nutritionist — labs + InBody"] }
   ]
 }

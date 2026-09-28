@@ -15,21 +15,21 @@
     .box p { color: #94a3b8; margin: 0; font-size: 14px; }
   </style>
   <script>
-    // SPA redirect for Lyftr's subdirectory. GitHub Pages serves this
+    // SPA redirect for Luna's subdirectory. GitHub Pages serves this
     // single 404.html from the site root for any missing URL under
-    // /personal/. If the requested path is inside the Lyftr app,
+    // /personal/. If the requested path is inside the Luna app,
     // stash it in sessionStorage and redirect to the app shell so
     // react-router can pick up the intended route.
     (function () {
       var path = window.location.pathname;
       var search = window.location.search;
       var hash = window.location.hash;
-      var LYFTR_BASE = '/personal/lyftr/';
-      if (path.indexOf(LYFTR_BASE) === 0) {
+      var LUNA_BASE = '/personal/luna/';
+      if (path.indexOf(LUNA_BASE) === 0) {
         try {
-          sessionStorage.setItem('lyftr:redirect', path + search + hash);
+          sessionStorage.setItem('luna:redirect', path + search + hash);
         } catch (e) { /* private mode: fall through, at least the shell loads */ }
-        window.location.replace(LYFTR_BASE);
+        window.location.replace(LUNA_BASE);
       }
       // else: this 404 wasn't for the SPA — leave the visitor on this
       // page with a link back to the hub.
