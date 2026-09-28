@@ -193,7 +193,9 @@ def main():
         return
 
     print(f"Connecting to Supabase REST and upserting {len(rows)} rows...")
-    supabase: Client = create_client(env["SUPABASE_URL"].strip(), env["SUPABASE_KEY"].strip())
+    # Prefer service_role when set (bypasses RLS); fall back to anon.
+    sb_key = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or env["SUPABASE_KEY"]).strip()
+    supabase: Client = create_client(env["SUPABASE_URL"].strip(), sb_key)
     resp = supabase.table("body_composition").upsert(rows, on_conflict="measured_at").execute()
     written = len(resp.data) if getattr(resp, "data", None) else 0
     print(f"Upserted {written} rows into body_composition (of {len(rows)} sent).")

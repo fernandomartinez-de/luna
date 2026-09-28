@@ -29,4 +29,5 @@ jobs:
           RENPHO_PASSWORD:  ${{ secrets.RENPHO_PASSWORD }}
           SUPABASE_URL:     ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY:     ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python health/body/renpho_pull.py

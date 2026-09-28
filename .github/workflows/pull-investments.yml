@@ -37,4 +37,5 @@ jobs:
           PLAID_FIDELITY_ACCESS_TOKEN: ${{ secrets.PLAID_FIDELITY_ACCESS_TOKEN }}
           SUPABASE_URL:                ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY:                ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY:   ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python finances/scripts/plaid_investments_sync.py

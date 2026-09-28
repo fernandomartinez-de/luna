@@ -39,7 +39,9 @@ PLAID_ENV       = os.environ.get("PLAID_ENV", "production").strip().lower()
 ACCESS_TOKEN    = _req("PLAID_FIDELITY_ACCESS_TOKEN")
 
 SUPABASE_URL = _req("SUPABASE_URL")
-SUPABASE_KEY = _req("SUPABASE_KEY")
+# Prefer service_role key when present (bypasses RLS on backend writes);
+# fall back to anon key so local runs and legacy environments still work.
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or _req("SUPABASE_KEY")
 
 _ENV_HOST = {
     "production": plaid.Environment.Production,

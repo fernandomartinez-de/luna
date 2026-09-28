@@ -50,7 +50,9 @@ ACCESS_TOKEN    = _req("PLAID_ACCESS_TOKEN")
 ITEM_ID         = os.environ.get("PLAID_ITEM_ID", "").strip()
 
 SUPABASE_URL = _req("SUPABASE_URL")
-SUPABASE_KEY = _req("SUPABASE_KEY")
+# Prefer service_role key when present (bypasses RLS on backend writes);
+# fall back to anon key so local runs and legacy environments still work.
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or _req("SUPABASE_KEY")
 
 # Used only for an account that has NO prior rows at all (a brand-new link).
 SYNC_FLOOR = os.environ.get("PLAID_SYNC_FLOOR", "2000-01-01").strip()

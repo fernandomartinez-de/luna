@@ -419,7 +419,9 @@ def insert_inbody(supabase, data, archivo, proveedor):
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     print("Connecting to Supabase...")
-    supabase: Client = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])
+    # Prefer service_role when set (bypasses RLS); fall back to anon.
+    sb_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ["SUPABASE_KEY"]
+    supabase: Client = create_client(os.environ["SUPABASE_URL"], sb_key)
 
     print("Connecting to Google Drive...")
     service = get_drive_service()
