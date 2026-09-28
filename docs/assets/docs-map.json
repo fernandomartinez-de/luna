@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Where to find things in docs/",
+    "locale": "en",
+    "quality_profile": "standard",
+    "viewBox": [900, 470]
+  },
+  "components": [
+    { "id": "you",     "type": "external",  "label": "You",              "sublabel": "reader",                       "pos": [355, 20],  "size": [190, 70] },
+
+    { "id": "readme",  "type": "frontend",  "label": "Root README",      "sublabel": "what and why",                 "pos": [30, 180],  "size": [190, 78] },
+    { "id": "arch",    "type": "frontend",  "label": "architecture.html","sublabel": "system diagram",               "pos": [240, 180], "size": [190, 78] },
+    { "id": "tables",  "type": "frontend",  "label": "tables.md",        "sublabel": "every table + RLS",            "pos": [450, 180], "size": [190, 78] },
+    { "id": "maint",   "type": "frontend",  "label": "maintainers.md",   "sublabel": "dev, workflows, secrets",      "pos": [660, 180], "size": [200, 78] },
+
+    { "id": "supa",    "type": "database",  "label": "Supabase",         "sublabel": "one Postgres database",        "pos": [130, 360],  "size": [210, 88] },
+    { "id": "app",     "type": "frontend",  "label": "Lyftr + v1",       "sublabel": "the running apps",             "pos": [560, 360], "size": [210, 88] }
+  ],
+  "connections": [
+    { "id": "you-readme", "from": "you", "to": "readme", "label": "start here",        "variant": "emphasis", "fromSide": "bottom", "toSide": "top" },
+    { "id": "you-arch",   "from": "you", "to": "arch",   "label": "how data flows",    "fromSide": "bottom", "toSide": "top" },
+    { "id": "you-tables", "from": "you", "to": "tables", "label": "what's in the DB",  "fromSide": "bottom", "toSide": "top" },
+    { "id": "you-maint",  "from": "you", "to": "maint",  "label": "how to work on it", "fromSide": "bottom", "toSide": "top" },
+
+    { "id": "arch-db",    "from": "arch",   "to": "supa", "label": "visualises",  "variant": "dashed", "fromSide": "bottom", "toSide": "top" },
+    { "id": "tables-db",  "from": "tables", "to": "supa", "label": "describes",   "variant": "dashed", "fromSide": "bottom", "toSide": "top" },
+    { "id": "maint-app",  "from": "maint",  "to": "app",  "label": "operates",    "variant": "dashed", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    { "dot": "cyan",    "title": "The narrative", "items": ["Root README — what and why, non-technical", "docs/README.md — index of this folder"] },
+    { "dot": "amber",   "title": "The reference", "items": ["tables.md — schema + RLS notes", "maintainers.md — dev setup + workflows + secrets"] },
+    { "dot": "violet",  "title": "The picture",   "items": ["architecture.html — interactive system map", "logo-concepts/C-nodes.svg — Lyftr logo source"] }
+  ]
+}
