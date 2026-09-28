@@ -5,7 +5,7 @@ import SquishSwitch from '../../components/SquishSwitch/SquishSwitch.jsx'
 const RETIREMENT_FALLBACK = 2480.30
 
 // ---- Live market data config -----------------------------------------------
-// Keys come from Vite env only (never committed). Create exercise-app/.env.local:
+// Keys come from Vite env only (never committed). Create lyftr/app/.env.local:
 //   VITE_FINNHUB_KEY=your_finnhub_key
 //   VITE_RAPIDAPI_KEY=your_rapidapi_key
 // then restart `npm run dev`. CoinGecko needs no key.
@@ -388,7 +388,7 @@ export default function InvestmentsTab() {
     setRefreshNote(null)
 
     if (!FINNHUB_KEY) {
-      setRefreshError('Missing VITE_FINNHUB_KEY. Add it to exercise-app/.env.local and restart the dev server.')
+      setRefreshError('Missing VITE_FINNHUB_KEY. Add it to lyftr/app/.env.local and restart the dev server.')
       setRefreshing(false)
       return
     }

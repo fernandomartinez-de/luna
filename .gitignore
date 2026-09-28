@@ -81,6 +81,7 @@ finances/.env
 finances/.plaid_secrets.local
 finances/.plaid_investments_secrets.local
 
-exercise-app/vite/deps/
+lyftr/app/vite/deps/
+lyftr/app/dist/
 
 .vite/

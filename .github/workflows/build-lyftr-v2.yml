@@ -7,7 +7,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'exercise-app/**'
+      - 'lyftr/app/**'
   workflow_dispatch: {}
 
 permissions:
@@ -28,11 +28,11 @@ jobs:
           node-version: '18'
 
       - name: Install dependencies
-        working-directory: exercise-app
+        working-directory: lyftr/app
         run: npm ci
 
       - name: Build React app
-        working-directory: exercise-app
+        working-directory: lyftr/app
         env:
           VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_KEY }}
@@ -40,18 +40,21 @@ jobs:
           VITE_RAPIDAPI_KEY: ${{ secrets.ZILLOW_API_KEY }}
         run: npm run build
 
-      - name: Copy build to lyftr folder
+      - name: Copy build output into lyftr/ (alongside lyftr/app/ source)
         run: |
-          mkdir -p lyftr
-          cp -r exercise-app/dist/* lyftr/
+          # Copy dist contents into lyftr/, but explicitly not into lyftr/app/.
+          # Vite's dist doesn't contain an "app" directory, so cp -r is safe.
+          cp -r lyftr/app/dist/* lyftr/
           # GitHub Pages SPA fallback: any deep-link 404 serves the SPA shell
-          # so react-router can take over. See spa-github-pages pattern.
+          # so react-router can take over.
           cp lyftr/index.html lyftr/404.html
 
       - name: Commit and push
         run: |
           git config user.name "lyftr-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add lyftr/
+          # Stage everything under lyftr/ except the source subdir. Source in
+          # lyftr/app/ is committed via normal PRs, not by this bot.
+          git add -A lyftr/ ':(exclude)lyftr/app/**'
           git diff --quiet --cached || git commit -m "chore: rebuild Lyftr v2 ($(date -u +%F))"
           git push

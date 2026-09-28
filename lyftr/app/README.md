@@ -196,7 +196,7 @@ graph TB
 ## Setup
 
 ```powershell
-cd C:\Users\fmartine\Personal\repos\personal\exercise-app
+cd C:\Users\fmartine\Personal\repos\personal\lyftr\app
 npm install
 ```
 
@@ -273,7 +273,7 @@ If you add new `muscle_group` or `secondary_muscles` values in Supabase, extend 
 ## Layout
 
 ```
-exercise-app/
+lyftr/app/
 ├── index.html
 ├── package.json
 ├── vite.config.js

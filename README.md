@@ -80,8 +80,7 @@ personal/
 ├── index.html              # Redirects / to /lyftr/
 ├── 404.html                # SPA fallback for the Lyftr React app
 ├── V1/                     # Archived v1 static dashboards
-├── exercise-app/           # Lyftr React source (v2)
-├── lyftr/                  # Built React app (auto-generated)
+├── lyftr/                  # Lyftr v2 — source lives in lyftr/app/, built output at lyftr/
 ├── finances/               # Plaid sync scripts + finance docs
 ├── health/
 │   ├── whoop/              # WHOOP sync

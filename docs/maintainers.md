@@ -5,7 +5,7 @@ For working on the repo, not for reading the site.
 ## Local dev
 
 ```powershell
-cd exercise-app
+cd lyftr\app
 npm install
 npm run dev        # http://localhost:5173
 ```
@@ -39,7 +39,7 @@ All schedules in UTC.
 | `pull-body.yml` | Daily 14:00 | Renpho body composition |
 | `medical-ingest-labs.yml` | Weekly Mon 09:00 | Ingest lab PDFs from Drive |
 | `medical-clean-drive.yml` | Monthly 1st | Clean processed Drive files |
-| `build-lyftr-v2.yml` | On push to `exercise-app/` | Build & deploy the React app |
+| `build-lyftr-v2.yml` | On push to `lyftr/app/` | Build & deploy the React app |
 
 ## Secrets
 
@@ -83,7 +83,7 @@ env:
 ## Notes
 
 - **Public repo.** All secrets in GitHub secrets or gitignored `.env` files. Never commit real client data.
-- **v2 auto-deploy.** Any change to `exercise-app/` triggers `build-lyftr-v2.yml`, which rebuilds the React bundle, copies it to `lyftr/`, and commits the build.
+- **v2 auto-deploy.** Any change to `lyftr/app/` triggers `build-lyftr-v2.yml`, which rebuilds the React bundle, copies it to `lyftr/`, and commits the build.
 - **WHOOP token** auto-refreshes daily via `whoop-daily-sync.yml`.
 - **Real estate:** Zillow refreshes via the app's Refresh Prices button; Redfin is manual (CORS blocks in-browser fetch), run `finances/scripts/fetch_redfin_property_value.py` monthly.
 - **SPA fallback.** GitHub Pages serves `/404.html` from repo root for any missing URL under `/personal/`. It redirects Lyftr paths back into the app shell; other 404s (v1 typos) show a small "Back to hub" page.
