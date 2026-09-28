@@ -31,6 +31,6 @@
   "cards": [
     { "dot": "cyan",    "title": "The narrative", "items": ["Root README — what and why, non-technical", "docs/README.md — index of this folder"] },
     { "dot": "amber",   "title": "The reference", "items": ["tables.md — schema + RLS notes", "maintainers.md — dev setup + workflows + secrets"] },
-    { "dot": "violet",  "title": "The picture",   "items": ["architecture.html — interactive system map", "logo-concepts/C-nodes.svg — Lyftr logo source"] }
+    { "dot": "violet",  "title": "The picture",   "items": ["architecture.html — interactive system map", "lyftr-logo.svg — Lyftr logo source"] }
   ]
 }

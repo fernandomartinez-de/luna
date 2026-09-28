@@ -29,8 +29,7 @@ docs/
 └── assets/
     ├── architecture.json / .html / .png   # full system diagram
     ├── docs-map.json    / .html / .png    # this folder's map
-    └── logo-concepts/
-        └── C-nodes.svg  # chosen Lyftr logo (source; PNGs live in exercise-app/public/)
+    └── lyftr-logo.svg                     # Lyftr logo source (PNGs live in exercise-app/public/)
 ```
 
 ## Regenerating a diagram
