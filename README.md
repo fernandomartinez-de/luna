@@ -18,11 +18,13 @@ Data is pulled into a single Supabase project by scheduled GitHub Actions. The s
 **Landing Page:** https://fernandomartinez-de.github.io/personal/
 
 **Direct Links:**
-- Finances (v1): https://fernandomartinez-de.github.io/personal/finances/finances.html
-- Fitness (Overload v1): https://fernandomartinez-de.github.io/personal/health/fitness/overload.html
-- Medical: https://fernandomartinez-de.github.io/personal/health/medical/medical.html
+- **v1 Dashboards:**
+  - Finances: https://fernandomartinez-de.github.io/personal/finances/finances.html
+  - Fitness (Overload): https://fernandomartinez-de.github.io/personal/health/fitness/overload.html
+  - Medical: https://fernandomartinez-de.github.io/personal/health/medical/medical.html
+- **v2 App (Lyftr):** https://fernandomartinez-de.github.io/personal/lyftr/
 
-The v2 "Lyftr" app (`health/fitness/exercise-app/`) is a React + Vite SPA run locally with `npm run dev`. It is not currently built or deployed by a GitHub Action.
+The v2 "Lyftr" app (`health/fitness/exercise-app/`) is a React + Vite SPA that auto-builds and deploys to GitHub Pages on push to main. Run locally with `npm run dev` for development.
 
 ## Repository Structure
 
@@ -130,7 +132,7 @@ All finance and health data lives in one Supabase project: **`uuvsvtpfcexhqojlrs
 
 ## Automated Workflows (GitHub Actions)
 
-Eight workflows. All times are UTC (New York is UTC minus 4 during EDT).
+Nine workflows. All times are UTC (New York is UTC minus 4 during EDT).
 
 | Workflow | Schedule | Runs | Purpose | Status |
 |----------|----------|------|---------|--------|
@@ -139,6 +141,7 @@ Eight workflows. All times are UTC (New York is UTC minus 4 during EDT).
 | `pull-body.yml` | Daily 14:00 (`0 14 * * *`) | `health/body/renpho_pull.py` | Renpho body composition | Active |
 | `whoop-daily-sync.yml` | Daily 08:00 (`0 8 * * *`) | `health/whoop/sync.py` | WHOOP data sync | Active |
 | `build-fitness.yml` | Daily 12:00 (`0 12 * * *`) | `health/fitness/build_overload.py` | Rebuild Overload dashboard | Needs repair (see Known Issues) |
+| `build-lyftr-v2.yml` | On push to main (exercise-app changes) | Build React app to `lyftr/` | Build and deploy Lyftr v2 to GitHub Pages | Active |
 | `medical-ingest-labs.yml` | Weekly Mon 09:00 (`0 9 * * 1`) | `health/medical/ingest_labs_gdrive.py` | Ingest lab PDFs from Drive | Active |
 | `medical-rebuild-dashboards.yml` | Weekly Mon 10:00 (`0 10 * * 1`) | `health/medical/build_dashboards.py` | Rebuild medical dashboards | Active |
 | `medical-clean-drive.yml` | Monthly 1st 00:00 (`0 0 1 * *`) | `health/medical/clean_medical_drive.py` | Clean medical Drive files | Active |

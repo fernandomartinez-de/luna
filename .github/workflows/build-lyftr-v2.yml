@@ -1,0 +1,54 @@
+name: Build Lyftr v2
+
+# Builds the React app and deploys to GitHub Pages at /lyftr/
+# Runs on push to main or manual trigger
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'health/fitness/exercise-app/**'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-lyftr-v2
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: health/fitness/exercise-app
+        run: npm ci
+
+      - name: Build React app
+        working-directory: health/fitness/exercise-app
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_KEY }}
+          VITE_FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+          VITE_RAPIDAPI_KEY: ${{ secrets.ZILLOW_API_KEY }}
+        run: npm run build
+
+      - name: Copy build to lyftr folder
+        run: |
+          mkdir -p lyftr
+          cp -r health/fitness/exercise-app/dist/* lyftr/
+
+      - name: Commit and push
+        run: |
+          git config user.name "lyftr-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add lyftr/
+          git diff --quiet --cached || git commit -m "chore: rebuild Lyftr v2 ($(date -u +%F))"
+          git push
