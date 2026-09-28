@@ -65,7 +65,7 @@ graph TB
     end
 
     subgraph "GitHub Actions Pipelines"
-        PLAID[plaid_sync.py<br/>Daily 13:00 UTC]
+        PLAID[plaid_chase_sync.py<br/>Daily 13:00 UTC]
         PLAID_INV[plaid_investments_sync.py<br/>Weekdays 22:00 UTC]
         WHOOP_SYNC[whoop/sync.py<br/>Daily 08:00 UTC]
         BODY_SYNC[renpho_pull.py<br/>Daily 14:00 UTC]

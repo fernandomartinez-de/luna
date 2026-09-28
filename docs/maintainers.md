@@ -16,14 +16,14 @@ Chase + Fidelity Plaid links (run once each):
 
 ```powershell
 cd finances\scripts
-python plaid_link.py                # Chase
+python plaid_chase_link.py          # Chase
 python plaid_investments_link.py    # Fidelity
 ```
 
 ## Manual re-sync (rarely needed — GitHub Actions handles this daily)
 
 ```powershell
-python finances\scripts\plaid_sync.py                    # Chase transactions
+python finances\scripts\plaid_chase_sync.py              # Chase transactions
 python finances\scripts\fetch_zillow_property_value.py   # Condo Zillow value
 ```
 

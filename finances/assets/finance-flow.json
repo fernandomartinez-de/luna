@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Finance data flow",
+    "locale": "en",
+    "quality_profile": "standard",
+    "viewBox": [1150, 540]
+  },
+  "components": [
+    { "id": "chase",     "type": "external",  "label": "Chase",           "sublabel": "checking + 2 credit cards", "pos": [30, 40],  "size": [180, 62] },
+    { "id": "fidelity",  "type": "external",  "label": "Fidelity",        "sublabel": "retirement + brokerage",    "pos": [30, 130], "size": [180, 62] },
+    { "id": "zillow",    "type": "external",  "label": "Zillow",          "sublabel": "condo estimate",            "pos": [30, 260], "size": [180, 62] },
+    { "id": "redfin",    "type": "external",  "label": "Redfin",          "sublabel": "condo estimate (manual)",   "pos": [30, 350], "size": [180, 62] },
+    { "id": "prices",    "type": "external",  "label": "Live prices",     "sublabel": "Finnhub + CoinGecko",       "pos": [30, 460], "size": [180, 62] },
+
+    { "id": "chase-sync",   "type": "backend", "label": "plaid_chase_sync.py",       "sublabel": "GH Actions, daily 13:00 UTC",       "pos": [270, 40],  "size": [230, 62] },
+    { "id": "fid-sync",     "type": "backend", "label": "plaid_investments_sync.py", "sublabel": "GH Actions, weekdays 22:00 UTC",    "pos": [270, 130], "size": [230, 62] },
+    { "id": "zillow-fetch", "type": "backend", "label": "fetch_zillow_property_value.py", "sublabel": "manual monthly fallback",      "pos": [270, 260], "size": [230, 62] },
+
+    { "id": "supa",   "type": "database", "label": "Supabase", "sublabel": "one Postgres database", "tag": "single hub", "pos": [560, 200], "size": [200, 100] },
+
+    { "id": "expenses",  "type": "frontend", "label": "Lyftr Expenses",    "sublabel": "phone app",   "pos": [820, 80],  "size": [200, 76] },
+    { "id": "invest",    "type": "frontend", "label": "Lyftr Investments", "sublabel": "phone app",   "pos": [820, 260], "size": [200, 76] }
+  ],
+  "connections": [
+    { "id": "chase-in",   "from": "chase",    "to": "chase-sync",   "label": "Plaid /transactions/sync",     "variant": "emphasis", "labelDy": -25 },
+    { "id": "fid-in",     "from": "fidelity", "to": "fid-sync",     "label": "Plaid /investments/holdings",  "variant": "emphasis", "labelDy": -25 },
+    { "id": "zillow-in",  "from": "zillow",   "to": "zillow-fetch", "label": "RapidAPI",                     "labelDy": -25 },
+    { "id": "redfin-in",  "from": "redfin",   "to": "supa",         "label": "manual SQL insert",            "variant": "dashed", "labelDy": 40 },
+
+    { "id": "chase-write", "from": "chase-sync",   "to": "supa", "variant": "emphasis" },
+    { "id": "fid-write",   "from": "fid-sync",     "to": "supa" },
+    { "id": "zillow-write","from": "zillow-fetch", "to": "supa" },
+
+    { "id": "prices-live", "from": "prices",  "to": "invest",     "label": "display only", "variant": "dashed", "labelDy": -30 },
+
+    { "id": "read-exp",  "from": "supa", "to": "expenses" },
+    { "id": "read-inv",  "from": "supa", "to": "invest"   }
+  ],
+  "cards": [
+    { "dot": "cyan",    "title": "Automatic", "items": ["Chase transactions daily via Plaid", "Fidelity holdings weekdays via Plaid"] },
+    { "dot": "amber",   "title": "One database", "items": ["expense_transactions", "stocks_crypto_history", "real_estate_history"] },
+    { "dot": "emerald", "title": "Manual", "items": ["Zillow: monthly fallback script", "Redfin: SQL insert once a month"] },
+    { "dot": "violet",  "title": "Read in Lyftr", "items": ["Expenses tab: spending + net remaining", "Investments tab: portfolio + real estate"] }
+  ]
+}

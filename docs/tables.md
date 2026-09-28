@@ -6,10 +6,10 @@ Everything lives in one Supabase project (**`uuvsvtpfcexhqojlrsxy`**, "Personal"
 
 | Table | Purpose | Written by | Read by |
 |-------|---------|------------|---------|
-| `expense_transactions` | Categorized Chase transactions (checking + 2 credit cards) | `pull-finances.yml` (`plaid_sync.py`); manual backfills | v1 finances, v2 Lyftr Expenses, `vw_dashboard_summary` |
-| `plaid_accounts` | Map of Plaid account IDs to masked account + source label | One-time `finances/scripts/plaid_link.py` | `plaid_sync.py` |
-| `plaid_sync_state` | Plaid `/transactions/sync` cursor per item | `plaid_sync.py` (every run) | `plaid_sync.py` |
-| `category_mapping` | Merchant pattern → category rules | Manual SQL | `plaid_sync.py`, `vw_category_mapping` |
+| `expense_transactions` | Categorized Chase transactions (checking + 2 credit cards) | `pull-finances.yml` (`plaid_chase_sync.py`); manual backfills | v1 finances, v2 Lyftr Expenses, `vw_dashboard_summary` |
+| `plaid_accounts` | Map of Plaid account IDs to masked account + source label | One-time `finances/scripts/plaid_chase_link.py` | `plaid_chase_sync.py` |
+| `plaid_sync_state` | Plaid `/transactions/sync` cursor per item | `plaid_chase_sync.py` (every run) | `plaid_chase_sync.py` |
+| `category_mapping` | Merchant pattern → category rules | Manual SQL | `plaid_chase_sync.py`, `vw_category_mapping` |
 | `stocks_crypto_history` | Daily snapshot of stocks, crypto, retirement, brokerage holdings | `pull-investments.yml`; v2 Lyftr Refresh Prices (Finnhub + CoinGecko) | v1 finances, v2 Lyftr Investments |
 | `real_estate_history` | Property value + mortgage balance snapshots (Zillow + Redfin) | Manual `fetch_zillow_property_value.py`; v2 Lyftr Refresh Prices (Zillow) | v1 finances, v2 Lyftr Investments |
 
@@ -63,7 +63,7 @@ Everything lives in one Supabase project (**`uuvsvtpfcexhqojlrsxy`**, "Personal"
 | View | Aggregates | Consumed by |
 |------|------------|-------------|
 | `vw_category_groups` | Category grouping hierarchy | Finance dashboards |
-| `vw_category_mapping` | Read-only projection of `category_mapping` | Dashboards, `plaid_sync.py` |
+| `vw_category_mapping` | Read-only projection of `category_mapping` | Dashboards, `plaid_chase_sync.py` |
 | `vw_dashboard_summary` | Monthly totals per category | v1 finances breakdown, v2 Lyftr Expenses |
 | `vw_discretionary_summary` | Monthly discretionary spend by category | v1 finances, v2 Lyftr Expenses |
 | `vw_fixed_costs_summary` | Monthly fixed-cost baseline (12-month averages) | v1 finances, v2 Lyftr Expenses |

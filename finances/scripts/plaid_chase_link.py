@@ -6,7 +6,7 @@ access token for the daily sync. Run this LOCALLY, once.
     cd finances
     cp .env.example .env          # fill in PLAID_CLIENT_ID / PLAID_SECRET
     pip install -r requirements.txt
-    python plaid_link.py
+    python plaid_chase_link.py
 
 It prints a Plaid Hosted Link URL. Open it, sign into Chase, and select the
 three accounts (Total Checking ...6813, Freedom Unlimited ...5113, Sapphire
@@ -144,7 +144,7 @@ def main():
                 if MASK_TO_SOURCE.get(a.get("mask") or "") is None]
     if unmapped:
         print(f"\n  NOTE: masks {unmapped} are not in MASK_TO_SOURCE and will be")
-        print("  ignored by the sync. Add them in plaid_sync.py to track them.")
+        print("  ignored by the sync. Add them in plaid_chase_sync.py to track them.")
 
     # Best-effort: record masked account map + init cursor state.
     if SUPABASE_URL and SUPABASE_KEY:
