@@ -44,6 +44,9 @@ jobs:
         run: |
           mkdir -p lyftr
           cp -r health/fitness/exercise-app/dist/* lyftr/
+          # GitHub Pages SPA fallback: any deep-link 404 serves the SPA shell
+          # so react-router can take over. See spa-github-pages pattern.
+          cp lyftr/index.html lyftr/404.html
 
       - name: Commit and push
         run: |
