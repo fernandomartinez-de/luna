@@ -37,7 +37,12 @@ export default function HomePage() {
   const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()]
   const monthDay = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
   const hour = now.getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+  const greeting =
+    hour < 5 ? 'Still up' :
+    hour < 12 ? 'Good morning' :
+    hour < 18 ? 'Good afternoon' :
+    hour < 22 ? 'Good evening' :
+    'Good night'
 
   // State
   const [weightHover, setWeightHover] = useState(null)

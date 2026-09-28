@@ -14,6 +14,7 @@ import FinancesInvestmentsPage from './pages/FinancesInvestmentsPage.jsx'
 import MedicalPage from './pages/MedicalPage.jsx'
 import Galaxy from './components/Galaxy/Galaxy.jsx'
 import RubberSegment from './components/RubberSegment/RubberSegment.jsx'
+import AppLock from './components/AppLock.jsx'
 import './App.css'
 
 const NAV_ICONS = {
@@ -100,6 +101,7 @@ export default function App() {
   }
 
   return (
+    <AppLock>
     <div className="app-shell galaxy-bg">
       <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, background: '#050509', pointerEvents: 'none' }} />
       <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
@@ -193,5 +195,6 @@ export default function App() {
         )
       })()}
     </div>
+    </AppLock>
   )
 }
