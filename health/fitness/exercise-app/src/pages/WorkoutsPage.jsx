@@ -63,6 +63,7 @@ export default function WorkoutsPage() {
         supabase
           .from('whoop_workouts')
           .select('workout_id, start_time, sport_name, strain, calories_kcal')
+          .neq('sport_name', 'Walking')
           .order('start_time', { ascending: false })
           .limit(15)
       ])
