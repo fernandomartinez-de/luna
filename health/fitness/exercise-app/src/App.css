@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Galaxy background pages: content lifts above the fixed galaxy layer */
@@ -24,11 +25,12 @@
 
 .rubber-nav-wrap {
   position: fixed;
-  bottom: 16px;
+  /* Lift above iOS home indicator: safe-area inset + 16px breathing room */
+  bottom: calc(var(--sa-bottom) + 16px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
-  max-width: calc(100vw - 32px);
+  max-width: calc(100vw - 32px - var(--sa-left) - var(--sa-right));
   padding: 8px;
   border-radius: 32px;
   background: rgba(5, 5, 9, 0.65);
@@ -64,7 +66,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  /* Sit under the iOS notch cleanly; keep inner padding for taps */
+  padding: calc(var(--sa-top) + 16px) calc(var(--sa-right) + 24px) 16px calc(var(--sa-left) + 24px);
   background-color: var(--surface-base);
   border-bottom: 1px solid var(--surface-border);
   position: sticky;
@@ -93,13 +96,14 @@
 
 .app-main {
   flex: 1;
-  padding: 24px 24px 100px 24px;
+  /* Bottom padding = space for rubber nav + safe-area home indicator */
+  padding: 24px calc(var(--sa-right) + 24px) calc(var(--sa-bottom) + 100px) calc(var(--sa-left) + 24px);
   max-width: 560px;
   width: 100%;
   margin: 0 auto;
 }
 
-/* Bottom Navigation */
+/* Bottom Navigation (legacy — RubberSegment is the primary nav now) */
 .bottom-nav {
   position: fixed;
   bottom: 0;
@@ -110,7 +114,8 @@
   gap: 0;
   background-color: var(--surface-raised);
   border-top: 1px solid var(--surface-border);
-  padding: 8px 0;
+  /* Extend padding-bottom past the iOS home indicator so tap targets stay above it */
+  padding: 8px calc(var(--sa-right)) calc(var(--sa-bottom) + 8px) calc(var(--sa-left));
   z-index: 100;
 }
 
@@ -832,7 +837,8 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  /* Respect notch and home indicator so modals never sit under system UI */
+  padding: calc(var(--sa-top) + 20px) calc(var(--sa-right) + 20px) calc(var(--sa-bottom) + 20px) calc(var(--sa-left) + 20px);
 }
 
 .modal-content {
@@ -841,8 +847,11 @@
   border-radius: 12px;
   width: 100%;
   max-width: 500px;
-  max-height: 90vh;
+  max-height: min(90dvh, 90vh);
   overflow: auto;
+  /* Native-feeling inertia scrolling inside modals on iOS */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .modal-header {
