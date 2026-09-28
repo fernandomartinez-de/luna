@@ -25,21 +25,22 @@
 
 .rubber-nav-wrap {
   position: fixed;
-  /* Lift above iOS home indicator: safe-area inset + 16px breathing room */
-  bottom: calc(var(--sa-bottom) + 16px);
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
-  max-width: calc(100vw - 32px - var(--sa-left) - var(--sa-right));
-  padding: 8px;
-  border-radius: 32px;
-  background: rgba(5, 5, 9, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* Full-width tab-bar: safe-area on sides + home indicator on bottom */
+  padding: 8px calc(var(--sa-right) + 12px) calc(var(--sa-bottom) + 8px) calc(var(--sa-left) + 12px);
+  border-radius: 20px 20px 0 0;
+  background: rgba(5, 5, 9, 0.72);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(18px) saturate(160%);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .rubber-nav-wrap .rubber-segment {
+  display: grid !important;
+  width: 100%;
   background: transparent !important;
 }
 
