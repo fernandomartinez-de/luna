@@ -182,9 +182,13 @@ function deriveFromData(scDataAll, reDataAll, asOfDate, livePrices = null) {
   const realEstate = []
   let reTotal = 0, reCost = 0
   if (latestRe) {
+    // Find latest Zillow and Redfin independently (may be different dates)
+    const zillowRows = reData.filter((r) => r.asset_name === 'Condo' && r.data_source === 'Zillow')
+    const redfinRows = reData.filter((r) => r.asset_name === 'Condo' && r.data_source === 'Redfin')
+    const zillowCondo = zillowRows.length > 0 ? zillowRows[zillowRows.length - 1] : null
+    const redfinCondo = redfinRows.length > 0 ? redfinRows[redfinRows.length - 1] : null
+
     const latestRows = reData.filter((r) => r.snapshot_date === latestRe)
-    const zillowCondo = latestRows.find((r) => r.asset_name === 'Condo' && r.data_source === 'Zillow')
-    const redfinCondo = latestRows.find((r) => r.asset_name === 'Condo' && r.data_source === 'Redfin')
     const storage = latestRows.find((r) => r.asset_name === 'Storage Unit')
     const oldestCondo = reData.find((r) => r.asset_name === 'Condo')
     const initialMortgage = oldestCondo ? (Number(oldestCondo.mortgage_balance) || 0) : 0
@@ -200,8 +204,14 @@ function deriveFromData(scDataAll, reDataAll, asOfDate, livePrices = null) {
       }
 
       const value = (zVal + rVal) / 2
-      const mortgage = (Number(zillowCondo.mortgage_balance || 0) + Number(redfinCondo.mortgage_balance || 0)) / 2
-      const equity = (Number(zillowCondo.net_equity || 0) + Number(redfinCondo.net_equity || 0)) / 2
+
+      // Use most recent mortgage (compare dates)
+      const zDate = new Date(zillowCondo.snapshot_date)
+      const rDate = new Date(redfinCondo.snapshot_date)
+      const mostRecentRow = zDate >= rDate ? zillowCondo : redfinCondo
+      const mortgage = Number(mostRecentRow.mortgage_balance || 0)
+      const equity = value - mortgage  // Calculate from average value and latest mortgage
+
       const cb = Number(zillowCondo.cost_basis) || 0
       realEstate.push({ name: 'Condo', value, mortgage, equity, costBasis: cb, gain: value - cb, gainPct: cb > 0 ? ((value - cb) / cb) * 100 : 0, zillow: zVal, redfin: rVal, initialMortgage })
       reTotal += value; reCost += cb
