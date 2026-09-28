@@ -46,9 +46,8 @@ graph TB
     SUPA[(Supabase<br/>uuvsvtpfcexhqojlrsxy<br/>Single unified database)]
 
     subgraph "GitHub Pages"
-        V1[v1 Dashboards<br/>finances.html<br/>overload.html<br/>medical.html]
+        V1[v1 Dashboards<br/>index.html (landing)<br/>finances.html<br/>overload.html<br/>medical.html]
         V2[v2 React App<br/>lyftr/]
-        LANDING[index.html]
     end
 
     CHASE --> PLAID_C
@@ -73,13 +72,9 @@ graph TB
     BUILD_M --> V1
     BUILD_L --> V2
 
-    V1 --> LANDING
-    V2 --> LANDING
-
     PRICES -->|Refresh Prices| SUPA
 
     style SUPA fill:#f59e0b,color:#000
-    style LANDING fill:#10b981,color:#fff
     style V1 fill:#3b82f6,color:#fff
     style V2 fill:#8b5cf6,color:#fff
 ```
