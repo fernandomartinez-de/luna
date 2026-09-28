@@ -110,8 +110,9 @@
 
 .app-main {
   flex: 1;
-  /* Bottom padding = space for rubber nav + safe-area home indicator */
-  padding: 24px calc(var(--sa-right) + 24px) calc(var(--sa-bottom) + 100px) calc(var(--sa-left) + 24px);
+  /* Top padding clears the notch now that the header is gone.
+     Bottom padding = space for rubber nav + safe-area home indicator. */
+  padding: calc(var(--sa-top) + 20px) calc(var(--sa-right) + 24px) calc(var(--sa-bottom) + 100px) calc(var(--sa-left) + 24px);
   max-width: 560px;
   width: 100%;
   margin: 0 auto;

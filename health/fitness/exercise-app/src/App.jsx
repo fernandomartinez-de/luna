@@ -116,21 +116,6 @@ export default function App() {
           saturation={0.3}
         />
       </div>
-      <header
-        className="app-header"
-        style={isHub ? {
-          background: 'rgba(5, 5, 9, 0.55)',
-          borderBottomColor: 'rgba(255, 255, 255, 0.06)',
-          backdropFilter: 'blur(14px) saturate(140%)',
-          WebkitBackdropFilter: 'blur(14px) saturate(140%)'
-        } : undefined}
-      >
-        <Link to="/" className="app-title">
-          <span className="app-title-mark">🧭</span>
-          <span>hub</span>
-        </Link>
-      </header>
-
       <main className="app-main" style={isMedical ? { maxWidth: '1440px' } : isHub ? { maxWidth: '1080px' } : undefined}>
         <Routes>
           <Route path="/" element={<HubPage />} />
