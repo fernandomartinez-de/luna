@@ -114,6 +114,95 @@ graph TB
 
 ---
 
+## 🗄️ Supabase Tables
+
+Everything lives in a single Supabase project (**`uuvsvtpfcexhqojlrsxy`** – "Personal"). Grouped by domain below; every row is either fed by one of the workflows above or written on demand by the v2 Lyftr app or a manual script.
+
+### Finance
+
+| Table | Purpose | Written by | Read by |
+|-------|---------|------------|---------|
+| `expense_transactions` | Categorized Chase transactions (checking + 2 credit cards) | `pull-finances.yml` (`plaid_sync.py`); manual backfills | v1 `finances.html`, v2 Lyftr Expenses, `vw_dashboard_summary` |
+| `plaid_accounts` | Map of Plaid account IDs → masked account + source label | One-time `finances/scripts/plaid_link.py` | `plaid_sync.py` |
+| `plaid_sync_state` | Plaid `/transactions/sync` cursor per item | `plaid_sync.py` (updated every run) | `plaid_sync.py` |
+| `category_mapping` | Merchant pattern → category rules | Manual SQL inserts | `plaid_sync.py`, `vw_category_mapping` |
+| `stocks_crypto_history` | Daily snapshot of stocks, crypto, retirement, brokerage holdings | `pull-investments.yml` (`plaid_investments_sync.py`, Fidelity Retirement/Brokerage rows); v2 Lyftr **Refresh Prices** button (Finnhub stocks + CoinGecko crypto) | v1 `finances.html`, v2 Lyftr Investments |
+| `real_estate_history` | Property value + mortgage balance snapshots (Zillow + Redfin) | Manual `fetch_zillow_property_value.py`; v2 Lyftr **Refresh Prices** button (Zillow via RapidAPI) | v1 `finances.html`, v2 Lyftr Investments |
+
+### Health – WHOOP + Body
+
+| Table | Purpose | Written by | Read by |
+|-------|---------|------------|---------|
+| `whoop_recovery` | Daily recovery score, HRV, RHR | `whoop-daily-sync.yml` (`health/whoop/sync.py`) | v1 Overload, v2 Lyftr (hub, oncologist), medical dashboards |
+| `whoop_cycles` | Daily physiological cycle (strain, calories, sleep coefficient) | `whoop-daily-sync.yml` | v1 Overload, v2 Lyftr, medical dashboards |
+| `whoop_sleep` | Sleep sessions (duration, efficiency, stages) | `whoop-daily-sync.yml` | v1 Overload, medical dashboards |
+| `whoop_workouts` | WHOOP-tagged workouts (sport, strain, calories) | `whoop-daily-sync.yml` | v1 Overload, v2 Lyftr Workouts, medical dashboards |
+| `whoop_body` | Height, weight, max HR, VO2 max snapshot | `whoop-daily-sync.yml` | v2 Lyftr, medical dashboards |
+| `body_composition` | Renpho scale readings (weight, body fat %, muscle, water, bone) | `pull-body.yml` (`health/body/renpho_pull.py`) | v2 Lyftr (Hub, Weight page, Nutritionist Renpho card) |
+
+### Medical
+
+| Table | Purpose | Written by | Read by |
+|-------|---------|------------|---------|
+| `lab_results` | Categorized lab values from PDFs (marcador, valor, unidad, ref_min/max, flag, panel) — panel normalized to 11 canonical categories on ingest | `medical-ingest-labs.yml` (`ingest_labs_gdrive.py`, LLM extraction) | v2 Lyftr Oncologist/Nutritionist, `martinez_*_dashboard.html` via `medical-rebuild-dashboards.yml` |
+| `inbody_results` | InBody bioimpedance scan snapshots (peso, mme, masa_grasa, pgc, agua, tmb, angulo_fase, score, grasa_visceral) | `medical-ingest-labs.yml` (parses InBody images in the same Drive folder) | v2 Lyftr Nutritionist (composition ring, scan comparison), medical dashboards |
+
+### Nutrition
+
+| Table | Purpose | Written by | Read by |
+|-------|---------|------------|---------|
+| `nutrition_log` | Logged food entries (meal, item, kcal, macros) | v2 Lyftr Food page (manual) | v2 Lyftr Food + Nutritionist (macro trend, meal distribution) |
+| `meal_templates` | Reusable meal blueprints for one-tap logging | Manual seed | v2 Lyftr Food picker |
+| `meal_plan` | Weekly meal-plan structure | Manual | v2 Lyftr (planned use) |
+
+### Training
+
+| Table | Purpose | Written by | Read by |
+|-------|---------|------------|---------|
+| `exercises` | Master exercise catalog (name, muscle_group, level, equipment) | Manual seed / one-off imports | v2 Lyftr Exercises + Workouts pages |
+| `workouts` | Saved workout templates | v2 Lyftr Workouts (Save Workout) | v2 Lyftr Workouts, Home last-workout tile |
+| `workout_exercises` | Ordered exercises inside each saved workout (sets/reps/order_index) | v2 Lyftr Workouts | v2 Lyftr Workout Detail |
+| `completed_workouts` | Logged workout sessions (linked to `workouts` + a WHOOP session when available) | v2 Lyftr Workouts (Assign to WHOOP session) | v2 Lyftr Home (Muscle Balance, Consistency Heatmap) |
+| `completed_workout_exercises` | Per-exercise records inside a completed workout | v2 Lyftr | v2 Lyftr |
+| `strength_sessions` | Legacy strength-training session log | External import (out of repo) | `build_overload.py` (last-lift lookups in Overload dashboard) |
+| `strength_exercises` | Legacy strength-training exercise metadata | External import | `build_overload.py` |
+| `strength_sets` | Legacy strength-training per-set records | External import | `build_overload.py` |
+| `strength_ingest_log` | Audit log of strength imports (row counts, timestamps) | External import runs | Diagnostics only |
+| `training_plan` | Weekly training-day plan (`dow` → `training_type` + load) | Manual seed | v2 Lyftr Workouts (Weekly Suggestions), `build_overload.py` |
+| `running_log` | Manual/imported run log (date + distance_km) | Manual | v2 Lyftr Workouts (Weekly Suggestions vs actual), `build_overload.py` |
+
+### Config
+
+| Table | Purpose | Written by | Read by |
+|-------|---------|------------|---------|
+| `app_config` | Generic key/value app config | Manual | Any script/app that needs runtime config |
+
+### Views (read-only, defined in Supabase)
+
+| View | Aggregates | Consumed by |
+|------|------------|-------------|
+| `vw_category_groups` | Category grouping hierarchy | v1/v2 finance dashboards |
+| `vw_category_mapping` | Read-only projection of `category_mapping` | Dashboards, `plaid_sync.py` |
+| `vw_dashboard_summary` | Monthly totals per category (all categories) | v1 `finances.html` breakdown, v2 Lyftr Expenses (Net Remaining Trend + Category Distribution heatmap) |
+| `vw_discretionary_summary` | Monthly discretionary spend by category (excludes fixed costs) | v1 `finances.html`, v2 Lyftr Expenses (Monthly Discretionary Trend, Top Categories) |
+| `vw_fixed_costs_summary` | Monthly fixed-cost baseline with 12-month averages | v1 `finances.html`, v2 Lyftr Expenses (Income & Expenses list) |
+
+### At a glance – table → workflow map
+
+- **`pull-finances.yml`** writes → `expense_transactions`, `plaid_sync_state`; reads → `plaid_accounts`, `category_mapping`
+- **`pull-investments.yml`** writes → `stocks_crypto_history` (Retirement / Brokerage rows only)
+- **`whoop-daily-sync.yml`** writes → `whoop_recovery`, `whoop_cycles`, `whoop_sleep`, `whoop_workouts`, `whoop_body`
+- **`pull-body.yml`** writes → `body_composition`
+- **`medical-ingest-labs.yml`** writes → `lab_results`, `inbody_results`
+- **`medical-rebuild-dashboards.yml`** reads → `lab_results`, `inbody_results`, `whoop_*`
+- **`medical-clean-drive.yml`** does not touch Supabase (Drive housekeeping only)
+- **`build-fitness.yml`** reads → `whoop_*`, `body_composition`, `strength_*`, `training_plan`, `running_log`, `completed_workouts`, `nutrition_log`
+- **`build-lyftr-v2.yml`** does not touch Supabase (compiles the React app; the app then reads/writes at runtime via the anon key)
+
+Manual writes (no workflow): `plaid_accounts` (one-time link), `category_mapping` (SQL), `exercises` / `meal_templates` / `training_plan` / `running_log` / `app_config` (seed data), `real_estate_history` (Redfin manual script + Zillow via v2 Refresh Prices).
+
+---
+
 ## 🚀 Quick Start
 
 ### Local Development (v2 React App)
