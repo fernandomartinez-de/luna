@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070d1a">
+  <title>Redirecting…</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #070d1a; color: #f1f5f9; height: 100%; }
+    body { display: flex; align-items: center; justify-content: center; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    a { color: #38d8fb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .box { text-align: center; padding: 24px; }
+    .box h1 { font-weight: 600; font-size: 20px; margin: 0 0 8px; }
+    .box p { color: #94a3b8; margin: 0; font-size: 14px; }
+  </style>
+  <script>
+    // SPA redirect for Lyftr's subdirectory. GitHub Pages serves this
+    // single 404.html from the site root for any missing URL under
+    // /personal/. If the requested path is inside the Lyftr app,
+    // stash it in sessionStorage and redirect to the app shell so
+    // react-router can pick up the intended route.
+    (function () {
+      var path = window.location.pathname;
+      var search = window.location.search;
+      var hash = window.location.hash;
+      var LYFTR_BASE = '/personal/lyftr/';
+      if (path.indexOf(LYFTR_BASE) === 0) {
+        try {
+          sessionStorage.setItem('lyftr:redirect', path + search + hash);
+        } catch (e) { /* private mode: fall through, at least the shell loads */ }
+        window.location.replace(LYFTR_BASE);
+      }
+      // else: this 404 wasn't for the SPA — leave the visitor on this
+      // page with a link back to the hub.
+    })();
+  </script>
+</head>
+<body>
+  <div class="box">
+    <h1>Page not found</h1>
+    <p><a href="/personal/">Back to hub →</a></p>
+  </div>
+</body>
+</html>
