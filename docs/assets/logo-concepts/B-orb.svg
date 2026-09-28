@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="orbBody" cx="0.38" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#7dd3fc"/>
+      <stop offset="0.35" stop-color="#22d3ee"/>
+      <stop offset="0.75" stop-color="#0099b8"/>
+      <stop offset="1" stop-color="#082f49"/>
+    </radialGradient>
+    <radialGradient id="orbHighlight" cx="0.3" cy="0.28" r="0.35">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0.5" cy="0.5" r="0.55">
+      <stop offset="0" stop-color="#38d8fb" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#070d1a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="110" fill="#070d1a"/>
+  <rect width="512" height="512" rx="110" fill="url(#glowB)"/>
+
+  <circle cx="256" cy="256" r="170" fill="url(#orbBody)"/>
+
+  <g stroke="#e0f2fe" stroke-width="1.5" fill="none" opacity="0.55">
+    <ellipse cx="256" cy="256" rx="170" ry="30"/>
+    <ellipse cx="256" cy="256" rx="170" ry="70"/>
+    <ellipse cx="256" cy="256" rx="170" ry="110"/>
+    <ellipse cx="256" cy="256" rx="170" ry="150"/>
+    <ellipse cx="256" cy="256" rx="30" ry="170"/>
+    <ellipse cx="256" cy="256" rx="70" ry="170"/>
+    <ellipse cx="256" cy="256" rx="110" ry="170"/>
+    <ellipse cx="256" cy="256" rx="150" ry="170"/>
+  </g>
+
+  <g fill="#f1f5f9">
+    <circle cx="256" cy="86" r="6"/>
+    <circle cx="336" cy="146" r="5"/>
+    <circle cx="386" cy="256" r="6"/>
+    <circle cx="196" cy="196" r="4"/>
+    <circle cx="146" cy="316" r="5"/>
+    <circle cx="306" cy="376" r="5"/>
+  </g>
+
+  <circle cx="256" cy="256" r="170" fill="url(#orbHighlight)"/>
+  <circle cx="256" cy="256" r="170" fill="none" stroke="#38d8fb" stroke-width="2" opacity="0.7"/>
+</svg>
