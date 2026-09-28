@@ -8,7 +8,9 @@ CLIENT_ID     = os.environ["WHOOP_CLIENT_ID"]
 CLIENT_SECRET = os.environ["WHOOP_CLIENT_SECRET"]
 REFRESH_TOKEN = os.environ["WHOOP_REFRESH_TOKEN"]
 SUPABASE_URL  = os.environ["SUPABASE_URL"]
-SUPABASE_KEY  = os.environ["SUPABASE_KEY"]
+# Prefer service_role key for backend sync (bypasses RLS); fall back to anon key
+# for backwards compatibility in local runs where only SUPABASE_KEY is set.
+SUPABASE_KEY  = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ["SUPABASE_KEY"]
 GH_PAT        = os.environ.get("GH_PAT")
 GH_REPO = os.environ.get("GITHUB_REPOSITORY", "fernandomartinez-de/whoop-pipeline")
 
