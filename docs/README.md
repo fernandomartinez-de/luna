@@ -17,6 +17,7 @@ Everything that explains the repo. If you're looking for the site itself, go to 
 | [assets/architecture.html](assets/architecture.html) | The full system diagram — outside services, GitHub Actions, Supabase, the two dashboards, and Fernando |
 | [assets/docs-map.html](assets/docs-map.html) | The picture above — a smaller map of this folder itself |
 | [assets/luna-build.html](assets/luna-build.html) | How the Luna React source becomes the live site (embedded in `luna/README.md`) |
+| [assets/workflows-tables.html](assets/workflows-tables.html) | Which scheduled workflow writes which Supabase table group (embedded in root `README.md`) |
 
 ## Assets
 
@@ -31,6 +32,7 @@ docs/
     ├── architecture.json / .html / .png   # full system diagram
     ├── docs-map.json    / .html / .png    # this folder's map
     ├── luna-build.json / .html / .png    # Luna source -> built site pipeline
+    ├── workflows-tables.json / .html / .png  # Which workflow writes which table group
     └── luna-logo.svg                     # Luna logo source (PNGs live in luna/app/public/)
 ```
 

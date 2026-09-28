@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Workflows and the tables they touch",
+    "locale": "en",
+    "quality_profile": "standard",
+    "viewBox": [900, 470]
+  },
+  "components": [
+    { "id": "wf-fin",   "type": "backend",  "label": "pull-finances.yml",       "sublabel": "daily 13:00 UTC",     "pos": [30, 30],  "size": [220, 62] },
+    { "id": "wf-inv",   "type": "backend",  "label": "pull-investments.yml",    "sublabel": "weekdays 22:00 UTC",  "pos": [30, 120], "size": [220, 62] },
+    { "id": "wf-whoop", "type": "backend",  "label": "whoop-daily-sync.yml",    "sublabel": "daily 08:00 UTC",     "pos": [30, 210], "size": [220, 62] },
+    { "id": "wf-body",  "type": "backend",  "label": "pull-body.yml",           "sublabel": "daily 14:00 UTC",     "pos": [30, 300], "size": [220, 62] },
+    { "id": "wf-labs",  "type": "backend",  "label": "medical-ingest-labs.yml", "sublabel": "weekly Mon 09:00 UTC","pos": [30, 390], "size": [220, 62] },
+
+    { "id": "tbl-fin",    "type": "database", "label": "Finance",  "sublabel": "6 tables + 5 views", "pos": [340, 60],  "size": [200, 82] },
+    { "id": "tbl-health", "type": "database", "label": "Health",   "sublabel": "6 tables",           "pos": [340, 220], "size": [200, 82] },
+    { "id": "tbl-med",    "type": "database", "label": "Medical",  "sublabel": "2 tables",           "pos": [340, 380], "size": [200, 82] },
+
+    { "id": "tbl-trn",  "type": "database", "label": "Training + Nutrition", "sublabel": "12 tables", "pos": [640, 30],  "size": [230, 82] },
+    { "id": "luna",     "type": "frontend", "label": "Luna",                 "sublabel": "phone app", "pos": [660, 220], "size": [190, 82] }
+  ],
+  "connections": [
+    { "id": "fin-write",   "from": "wf-fin",   "to": "tbl-fin",    "variant": "emphasis" },
+    { "id": "inv-write",   "from": "wf-inv",   "to": "tbl-fin" },
+    { "id": "whoop-write", "from": "wf-whoop", "to": "tbl-health", "variant": "emphasis" },
+    { "id": "body-write",  "from": "wf-body",  "to": "tbl-health" },
+    { "id": "labs-write",  "from": "wf-labs",  "to": "tbl-med",    "variant": "emphasis" },
+
+    { "id": "read-fin",    "from": "tbl-fin",    "to": "luna" },
+    { "id": "read-health", "from": "tbl-health", "to": "luna" },
+    { "id": "read-med",    "from": "tbl-med",    "to": "luna" },
+    { "id": "read-trn",    "from": "tbl-trn",    "to": "luna", "fromSide": "bottom", "toSide": "top" },
+
+    { "id": "luna-write",  "from": "luna", "to": "tbl-trn", "label": "app writes",  "variant": "dashed", "fromSide": "top", "toSide": "bottom", "labelDy": -8 }
+  ],
+  "cards": [
+    { "dot": "cyan",    "title": "Finance",  "items": ["Chase txns, Plaid state, category rules", "stocks + crypto, real estate"] },
+    { "dot": "emerald", "title": "Health",   "items": ["whoop_recovery/cycles/sleep/workouts/body", "body_composition (Renpho)"] },
+    { "dot": "amber",   "title": "Medical",  "items": ["lab_results, inbody_results"] },
+    { "dot": "violet",  "title": "Training + Nutrition", "items": ["exercises + workouts + logged sets", "meal templates + nutrition log + app_config"] }
+  ]
+}

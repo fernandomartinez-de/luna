@@ -1,75 +1,92 @@
 # Personal Dashboard & Automation
 
-Everything I track about my money, my body, and my health, in one place, updated automatically every day.
+One phone app for my money, my body, and my health. Every number I care about, updated automatically every day.
 
-**Live site:** https://fernandomartinez-de.github.io/personal/
+**Live site:** https://fernandomartinez-de.github.io/personal/luna/
 
 ---
 
 ## What this is
 
-I used to check ten different apps to see how I was doing: Chase for spending, Fidelity for retirement, WHOOP for sleep and workouts, Renpho for weight, a folder of PDFs for lab results, Zillow for the condo. Each one had its own login, its own chart, its own way of showing me numbers.
+Five services (Chase, Fidelity, WHOOP, Renpho, my medical Google Drive) push their data on a schedule into one Supabase database. **Luna** — a React app installed on the iPhone home screen — reads it all back and shows me what's changed.
 
-This repo replaces all of that with two things:
-
-1. **One database** that pulls in the data every day, automatically.
-2. **One app on my phone** (plus a couple of printer-friendly web pages) that reads from it.
-
-I don't have to click anything. Small robots grab the latest data from each service on a schedule. When I open the app on my phone, the numbers are already there.
+No manual clicks, no juggling logins. When I open the app in the morning, last night's sleep, this month's spending, and yesterday's lab result are already there.
 
 ---
 
-## The two versions
+## System diagram
 
-**Luna (v2)** — a phone app you install to your home screen. Modern, mobile-first, everything in one place.
-[Open Luna →](https://fernandomartinez-de.github.io/personal/luna/)
+[![Architecture](docs/assets/architecture.png)](docs/assets/architecture.html)
 
-**v1 dashboards (archived)** — plain web pages, one per topic. Print-friendly, good for handing to a doctor.
-[Open v1 →](https://fernandomartinez-de.github.io/personal/V1/)
-
-`fernandomartinez-de.github.io/personal/` auto-redirects to Luna. Both versions read from the same database, so the numbers agree.
+*Click for the interactive version — pan, zoom, dark/light, guided views.*
 
 ---
 
-## How it fits together
+## Workflows and tables
 
-[![Architecture diagram](docs/assets/architecture.png)](docs/assets/architecture.html)
+[![Workflows and the tables they touch](docs/assets/workflows-tables.png)](docs/assets/workflows-tables.html)
 
-*Click the image for the interactive version — pan, zoom, dark/light, guided views.*
+Five scheduled workflows fill four table groups. Luna reads them all. Luna also writes back to the training + nutrition tables when I log a workout or a meal.
 
-In plain words:
+### Automated workflows
 
-- **Left:** outside services I already use — bank, gym, scale, cloud storage, price APIs
-- **Middle:** scheduled jobs on GitHub grab the data and put it in one Supabase database
-- **Right:** the phone app and the static dashboards read from that database. I look at them
+| Workflow | Schedule (UTC) | What it does |
+|----------|----------------|--------------|
+| `pull-finances.yml` | Daily 13:00 | Chase transactions via Plaid → `expense_transactions` |
+| `pull-investments.yml` | Weekdays 22:00 | Fidelity holdings via Plaid → `stocks_crypto_history` |
+| `whoop-daily-sync.yml` | Daily 08:00 | WHOOP wearable → `whoop_*` |
+| `pull-body.yml` | Daily 14:00 | Renpho scale → `body_composition` |
+| `medical-ingest-labs.yml` | Weekly Mon 09:00 | Google Drive lab PDFs → `lab_results`, `inbody_results` (Anthropic LLM extraction) |
+| `medical-clean-drive.yml` | Monthly | Renames Drive PDFs into a canonical layout; no Supabase writes |
+| `build-luna-v2.yml` | On push to `luna/app/**` | Rebuilds the React app and commits the built site to `luna/` |
 
-Two exceptions to the "automated" story:
-- **Live prices** for stocks, crypto, and the condo refresh when I press a button in the app
-- **Redfin** is the one thing without an API — I run a script by hand once a month
+### Supabase tables
+
+One project, `uuvsvtpfcexhqojlrsxy`. Full column-level detail in [docs/tables.md](docs/tables.md).
+
+**Finance** — `expense_transactions`, `plaid_accounts`, `plaid_sync_state`, `category_mapping`, `stocks_crypto_history`, `real_estate_history`
++ views: `vw_category_groups`, `vw_category_mapping`, `vw_dashboard_summary`, `vw_discretionary_summary`, `vw_fixed_costs_summary`
+
+**Health (WHOOP + body)** — `whoop_recovery`, `whoop_cycles`, `whoop_sleep`, `whoop_workouts`, `whoop_body`, `body_composition`
+
+**Medical** — `lab_results`, `inbody_results`
+
+**Nutrition** — `nutrition_log`, `meal_templates`, `meal_plan`
+
+**Training** — `exercises`, `workouts`, `workout_exercises`, `completed_workouts`, `completed_workout_exercises`, `strength_sessions`, `strength_exercises`, `strength_sets`, `strength_ingest_log`, `training_plan`, `running_log`
+
+**Config** — `app_config`
+
+Every table has RLS on. Backend workflows use `SUPABASE_SERVICE_ROLE_KEY` (bypasses RLS). Luna uses `SUPABASE_KEY` (anon) and can only write to a small set of app tables. See [docs/tables.md](docs/tables.md#row-level-security).
 
 ---
 
-## Everyday use
+## Where to look for depth
 
-- **Morning:** open Luna. Recovery + sleep from last night, latest lab, portfolio value (behind a PIN), suggested workout.
-- **Doctor appointment:** open the v1 medical page — labs formatted the way an oncologist expects.
-- **Monthly finance review:** Luna → Finances → discretionary trend + category heatmap.
-- **New lab result:** dropped in Google Drive → auto-ingested on Monday morning → visible in Luna Monday afternoon.
+| Folder | What's there |
+|--------|--------------|
+| [luna/](luna/README.md) | The React app — source in `luna/app/`, built site alongside it |
+| [finances/](finances/README.md) | Plaid syncs (Chase + Fidelity), Zillow fallback, real estate |
+| [health/](health/README.md) | WHOOP, Renpho, medical labs — three independent pipelines |
+| [docs/](docs/README.md) | Documentation index, tables reference, maintainer notes |
 
-## Add to iPhone home screen
+---
 
-Open the [Luna link](https://fernandomartinez-de.github.io/personal/luna/) in Safari → Share → **Add to Home Screen**. The app will show up alongside your other apps with a custom icon.
+## Install on your phone
+
+Open https://fernandomartinez-de.github.io/personal/luna/ in Safari → Share → **Add to Home Screen**. The app installs with the Luna icon and behaves like a native app after that.
 
 Same on Android via Chrome menu → **Add to Home Screen**.
 
 ---
 
-## Is this safe?
+## Is it safe?
 
-The repo is public — anyone can read the code — but:
-- No passwords or API keys are in the code. They're stored as encrypted GitHub Secrets.
-- The Supabase database uses row-level security. Even someone with the app's read-only key can only see what I explicitly exposed.
-- No client or company data. This is my personal setup.
+The repo is public. Nothing sensitive is in it:
+
+- Passwords and API keys live in **GitHub Secrets** (not the code).
+- The Supabase anon key that ships with the app is read-mostly; **row-level security** blocks writes on every table except the ones the app is supposed to write to.
+- No client work or company data here — this is my personal setup.
 
 ---
 
@@ -78,20 +95,10 @@ The repo is public — anyone can read the code — but:
 ```
 personal/
 ├── index.html              # Redirects / to /luna/
-├── 404.html                # SPA fallback for the Luna React app
-├── V1/                     # Archived v1 static dashboards
-├── luna/                  # Luna v2 — source lives in luna/app/, built output at luna/
-├── finances/               # Plaid sync scripts + finance docs
-├── health/
-│   ├── whoop/              # WHOOP sync
-│   ├── body/               # Renpho sync
-│   └── medical/            # Lab ingest + Drive housekeeping
-├── docs/                   # Documentation (see docs/README.md)
+├── 404.html                # SPA fallback for Luna
+├── luna/                   # v2 app — source in luna/app/, built site alongside
+├── finances/               # Plaid + Zillow scripts
+├── health/                 # WHOOP + Renpho + medical labs
+├── docs/                   # Documentation + diagrams
 └── vault/                  # Personal Obsidian notes
 ```
-
-## For maintainers
-
-- **Docs:** [docs/README.md](docs/README.md)
-- **Every Supabase table:** [docs/tables.md](docs/tables.md)
-- **Dev setup, workflows, secrets, RLS notes:** [docs/maintainers.md](docs/maintainers.md)
