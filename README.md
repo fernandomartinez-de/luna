@@ -1,135 +1,221 @@
 # Personal Dashboard & Automation
 
-Automated personal finance, fitness, and health tracking system. All data flows through one Supabase database and deploys to GitHub Pages.
+Everything I track about my money, my body, and my health, in one place, updated automatically every day.
 
-**Live Site:** https://fernandomartinez-de.github.io/personal/
-
----
-
-## 🌐 Dashboards
-
-### v1 (Static HTML)
-- **Landing:** [index.html](https://fernandomartinez-de.github.io/personal/)
-- **Finances:** [finances.html](https://fernandomartinez-de.github.io/personal/finances/finances.html) - Expenses, investments, property
-- **Fitness:** [overload.html](https://fernandomartinez-de.github.io/personal/health/fitness/overload.html) - WHOOP data, training, nutrition
-- **Medical:** [medical.html](https://fernandomartinez-de.github.io/personal/health/medical/medical.html) - Lab results for providers
-
-### v2 (React App - Mobile-Friendly)
-- **Lyftr:** [lyftr/](https://fernandomartinez-de.github.io/personal/lyftr/) - Full-featured app with exercises, workouts, finances, medical
+**Live site:** https://fernandomartinez-de.github.io/personal/
 
 ---
 
-## 🏗️ Architecture
+## What this is
 
-```mermaid
-graph TB
-    subgraph "Data Sources"
-        CHASE[Chase]
-        FIDELITY[Fidelity]
-        WHOOP[WHOOP]
-        RENPHO[Renpho]
-        GDRIVE[Google Drive]
-        PRICES[Finnhub/CoinGecko/Zillow]
-    end
+I used to check ten different apps to see how I was doing: Chase for spending, Fidelity for retirement, WHOOP for sleep and workouts, Renpho for weight, a folder of PDFs for lab results, Zillow for the condo. Each one had its own login, its own chart, its own way of showing me numbers.
 
-    subgraph "GitHub Actions (Automated)"
-        PLAID_C[plaid_sync.py<br/>Daily 13:00 UTC]
-        PLAID_I[plaid_investments_sync.py<br/>Weekdays 22:00 UTC]
-        WHOOP_S[whoop/sync.py<br/>Daily 08:00 UTC]
-        BODY_S[renpho_pull.py<br/>Daily 14:00 UTC]
-        LABS[ingest_labs_gdrive.py<br/>Weekly Mon 09:00 UTC]
-        BUILD_F[build_overload.py<br/>Daily 12:00 UTC]
-        BUILD_M[build_dashboards.py<br/>Weekly Mon 10:00 UTC]
-        BUILD_L[build_lyftr_v2.yml<br/>On push]
-    end
+This repo replaces all of that with two things:
 
-    SUPA[(Supabase<br/>uuvsvtpfcexhqojlrsxy<br/>Single unified database)]
+1. **One database** that pulls in the data every day, automatically.
+2. **One app on my phone** (plus a couple of printer-friendly web pages) that reads from it.
 
-    subgraph "GitHub Pages"
-        V1[v1 Dashboards<br/>index.html (landing)<br/>finances.html<br/>overload.html<br/>medical.html]
-        V2[v2 React App<br/>lyftr/]
-    end
+I don't have to click anything. Every morning a set of small robots grabs the latest data from each service and updates the database. When I open the app on my phone, the numbers are already there.
 
-    CHASE --> PLAID_C
-    FIDELITY --> PLAID_I
-    WHOOP --> WHOOP_S
-    RENPHO --> BODY_S
-    GDRIVE --> LABS
+---
 
-    PLAID_C --> SUPA
-    PLAID_I --> SUPA
-    WHOOP_S --> SUPA
-    BODY_S --> SUPA
-    LABS --> SUPA
+## What you'll see if you open the site
 
-    SUPA --> BUILD_F
-    SUPA --> BUILD_M
-    SUPA --> BUILD_L
-    SUPA --> V1
-    SUPA --> V2
+Go to [fernandomartinez-de.github.io/personal](https://fernandomartinez-de.github.io/personal/) and you get a landing page with links to two versions of the same idea.
 
-    BUILD_F --> V1
-    BUILD_M --> V1
-    BUILD_L --> V2
+**The old version (v1)** — plain web pages, one per topic. Good for printing and sharing with a doctor.
 
-    PRICES -->|Refresh Prices| SUPA
+- [Finances](https://fernandomartinez-de.github.io/personal/finances/finances.html) — spending, investments, property value
+- [Fitness](https://fernandomartinez-de.github.io/personal/health/fitness/overload.html) — WHOOP data, workouts, running
+- [Medical](https://fernandomartinez-de.github.io/personal/health/medical/medical.html) — lab results, ready for oncologist or nutritionist
 
-    style SUPA fill:#f59e0b,color:#000
-    style V1 fill:#3b82f6,color:#fff
-    style V2 fill:#8b5cf6,color:#fff
+**The new version (v2), called Lyftr** — a proper app, built to feel good on a phone.
+
+- [Lyftr](https://fernandomartinez-de.github.io/personal/lyftr/) — everything in one place, with cleaner charts and interactive tabs
+
+Both versions read from the same database, so the numbers agree.
+
+---
+
+## How it all fits together
+
+The interactive diagram below shows the whole system on one screen: where the data comes from, where it goes, and how it reaches the phone.
+
+**[Open the interactive architecture diagram →](docs/assets/architecture.html)**
+
+In plain words:
+
+- On the left: **outside services** I already use (bank, gym, scale, cloud storage).
+- In the middle: **automated jobs** on GitHub grab data from those services on a schedule, and a single **Supabase database** stores it all.
+- On the right: **two dashboards** read from that database. I look at them.
+
+Live prices for stocks, crypto, and the condo aren't on a fixed schedule — I press a button in the app when I want them refreshed.
+
+---
+
+## How the "no clicks" part works
+
+There's a service called **GitHub Actions** that lets you schedule little programs to run on someone else's computer. This repo has nine of them, each doing one small job:
+
+| Job | How often | What it does |
+|----------|----------|---------|
+| Chase transactions | Every morning | Pulls yesterday's spending and categorizes it |
+| Fidelity holdings | Every weekday evening | Pulls the retirement account balance |
+| WHOOP sync | Every morning | Pulls sleep, recovery, and workout data |
+| Renpho scale | Every afternoon | Pulls weight and body composition |
+| Fitness dashboard rebuild | Every day at noon | Re-generates the v1 fitness page |
+| Lyftr app rebuild | When I push code | Rebuilds the phone app |
+| Lab ingestion | Every Monday morning | Reads new lab PDFs, extracts the numbers |
+| Medical dashboard rebuild | Every Monday morning | Re-generates the printable medical pages |
+| Drive cleanup | 1st of each month | Cleans out old temporary files |
+
+All of these run automatically. I don't have to do anything.
+
+---
+
+## Why one database and not many
+
+Every piece of data — a workout, a grocery charge, a cholesterol reading — ends up in the same Postgres database on Supabase.
+
+The advantage is that everything can be joined together. I can ask "did my HRV drop the week I ate out three times?" because both the WHOOP data and the restaurant charges are in the same place.
+
+The full list of tables and what each one is for is in [Appendix: Tables](#appendix-tables) at the bottom, if you're curious.
+
+---
+
+## Everyday use
+
+**Morning:** open Lyftr on my phone. It's pinned to the home screen and looks like a normal app. I see:
+- Recovery score and sleep from last night
+- Any new lab result that came in
+- Portfolio value (if I unlock it with a PIN)
+- Today's suggested workout
+
+**When labs come back:** they land in Google Drive as PDFs. Monday morning, the lab-ingestion job reads them, extracts the numbers, and drops them into the database. By the time I look Monday afternoon, the trend chart already includes the new reading.
+
+**Doctor's appointment:** I open the v1 medical page and either print it or share the URL. It's already formatted the way an oncologist expects — panels, reference ranges, trend chart per marker.
+
+**Monthly finance review:** I open Lyftr → Finances. Discretionary spending trend, category heatmap, net remaining chart. If a merchant showed up as "Miscellaneous" I add one line of SQL to the mapping table and it categorizes correctly next time.
+
+---
+
+## Putting the app on your phone
+
+The Lyftr app isn't in the App Store — it's a website designed to work like an app.
+
+**iPhone:** open [the Lyftr link](https://fernandomartinez-de.github.io/personal/lyftr/) in Safari, tap the Share button, then "Add to Home Screen."
+
+**Android:** open the same link in Chrome, tap the menu, then "Add to Home Screen."
+
+That's it. It'll show up alongside your other apps.
+
+---
+
+## Is this safe / private?
+
+The repo is **public**, meaning anyone on the internet can read the code. But:
+
+- No passwords, API keys, or personal secrets are in the code itself. They're stored in a separate encrypted spot on GitHub called "Secrets."
+- The Supabase database uses row-level security, so even someone with the anon key can only read the tables I've marked as safe to expose.
+- No real client work or company data is here. This is my personal setup.
+
+---
+
+# For maintainers
+
+Everything below is the technical stuff. If you're not planning to change the code, you can stop reading here.
+
+## Live URLs
+
+- **Site:** https://fernandomartinez-de.github.io/personal/
+- **Supabase:** https://supabase.com/dashboard/project/uuvsvtpfcexhqojlrsxy
+- **GitHub Actions:** https://github.com/fernandomartinez-de/personal/actions
+- **GitHub Secrets:** https://github.com/fernandomartinez-de/personal/settings/secrets/actions
+- **Plaid Dashboard:** https://dashboard.plaid.com/
+
+## Local development
+
+```powershell
+cd health\fitness\exercise-app
+npm install
+npm run dev        # http://localhost:5173
 ```
 
----
+## One-time setup for finance automation
 
-## 📊 Data Pipeline
+```powershell
+cd finances\scripts
+python plaid_link.py                # Connect Chase
+python plaid_investments_link.py    # Connect Fidelity
+```
 
-**Single Supabase Database:** `uuvsvtpfcexhqojlrsxy`
+## Manual re-sync (rarely needed)
 
-**Finance Tables:**
-- `expense_transactions` - Chase transactions (auto-synced daily)
-- `stocks_crypto_history` - Investment holdings (auto-synced weekdays)
-- `real_estate_history` - Property values (on-demand via Zillow API using Refresh Prices button)
+```powershell
+python finances\scripts\plaid_sync.py                       # Chase transactions
+python finances\scripts\fetch_zillow_property_value.py      # Condo value
+```
 
-**Health Tables:**
-- `whoop_*` - Recovery, sleep, workouts (auto-synced daily)
-- `body_composition` - Renpho scale data (auto-synced daily)
-- `labs` - Medical lab results (auto-synced weekly from Google Drive)
-- `nutrition_log`, `strength_*`, `exercises`, `workouts`, `completed_workouts`
+## GitHub secrets required
 
----
+**Supabase:** `SUPABASE_URL`, `SUPABASE_KEY`
+**Plaid:** `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ACCESS_TOKEN`, `PLAID_FIDELITY_ACCESS_TOKEN`
+**WHOOP:** `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET`, `WHOOP_REFRESH_TOKEN`
+**Renpho:** `RENPHO_EMAIL`, `RENPHO_PASSWORD`
+**APIs:** `FINNHUB_KEY`, `ZILLOW_API_KEY`
+**Google:** `GOOGLE_CREDENTIALS`, `ANTHROPIC_API_KEY`
+**GitHub:** `GH_PAT`
 
-## 🤖 Automated Workflows
+## Repository layout
 
-| Workflow | Schedule | Purpose |
+```
+personal/
+├── index.html              # v1 landing page
+├── finances/               # v1 finances dashboard + Plaid scripts
+├── health/
+│   ├── fitness/
+│   │   ├── overload.html   # v1 fitness dashboard
+│   │   └── exercise-app/   # v2 Lyftr React app source
+│   ├── medical/            # Medical dashboards + lab ingestion
+│   ├── whoop/              # WHOOP sync scripts
+│   └── body/               # Renpho sync scripts
+├── lyftr/                  # v2 built React app (auto-generated)
+├── docs/assets/            # Architecture diagram
+└── vault/                  # Personal Obsidian notes (gitignored)
+```
+
+## GitHub Actions workflows
+
+| Workflow file | Schedule (UTC) | Purpose |
 |----------|----------|---------|
-| `pull-finances.yml` | Daily 13:00 UTC | Chase transactions via Plaid |
-| `pull-investments.yml` | Weekdays 22:00 UTC | Fidelity holdings via Plaid |
-| `whoop-daily-sync.yml` | Daily 08:00 UTC | WHOOP fitness data |
-| `pull-body.yml` | Daily 14:00 UTC | Renpho body composition |
-| `build-fitness.yml` | Daily 12:00 UTC | Rebuild Overload dashboard |
+| `pull-finances.yml` | Daily 13:00 | Chase transactions via Plaid |
+| `pull-investments.yml` | Weekdays 22:00 | Fidelity holdings via Plaid |
+| `whoop-daily-sync.yml` | Daily 08:00 | WHOOP fitness data |
+| `pull-body.yml` | Daily 14:00 | Renpho body composition |
+| `build-fitness.yml` | Daily 12:00 | Rebuild Overload dashboard |
 | `build-lyftr-v2.yml` | On push to exercise-app | Build & deploy React app |
-| `medical-ingest-labs.yml` | Weekly Mon 09:00 UTC | Ingest lab PDFs from Drive |
-| `medical-rebuild-dashboards.yml` | Weekly Mon 10:00 UTC | Rebuild medical dashboards |
-| `medical-clean-drive.yml` | Monthly 1st 00:00 UTC | Clean Google Drive files |
+| `medical-ingest-labs.yml` | Weekly Mon 09:00 | Ingest lab PDFs from Drive |
+| `medical-rebuild-dashboards.yml` | Weekly Mon 10:00 | Rebuild medical dashboards |
+| `medical-clean-drive.yml` | Monthly 1st 00:00 | Clean Google Drive files |
 
 ---
 
-## 🗄️ Supabase Tables
+## Appendix: Tables
 
-Everything lives in a single Supabase project (**`uuvsvtpfcexhqojlrsxy`** – "Personal"). Grouped by domain below; every row is either fed by one of the workflows above or written on demand by the v2 Lyftr app or a manual script.
+Everything lives in a single Supabase project (**`uuvsvtpfcexhqojlrsxy`**, project name "Personal"). Grouped by domain. Every row is fed either by one of the workflows above, or written on demand by the Lyftr app, or seeded by a manual script.
 
 ### Finance
 
 | Table | Purpose | Written by | Read by |
 |-------|---------|------------|---------|
 | `expense_transactions` | Categorized Chase transactions (checking + 2 credit cards) | `pull-finances.yml` (`plaid_sync.py`); manual backfills | v1 `finances.html`, v2 Lyftr Expenses, `vw_dashboard_summary` |
-| `plaid_accounts` | Map of Plaid account IDs → masked account + source label | One-time `finances/scripts/plaid_link.py` | `plaid_sync.py` |
+| `plaid_accounts` | Map of Plaid account IDs to masked account + source label | One-time `finances/scripts/plaid_link.py` | `plaid_sync.py` |
 | `plaid_sync_state` | Plaid `/transactions/sync` cursor per item | `plaid_sync.py` (updated every run) | `plaid_sync.py` |
-| `category_mapping` | Merchant pattern → category rules | Manual SQL inserts | `plaid_sync.py`, `vw_category_mapping` |
+| `category_mapping` | Merchant pattern to category rules | Manual SQL inserts | `plaid_sync.py`, `vw_category_mapping` |
 | `stocks_crypto_history` | Daily snapshot of stocks, crypto, retirement, brokerage holdings | `pull-investments.yml` (`plaid_investments_sync.py`, Fidelity Retirement/Brokerage rows); v2 Lyftr **Refresh Prices** button (Finnhub stocks + CoinGecko crypto) | v1 `finances.html`, v2 Lyftr Investments |
 | `real_estate_history` | Property value + mortgage balance snapshots (Zillow + Redfin) | Manual `fetch_zillow_property_value.py`; v2 Lyftr **Refresh Prices** button (Zillow via RapidAPI) | v1 `finances.html`, v2 Lyftr Investments |
 
-### Health – WHOOP + Body
+### Health — WHOOP + Body
 
 | Table | Purpose | Written by | Read by |
 |-------|---------|------------|---------|
@@ -144,7 +230,7 @@ Everything lives in a single Supabase project (**`uuvsvtpfcexhqojlrsxy`** – "P
 
 | Table | Purpose | Written by | Read by |
 |-------|---------|------------|---------|
-| `lab_results` | Categorized lab values from PDFs (marcador, valor, unidad, ref_min/max, flag, panel) — panel normalized to 11 canonical categories on ingest | `medical-ingest-labs.yml` (`ingest_labs_gdrive.py`, LLM extraction) | v2 Lyftr Oncologist/Nutritionist, `martinez_*_dashboard.html` via `medical-rebuild-dashboards.yml` |
+| `lab_results` | Categorized lab values from PDFs (marcador, valor, unidad, ref_min/max, flag, panel), panel normalized to 11 canonical categories on ingest | `medical-ingest-labs.yml` (`ingest_labs_gdrive.py`, LLM extraction) | v2 Lyftr Oncologist/Nutritionist, `martinez_*_dashboard.html` via `medical-rebuild-dashboards.yml` |
 | `inbody_results` | InBody bioimpedance scan snapshots (peso, mme, masa_grasa, pgc, agua, tmb, angulo_fase, score, grasa_visceral) | `medical-ingest-labs.yml` (parses InBody images in the same Drive folder) | v2 Lyftr Nutritionist (composition ring, scan comparison), medical dashboards |
 
 ### Nutrition
@@ -168,7 +254,7 @@ Everything lives in a single Supabase project (**`uuvsvtpfcexhqojlrsxy`** – "P
 | `strength_exercises` | Legacy strength-training exercise metadata | External import | `build_overload.py` |
 | `strength_sets` | Legacy strength-training per-set records | External import | `build_overload.py` |
 | `strength_ingest_log` | Audit log of strength imports (row counts, timestamps) | External import runs | Diagnostics only |
-| `training_plan` | Weekly training-day plan (`dow` → `training_type` + load) | Manual seed | v2 Lyftr Workouts (Weekly Suggestions), `build_overload.py` |
+| `training_plan` | Weekly training-day plan (`dow` to `training_type` + load) | Manual seed | v2 Lyftr Workouts (Weekly Suggestions), `build_overload.py` |
 | `running_log` | Manual/imported run log (date + distance_km) | Manual | v2 Lyftr Workouts (Weekly Suggestions vs actual), `build_overload.py` |
 
 ### Config
@@ -187,7 +273,7 @@ Everything lives in a single Supabase project (**`uuvsvtpfcexhqojlrsxy`** – "P
 | `vw_discretionary_summary` | Monthly discretionary spend by category (excludes fixed costs) | v1 `finances.html`, v2 Lyftr Expenses (Monthly Discretionary Trend, Top Categories) |
 | `vw_fixed_costs_summary` | Monthly fixed-cost baseline with 12-month averages | v1 `finances.html`, v2 Lyftr Expenses (Income & Expenses list) |
 
-### At a glance – table → workflow map
+### Table-to-workflow map
 
 - **`pull-finances.yml`** writes → `expense_transactions`, `plaid_sync_state`; reads → `plaid_accounts`, `category_mapping`
 - **`pull-investments.yml`** writes → `stocks_crypto_history` (Retirement / Brokerage rows only)
@@ -201,96 +287,8 @@ Everything lives in a single Supabase project (**`uuvsvtpfcexhqojlrsxy`** – "P
 
 Manual writes (no workflow): `plaid_accounts` (one-time link), `category_mapping` (SQL), `exercises` / `meal_templates` / `training_plan` / `running_log` / `app_config` (seed data), `real_estate_history` (Redfin manual script + Zillow via v2 Refresh Prices).
 
----
+## Notes
 
-## 🚀 Quick Start
-
-### Local Development (v2 React App)
-```powershell
-cd health\fitness\exercise-app
-npm install
-npm run dev        # http://localhost:5173
-```
-
-### One-Time Setup (Finance Automation)
-```powershell
-# Connect Chase
-cd finances\scripts
-python plaid_link.py
-
-# Connect Fidelity
-python plaid_investments_link.py
-```
-
-### Manual Sync
-```powershell
-# Sync Chase transactions
-python finances\scripts\plaid_sync.py
-
-# Fetch property value
-python finances\scripts\fetch_zillow_property_value.py
-```
-
----
-
-## 🔑 GitHub Secrets
-
-Required secrets in **Settings → Secrets and variables → Actions:**
-
-**Supabase:** `SUPABASE_URL`, `SUPABASE_KEY`  
-**Plaid:** `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ACCESS_TOKEN`, `PLAID_FIDELITY_ACCESS_TOKEN`  
-**WHOOP:** `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET`, `WHOOP_REFRESH_TOKEN`  
-**Renpho:** `RENPHO_EMAIL`, `RENPHO_PASSWORD`  
-**APIs:** `FINNHUB_KEY`, `ZILLOW_API_KEY`  
-**Google:** `GOOGLE_CREDENTIALS`, `ANTHROPIC_API_KEY`  
-**GitHub:** `GH_PAT`
-
----
-
-## 📱 Mobile Access
-
-The v2 Lyftr app is mobile-friendly and can be added to your home screen:
-
-**iPhone:** Safari → Share → "Add to Home Screen"  
-**Android:** Chrome → Menu → "Add to Home Screen"
-
----
-
-## 📁 Repository Structure
-
-```
-personal/
-├── index.html              # v1 landing page
-├── finances/               # v1 finances dashboard + Plaid scripts
-├── health/
-│   ├── fitness/
-│   │   ├── overload.html   # v1 fitness dashboard
-│   │   └── exercise-app/   # v2 Lyftr React app
-│   ├── medical/            # Medical dashboards + lab ingestion
-│   ├── whoop/              # WHOOP sync scripts
-│   └── body/               # Renpho sync scripts
-├── lyftr/                  # v2 built React app (auto-generated)
-└── vault/                  # Personal notes (gitignored)
-```
-
----
-
-## 🔗 Links
-
-- **Live Site:** https://fernandomartinez-de.github.io/personal/
-- **Supabase:** https://supabase.com/dashboard/project/uuvsvtpfcexhqojlrsxy
-- **GitHub Actions:** https://github.com/fernandomartinez-de/personal/actions
-- **GitHub Secrets:** https://github.com/fernandomartinez-de/personal/settings/secrets/actions
-- **Plaid Dashboard:** https://dashboard.plaid.com/
-
----
-
-## 📝 Notes
-
-- **Security:** This repo is public. All secrets are in GitHub Secrets or gitignored `.env` files.
-- **v2 Auto-Deploy:** Changes to `health/fitness/exercise-app/` automatically rebuild and deploy to `/lyftr/`.
-- **WHOOP Token:** Auto-refreshes daily via `whoop-daily-sync.yml` workflow.
-- **Real Estate Tracking:**
-  - All values (home value, mortgage balance, net equity) read from Supabase `real_estate_history` table
-  - **Zillow data:** Automated via "Refresh Prices" button (fetches via RapidAPI, writes to Supabase)
-  - **Redfin data:** Manual entry into Supabase table
+- **v2 auto-deploy:** any change pushed to `health/fitness/exercise-app/` triggers `build-lyftr-v2.yml`, which builds the React bundle, copies it to `lyftr/`, and commits the build.
+- **WHOOP token:** auto-refreshes daily via `whoop-daily-sync.yml`.
+- **Real estate:** all values (home, mortgage, net equity) live in `real_estate_history`. Zillow auto-refreshes via the app's Refresh Prices button; Redfin is a manual entry (CORS blocks in-browser fetch).

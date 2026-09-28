@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Personal Dashboard & Automation",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "viewBox": [1250, 520],
+    "views": [
+      { "id": "main-flow", "label": "How data reaches the phone", "focus": ["plaid", "whoop", "renpho", "gdrive", "actions", "supabase", "lyftr"], "note": "Sources land in Supabase via scheduled GitHub Actions, then the phone app reads from there." },
+      { "id": "live-refresh", "label": "Live price refresh", "focus": ["prices", "lyftr", "supabase"], "note": "The Refresh Prices button in Lyftr calls Finnhub, CoinGecko, and Zillow directly from the browser and writes back to Supabase." },
+      { "id": "consumer-side", "label": "Where I look at it", "focus": ["v1", "lyftr", "fernando"], "note": "v1 is the static HTML I print or share with providers; Lyftr is the app pinned to my home screen." }
+    ]
+  },
+  "components": [
+    { "id": "plaid",   "type": "external",  "label": "Plaid",           "sublabel": "Chase + Fidelity",             "pos": [30, 30],   "size": [170, 56] },
+    { "id": "whoop",   "type": "external",  "label": "WHOOP",           "sublabel": "recovery + sleep",             "pos": [30, 110],  "size": [170, 56] },
+    { "id": "renpho",  "type": "external",  "label": "Renpho Scale",    "sublabel": "weight + body fat",            "pos": [30, 190],  "size": [170, 56] },
+    { "id": "gdrive",  "type": "external",  "label": "Google Drive",    "sublabel": "lab PDFs",                     "pos": [30, 270],  "size": [170, 56] },
+    { "id": "prices",  "type": "external",  "label": "Live Prices",     "sublabel": "Finnhub + CoinGecko",          "pos": [30, 380],  "size": [170, 56] },
+
+    { "id": "actions", "type": "backend",   "label": "GitHub Actions",  "sublabel": "9 scheduled workflows",        "tag": "cron",         "pos": [270, 160], "size": [190, 130] },
+
+    { "id": "supabase","type": "database",  "label": "Supabase",        "sublabel": "one Postgres database",        "tag": "single hub",   "pos": [540, 190], "size": [190, 92] },
+
+    { "id": "v1",      "type": "frontend",  "label": "v1 Dashboards",   "sublabel": "static HTML pages",            "pos": [810, 80],  "size": [180, 72] },
+    { "id": "lyftr",   "type": "frontend",  "label": "Lyftr (v2 app)",  "sublabel": "React app on phone",           "pos": [810, 300], "size": [180, 72] },
+
+    { "id": "fernando","type": "external",  "label": "Fernando",        "sublabel": "browser + phone",              "pos": [1060, 190], "size": [160, 92] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "GitHub (public repo + Actions + Pages)", "wraps": ["actions", "v1", "lyftr"] }
+  ],
+  "connections": [
+    { "id": "plaid-in",   "from": "plaid",    "to": "actions",  "variant": "emphasis" },
+    { "id": "whoop-in",   "from": "whoop",    "to": "actions" },
+    { "id": "renpho-in",  "from": "renpho",   "to": "actions" },
+    { "id": "gdrive-in",  "from": "gdrive",   "to": "actions" },
+
+    { "id": "write-db",   "from": "actions",  "to": "supabase", "variant": "emphasis" },
+
+    { "id": "build-v1",   "from": "actions",  "to": "v1",       "label": "rebuild HTML",           "variant": "dashed", "labelDy": -47 },
+    { "id": "build-v2",   "from": "actions",  "to": "lyftr",    "label": "build React on push",    "variant": "dashed", "labelDy": 47 },
+
+    { "id": "read-v1",    "from": "supabase", "to": "v1" },
+    { "id": "read-v2",    "from": "supabase", "to": "lyftr",    "label": "read + write" },
+
+    { "id": "live-prices","from": "prices",   "to": "lyftr",    "label": "on-demand refresh",      "variant": "dashed" },
+
+    { "id": "look-v1",    "from": "v1",       "to": "fernando", "label": "print / share" },
+    { "id": "look-v2",    "from": "lyftr",    "to": "fernando", "label": "home screen" }
+  ],
+  "cards": [
+    { "dot": "cyan",    "title": "Data in",       "items": ["Plaid syncs Chase and Fidelity", "WHOOP and Renpho push daily", "Google Drive holds the raw lab PDFs"] },
+    { "dot": "amber",   "title": "Storage",       "items": ["One Supabase Postgres database", "Every workflow writes here", "Both dashboards read from here"] },
+    { "dot": "emerald", "title": "Automation",    "items": ["Nine GitHub Actions on a schedule", "Fetch, categorize, and re-publish", "No clicks needed day to day"] },
+    { "dot": "violet",  "title": "Dashboards",    "items": ["v1 static HTML for medical printouts", "Lyftr React app for daily phone use", "Live prices refresh from the app itself"] }
+  ]
+}
