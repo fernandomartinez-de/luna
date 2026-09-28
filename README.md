@@ -262,10 +262,6 @@ graph TB
         GDRIVE[Google Drive]
     end
 
-    subgraph LYFTR["Lyftr v2 (React + Vite, local)"]
-        REFRESH[Refresh Prices<br/>button]
-    end
-
     subgraph GHA["Scheduled Ingestion (GitHub Actions)"]
         PLAID_CHASE[plaid_sync.py<br/>Daily 13:00 UTC]
         PLAID_INV[plaid_investments_sync.py<br/>Weekdays 22:00 UTC]
@@ -276,19 +272,22 @@ graph TB
 
     SUPA[(Supabase<br/>single project: uuvsvtpfcexhqojlrsxy<br/>Finance + Health tables)]
 
-    subgraph BUILD["Dashboard Builders"]
+    subgraph BUILD["Dashboard Builders (GitHub Actions)"]
         BUILD_FITNESS[build_overload.py<br/>Daily 12:00 UTC]
         BUILD_MEDICAL[build_dashboards.py<br/>Weekly Mon 10:00 UTC]
     end
 
-    subgraph GHP["GitHub Pages (v1 static)"]
+    subgraph V1["v1 Dashboards (GitHub Pages)"]
         DASH_FINANCE[finances.html]
         DASH_FITNESS[overload.html]
         DASH_MEDICAL[medical.html]
         LANDING[index.html]
     end
 
-    LYFTR_APP[exercise-app<br/>Finances / Medical / Workouts]
+    subgraph V2["v2 App (Lyftr - React + Vite, local only)"]
+        LYFTR_APP[exercise-app<br/>Exercises / Workouts / Programs<br/>Weight / Food / Finances / Medical]
+        REFRESH[Refresh Prices<br/>button]
+    end
 
     CHASE --> PLAID_CHASE
     FIDELITY --> PLAID_INV
@@ -302,8 +301,7 @@ graph TB
     BODY_SYNC --> SUPA
     LABS_INGEST --> SUPA
 
-    SUPA --> LYFTR_APP
-    SUPA --> DASH_FINANCE
+    SUPA -->|browser reads| DASH_FINANCE
     SUPA --> BUILD_FITNESS
     SUPA --> BUILD_MEDICAL
 
@@ -314,6 +312,7 @@ graph TB
     DASH_FITNESS --> LANDING
     DASH_MEDICAL --> LANDING
 
+    SUPA -->|browser reads| LYFTR_APP
     REFRESH --> PRICES
     PRICES --> SUPA
 
