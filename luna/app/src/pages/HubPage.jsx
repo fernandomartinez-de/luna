@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import WebThreads from '../components/WebThreads/WebThreads.jsx'
 import CodeSlots from '../components/CodeSlots/CodeSlots.jsx'
+import LunaBurst from '../components/LunaBurst.jsx'
 
 const FINANCES_PIN = '3221'
 
@@ -282,6 +283,19 @@ export default function HubPage() {
             mouseInteraction={false}
             mouseStrength={0.27}
           />
+        </div>
+        <div aria-hidden="true" style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '120px',
+          height: '120px',
+          zIndex: 0,
+          pointerEvents: 'none',
+          opacity: 0.9
+        }}>
+          <LunaBurst size={120} />
         </div>
         <div style={{ position: 'relative', zIndex: 1, padding: '48px 32px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: 'calc(100vh - 160px)' }}>
           <div style={{
