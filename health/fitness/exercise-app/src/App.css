@@ -44,6 +44,19 @@
   background: transparent !important;
 }
 
+/* Compact mode: many tabs (e.g. Fitness has 7). Hide labels, show icons only. */
+.rubber-nav-compact .rubber-segment__item {
+  padding: 0 4px;
+  gap: 0;
+  font-size: 0;
+  line-height: 0;
+  min-width: 0;
+}
+.rubber-nav-compact .rubber-segment__item svg {
+  width: 22px;
+  height: 22px;
+}
+
 /* Convert inline card backgrounds into glass panels when Galaxy is active */
 .galaxy-bg [style*="--surface-raised"],
 .galaxy-bg [style*="surface-raised"] {

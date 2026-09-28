@@ -185,7 +185,7 @@ export default function App() {
           else current = 'home'
         }
         return (
-          <div className="rubber-nav-wrap">
+          <div className={`rubber-nav-wrap${items.length > 5 ? ' rubber-nav-compact' : ''}`}>
             <RubberSegment
               items={items}
               value={current}
