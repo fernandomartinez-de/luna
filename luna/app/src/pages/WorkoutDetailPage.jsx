@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient.js'
 import LogWorkoutModal from '../components/LogWorkoutModal.jsx'
+import ExercisePickerModal from '../components/ExercisePickerModal.jsx'
 
 function getSetArray(we) {
   if (Array.isArray(we.set_details) && we.set_details.length > 0) {
@@ -32,6 +33,7 @@ export default function WorkoutDetailPage() {
   const [saving, setSaving] = useState(false)
   const [draft, setDraft] = useState({ name: '', description: '', rows: [], removedIds: [] })
   const [editError, setEditError] = useState(null)
+  const [showPicker, setShowPicker] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -76,13 +78,18 @@ export default function WorkoutDetailPage() {
     setEditing(true)
   }
 
-  function removeExercise(rowId) {
+  function removeExercise(rowKey) {
     if (!confirm('Remove this exercise from the workout?')) return
-    setDraft((prev) => ({
-      ...prev,
-      rows: prev.rows.filter((r) => r.id !== rowId),
-      removedIds: [...prev.removedIds, rowId]
-    }))
+    setDraft((prev) => {
+      const row = prev.rows.find((r) => (r.id || r._tempId) === rowKey)
+      const isNew = row && row._new
+      return {
+        ...prev,
+        rows: prev.rows.filter((r) => (r.id || r._tempId) !== rowKey),
+        // Only track for deletion if it's a persisted row (has a real id).
+        removedIds: isNew ? prev.removedIds : [...prev.removedIds, rowKey]
+      }
+    })
   }
 
   function cancelEdit() {
@@ -90,22 +97,48 @@ export default function WorkoutDetailPage() {
     setEditError(null)
   }
 
-  function updateSet(rowId, index, field, value) {
+  function addExercisesFromPicker(picked) {
+    // Each `picked` entry is a full exercise row from the modal.
+    setDraft((prev) => {
+      const startOrder = Math.max(
+        0,
+        exercises.length,
+        ...prev.rows.map((r) => r._orderIndex || 0)
+      )
+      const newRows = picked.map((ex, i) => ({
+        _new: true,
+        _tempId: `new-${Date.now()}-${i}`,
+        _exercise: {
+          id: ex.id,
+          name: ex.name,
+          muscle_group: ex.muscle_group,
+          images: ex.images
+        },
+        _orderIndex: startOrder + i + 1,
+        exercise_name: ex.name,
+        setArr: [{ reps: '10', weight: '' }]
+      }))
+      return { ...prev, rows: [...prev.rows, ...newRows] }
+    })
+    setShowPicker(false)
+  }
+
+  function updateSet(rowKey, index, field, value) {
     setDraft((prev) => ({
       ...prev,
       rows: prev.rows.map((r) => {
-        if (r.id !== rowId) return r
+        if ((r.id || r._tempId) !== rowKey) return r
         const nextArr = r.setArr.map((s, i) => (i === index ? { ...s, [field]: value } : s))
         return { ...r, setArr: nextArr }
       })
     }))
   }
 
-  function addSet(rowId) {
+  function addSet(rowKey) {
     setDraft((prev) => ({
       ...prev,
       rows: prev.rows.map((r) => {
-        if (r.id !== rowId) return r
+        if ((r.id || r._tempId) !== rowKey) return r
         const last = r.setArr[r.setArr.length - 1]
         const seed = last ? { reps: last.reps, weight: last.weight } : { reps: '', weight: '' }
         return { ...r, setArr: [...r.setArr, seed] }
@@ -113,10 +146,10 @@ export default function WorkoutDetailPage() {
     }))
   }
 
-  function removeSet(rowId, index) {
+  function removeSet(rowKey, index) {
     setDraft((prev) => ({
       ...prev,
-      rows: prev.rows.map((r) => (r.id !== rowId ? r : { ...r, setArr: r.setArr.filter((_, i) => i !== index) }))
+      rows: prev.rows.map((r) => ((r.id || r._tempId) !== rowKey ? r : { ...r, setArr: r.setArr.filter((_, i) => i !== index) }))
     }))
   }
 
@@ -138,7 +171,9 @@ export default function WorkoutDetailPage() {
         if (dErr) throw dErr
       }
 
-      for (const r of draft.rows) {
+      // Update existing rows (those with a real id)
+      const existingRows = draft.rows.filter((r) => r.id && !r._new)
+      for (const r of existingRows) {
         const cleanSets = r.setArr.map((s) => ({
           reps: s.reps === '' ? null : Number(s.reps),
           weight: s.weight === '' ? null : Number(s.weight)
@@ -154,6 +189,30 @@ export default function WorkoutDetailPage() {
           })
           .eq('id', r.id)
         if (rErr) throw rErr
+      }
+
+      // Insert new rows (added via the Add Exercises picker)
+      const newRows = draft.rows.filter((r) => r._new)
+      if (newRows.length > 0) {
+        const maxExisting = exercises.reduce((m, we) => Math.max(m, we.order_index || 0), 0)
+        const payload = newRows.map((r, i) => {
+          const cleanSets = r.setArr.map((s) => ({
+            reps: s.reps === '' ? null : Number(s.reps),
+            weight: s.weight === '' ? null : Number(s.weight)
+          }))
+          const first = cleanSets[0] || { reps: null, weight: null }
+          return {
+            workout_id: id,
+            exercise_id: r._exercise.id,
+            order_index: maxExisting + i + 1,
+            sets: cleanSets.length || null,
+            reps: first.reps,
+            weight: first.weight,
+            set_details: cleanSets
+          }
+        })
+        const { error: iErr } = await supabase.from('workout_exercises').insert(payload)
+        if (iErr) throw iErr
       }
 
       const { data: w2 } = await supabase.from('workouts').select('*').eq('id', id).single()
@@ -317,6 +376,9 @@ export default function WorkoutDetailPage() {
 
       {exercises.map((we, exIdx) => {
         if (editing && draft.removedIds.includes(we.id)) return null
+        // Also hide if user removed a row that was originally persisted but
+        // then dropped in this edit session.
+        if (editing && !draft.rows.find((r) => r.id === we.id)) return null
         const ex = we.exercises || {}
         const sArr = perExerciseSets[exIdx]
         const setCount = sArr.length
@@ -388,6 +450,78 @@ export default function WorkoutDetailPage() {
           </div>
         )
       })}
+
+      {editing && draft.rows.filter((r) => r._new).map((r) => {
+        const ex = r._exercise || {}
+        const exImg = ex.images ? ex.images[0] : null
+        const rowKey = r._tempId
+        return (
+          <div key={rowKey} style={card}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={thumb(48)}>
+                {exImg ? <img src={exImg} alt="" style={img} onError={(e) => { e.currentTarget.style.display = 'none' }} /> : <span style={{ color: 'var(--tx-muted)' }}>◐</span>}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, color: 'var(--tx-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name || 'Exercise'}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                  {ex.muscle_group && <span style={muscleTag}>{ex.muscle_group}</span>}
+                  <span style={{ fontSize: '11px', color: 'var(--brand-400)', fontWeight: 600 }}>NEW</span>
+                </div>
+              </div>
+            </div>
+            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2px' }}>
+                <button type="button" onClick={() => removeExercise(rowKey)} style={{ border: '1px solid var(--surface-border)', background: 'transparent', color: '#ef4444', borderRadius: '6px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
+                  − Remove exercise
+                </button>
+              </div>
+              {r.setArr.map((s, i) => (
+                <div key={i} style={setRow}>
+                  <span style={{ fontSize: '11px', color: 'var(--tx-muted)', width: '38px', flexShrink: 0 }}>Set {i + 1}</span>
+                  <input type="number" min="0" max="100" placeholder="reps" value={s.reps} onChange={(e) => updateSet(rowKey, i, 'reps', e.target.value)} style={numInput} />
+                  <span style={{ fontSize: '11px', color: 'var(--tx-muted)' }}>×</span>
+                  <input type="number" min="0" step="5" placeholder="lb" value={s.weight} onChange={(e) => updateSet(rowKey, i, 'weight', e.target.value)} style={{ ...numInput, width: '64px' }} />
+                  <span style={{ fontSize: '11px', color: 'var(--tx-muted)', flex: 1 }}>lb</span>
+                  <button type="button" onClick={() => removeSet(rowKey, i)} title="Remove set" style={xSet}>×</button>
+                </div>
+              ))}
+              <button type="button" onClick={() => addSet(rowKey)} style={addSetBtn}>+ Add set</button>
+            </div>
+          </div>
+        )
+      })}
+
+      {editing && (
+        <button
+          type="button"
+          onClick={() => setShowPicker(true)}
+          style={{
+            border: '1px dashed var(--brand-400)',
+            background: 'rgba(0, 184, 217, 0.05)',
+            color: 'var(--brand-400)',
+            borderRadius: '12px',
+            padding: '14px',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            width: '100%'
+          }}
+        >+ Add exercises</button>
+      )}
+
+      {showPicker && (
+        <ExercisePickerModal
+          excludedIds={draft.rows
+            .filter((r) => !r._new)
+            .map((r) => {
+              const we = exercises.find((e) => e.id === r.id)
+              return we && we.exercises ? we.exercises.id : null
+            })
+            .filter(Boolean)}
+          onCancel={() => setShowPicker(false)}
+          onConfirm={addExercisesFromPicker}
+        />
+      )}
 
       {showLog && (
         <LogWorkoutModal
