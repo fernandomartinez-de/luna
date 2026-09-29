@@ -109,7 +109,7 @@ export default function HomePage() {
     if (data && data.length > 0) {
       const formatted = data.reverse().map(d => ({
         date: new Date(d.measured_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        weight: (d.weight_kg * 2.20462).toFixed(1) // Convert kg to lb
+        weight: Number(d.weight_kg).toFixed(1) // kg — Renpho native unit
       }))
       setWeightData(formatted)
     }
@@ -252,8 +252,8 @@ export default function HomePage() {
     }
   }
 
-  const minWeight = weightData.length > 0 ? Math.min(...weightData.map(d => parseFloat(d.weight))) - 0.5 : 173
-  const maxWeight = weightData.length > 0 ? Math.max(...weightData.map(d => parseFloat(d.weight))) + 0.5 : 174
+  const minWeight = weightData.length > 0 ? Math.min(...weightData.map(d => parseFloat(d.weight))) - 0.5 : 68
+  const maxWeight = weightData.length > 0 ? Math.max(...weightData.map(d => parseFloat(d.weight))) + 0.5 : 69
   const weightRange = maxWeight - minWeight
 
   return (
@@ -637,7 +637,7 @@ export default function HomePage() {
             <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--tx-primary)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
               {weightData.length > 0 ? parseFloat(weightData[weightData.length - 1].weight).toFixed(1) : '—'}
             </span>
-            <span style={{ fontSize: '0.85rem', color: 'var(--tx-muted)' }}>lb</span>
+            <span style={{ fontSize: '0.85rem', color: 'var(--tx-muted)' }}>kg</span>
           </div>
           <span style={{ fontSize: '12px', color: 'var(--tx-muted)' }}>
             {weightData.length >= 2 ? (
@@ -646,7 +646,7 @@ export default function HomePage() {
                   const latest = parseFloat(weightData[weightData.length - 1].weight)
                   const oldest = parseFloat(weightData[0].weight)
                   const change = latest - oldest
-                  return change === 0 ? 'no change' : `${change > 0 ? '+' : ''}${change.toFixed(1)} lb`
+                  return change === 0 ? 'no change' : `${change > 0 ? '+' : ''}${change.toFixed(1)} kg`
                 })()}
               </>
             ) : '7d · no data'}
@@ -726,7 +726,7 @@ export default function HomePage() {
               zIndex: 10
             }}>
               <div style={{ fontWeight: 600 }}>{weightData[weightHover].date}</div>
-              <div style={{ color: '#6366f1', fontWeight: 700 }}>Weight: {weightData[weightHover].weight} lb</div>
+              <div style={{ color: '#6366f1', fontWeight: 700 }}>Weight: {weightData[weightHover].weight} kg</div>
             </div>
           )}
         </div>

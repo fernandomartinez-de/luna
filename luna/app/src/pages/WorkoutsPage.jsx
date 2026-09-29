@@ -222,34 +222,9 @@ export default function WorkoutsPage() {
       {view === 'log' && (
         <>
           <section>
-            <p style={label}>Log a workout · assign to a WHOOP session</p>
-            {saved.length === 0 ? (
-              <div className="status-block">Build a workout on the Exercises tab first, then assign it here.</div>
-            ) : sessions.length === 0 ? (
-              <div className="status-block">No unassigned WHOOP sessions. New ones appear here after your watch syncs.</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {sessions.map((s) => (
-                  <div key={s.workout_id} style={{ ...card, display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: strainColor(s.strain), flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--tx-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.sport_name || 'Activity'}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--tx-muted)' }}>{fmtDate(s.start_time)} · strain {Number(s.strain || 0).toFixed(1)}</div>
-                    </div>
-                    <select defaultValue="" disabled={busy === s.workout_id} onChange={(e) => assign(s, e.target.value)} style={{ fontSize: '16px', padding: '6px 8px', borderRadius: '8px', border: '1px solid var(--surface-border)', background: 'var(--surface-base)', color: 'var(--tx-primary)', maxWidth: '48%' }}>
-                      <option value="" disabled>Assign…</option>
-                      {saved.map((w) => (<option key={w.id} value={w.id}>{w.name}</option>))}
-                    </select>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section>
             <p style={label}>Completed · {completed.length}</p>
             {completed.length === 0 ? (
-              <div className="status-block">Nothing logged yet. Assign a saved workout to a WHOOP session above.</div>
+              <div className="status-block">Nothing logged yet. Assign a saved workout to a WHOOP session below.</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {completed.map((c) => {
@@ -286,6 +261,31 @@ export default function WorkoutsPage() {
                     </div>
                   )
                 })}
+              </div>
+            )}
+          </section>
+
+          <section>
+            <p style={label}>Log a workout · assign to a WHOOP session</p>
+            {saved.length === 0 ? (
+              <div className="status-block">Build a workout on the Exercises tab first, then assign it here.</div>
+            ) : sessions.length === 0 ? (
+              <div className="status-block">No unassigned WHOOP sessions. New ones appear here after your watch syncs.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {sessions.map((s) => (
+                  <div key={s.workout_id} style={{ ...card, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: strainColor(s.strain), flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--tx-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.sport_name || 'Activity'}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--tx-muted)' }}>{fmtDate(s.start_time)} · strain {Number(s.strain || 0).toFixed(1)}</div>
+                    </div>
+                    <select defaultValue="" disabled={busy === s.workout_id} onChange={(e) => assign(s, e.target.value)} style={{ fontSize: '16px', padding: '6px 8px', borderRadius: '8px', border: '1px solid var(--surface-border)', background: 'var(--surface-base)', color: 'var(--tx-primary)', maxWidth: '48%' }}>
+                      <option value="" disabled>Assign…</option>
+                      {saved.map((w) => (<option key={w.id} value={w.id}>{w.name}</option>))}
+                    </select>
+                  </div>
+                ))}
               </div>
             )}
           </section>
