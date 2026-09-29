@@ -35,6 +35,7 @@ export default function FoodPage() {
   const [busy, setBusy] = useState(false)
   const [period, setPeriod] = useState('30d')
   const [history, setHistory] = useState([])
+  const [burnedToday, setBurnedToday] = useState(null)
 
   async function loadTemplates() {
     const { data } = await supabase.from('meal_templates').select('*').eq('active', true).order('name', { ascending: true })
@@ -68,8 +69,27 @@ export default function FoodPage() {
     setHistory(Object.values(byDay))
   }
 
+  async function loadBurnedForDate(dateStr) {
+    // Pick the whoop_cycles row whose local date matches dateStr.
+    const start = new Date(dateStr + 'T00:00:00')
+    const end = new Date(start); end.setDate(end.getDate() + 1)
+    const { data, error } = await supabase
+      .from('whoop_cycles')
+      .select('start_time, calories_kcal')
+      .gte('start_time', start.toISOString())
+      .lt('start_time', end.toISOString())
+      .order('start_time', { ascending: false })
+      .limit(1)
+    if (error) { setBurnedToday(null); return }
+    if (data && data.length > 0 && data[0].calories_kcal != null) {
+      setBurnedToday(Math.round(Number(data[0].calories_kcal)))
+    } else {
+      setBurnedToday(null)
+    }
+  }
+
   useEffect(() => { loadTemplates() }, [])
-  useEffect(() => { loadDay() }, [viewDate])
+  useEffect(() => { loadDay(); loadBurnedForDate(viewDate) }, [viewDate])
   useEffect(() => { loadHistory() }, [period])
 
   async function logMeal(mealKey, tpl) {
@@ -145,6 +165,57 @@ export default function FoodPage() {
             </div>
             <button onClick={() => { if (!atToday) setViewDate(shiftDate(viewDate, 1)) }} disabled={atToday} style={{ ...navArrow, opacity: atToday ? 0.3 : 1, cursor: atToday ? 'default' : 'pointer' }}>›</button>
           </div>
+
+          {/* Calorie balance — burned vs eaten */}
+          {(() => {
+            const burned = burnedToday || 0
+            const eaten = Math.round(totals.calories)
+            const delta = burned - eaten
+            const isDeficit = delta > 0
+            const totalMag = Math.max(burned + eaten, 1)
+            const burnedPct = (burned / totalMag) * 100
+            const eatenPct = (eaten / totalMag) * 100
+            const deltaColor = isDeficit ? '#22c55e' : (delta === 0 ? 'var(--tx-secondary)' : '#f59e0b')
+            const label = burnedToday == null && eaten === 0
+              ? 'No data yet today'
+              : delta === 0 ? 'Balanced' : (isDeficit ? 'deficit' : 'surplus')
+            return (
+              <div style={{ ...card, padding: '20px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1rem' }}>🔥</span>
+                    <div>
+                      <div style={{ fontSize: '9px', color: 'var(--tx-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Burned</div>
+                      <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#22c55e', lineHeight: 1 }}>{burnedToday != null ? burned.toLocaleString() : '—'}</div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'center', padding: '0 8px' }}>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 700, color: deltaColor, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                      {burnedToday == null && eaten === 0 ? '—' : (delta === 0 ? '0' : `${delta > 0 ? '−' : '+'}${Math.abs(delta).toLocaleString()}`)}
+                    </div>
+                    <div style={{ fontSize: '10px', color: 'var(--tx-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '3px', fontWeight: 600 }}>{label}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '9px', color: 'var(--tx-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Eaten</div>
+                      <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#f59e0b', lineHeight: 1 }}>{eaten.toLocaleString()}</div>
+                    </div>
+                    <span style={{ fontSize: '1rem' }}>🍽️</span>
+                  </div>
+                </div>
+                {/* Split bar */}
+                <div style={{ position: 'relative', height: '10px', background: 'var(--surface-muted)', borderRadius: '5px', overflow: 'hidden', display: 'flex' }}>
+                  <div style={{ width: `${burnedPct}%`, background: 'linear-gradient(90deg, #16a34a, #22c55e)', transition: 'width 0.4s ease' }} />
+                  <div style={{ width: `${eatenPct}%`, background: 'linear-gradient(90deg, #f59e0b, #d97706)', transition: 'width 0.4s ease' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--tx-muted)', marginTop: '6px' }}>
+                  <span>{burnedPct.toFixed(0)}%</span>
+                  <span>kcal balance</span>
+                  <span>{eatenPct.toFixed(0)}%</span>
+                </div>
+              </div>
+            )
+          })()}
 
           <div style={{ ...card, padding: '20px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
