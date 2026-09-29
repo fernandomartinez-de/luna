@@ -34,7 +34,7 @@ Five scheduled workflows fill four table groups. Luna reads them all. Luna also 
 |----------|----------------|--------------|
 | `pull-finances.yml` | Daily 13:00 | Chase transactions via Plaid → `expense_transactions` |
 | `pull-investments.yml` | Weekdays 22:00 | Fidelity holdings via Plaid → `stocks_crypto_history` |
-| `whoop-daily-sync.yml` | Daily 08:00 | WHOOP wearable → `whoop_*` |
+| `whoop-daily-sync.yml` | 5x/day (02, 13, 16, 19, 22 UTC ≈ ET 9a/12p/3p/6p/10p) | WHOOP wearable → `whoop_*` |
 | `pull-body.yml` | Daily 14:00 | Renpho scale → `body_composition` |
 | `medical-ingest-labs.yml` | Weekly Mon 09:00 | Google Drive lab PDFs → `lab_results`, `inbody_results` (Anthropic LLM extraction) |
 | `medical-clean-drive.yml` | Monthly | Renames Drive PDFs into a canonical layout; no Supabase writes |

@@ -13,7 +13,7 @@
     { "id": "gdrive",    "type": "external", "label": "Google Drive",  "sublabel": "lab PDFs + InBody images",        "pos": [30, 300], "size": [170, 62] },
     { "id": "claude",    "type": "external", "label": "Anthropic",     "sublabel": "Claude API (LLM extraction)",     "pos": [30, 470], "size": [170, 62] },
 
-    { "id": "whoop-sync",  "type": "backend", "label": "whoop/sync.py",                  "sublabel": "daily 08:00 UTC",       "pos": [260, 40],  "size": [220, 62] },
+    { "id": "whoop-sync",  "type": "backend", "label": "whoop/sync.py",                  "sublabel": "5x/day (ET 9a/12p/3p/6p/10p)", "pos": [260, 40],  "size": [220, 62] },
     { "id": "renpho-sync", "type": "backend", "label": "body/renpho_pull.py",            "sublabel": "daily 14:00 UTC",       "pos": [260, 150], "size": [220, 62] },
     { "id": "drive-clean", "type": "backend", "label": "medical/clean_medical_drive.py", "sublabel": "monthly, renames PDFs", "pos": [260, 260], "size": [240, 62] },
     { "id": "labs-ingest", "type": "backend", "label": "medical/ingest_labs_gdrive.py",  "sublabel": "weekly Mon 09:00 UTC",  "pos": [260, 360], "size": [240, 62] },

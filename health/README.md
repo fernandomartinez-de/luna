@@ -36,7 +36,7 @@ health/
 
 | Script | When | Writes |
 |--------|------|--------|
-| `sync.py` | GitHub Actions daily 08:00 UTC (`whoop-daily-sync.yml`) | `whoop_recovery`, `whoop_cycles`, `whoop_sleep`, `whoop_workouts`, `whoop_body`. Also rotates the `WHOOP_REFRESH_TOKEN` secret via `GH_PAT` |
+| `sync.py` | GitHub Actions 5x/day at 02/13/16/19/22 UTC (≈ 9am/12pm/3pm/6pm/10pm ET) (`whoop-daily-sync.yml`) | `whoop_recovery`, `whoop_cycles`, `whoop_sleep`, `whoop_workouts`, `whoop_body`. Also rotates the `WHOOP_REFRESH_TOKEN` secret via `GH_PAT` |
 | `bootstrap.py` | Manual, once, to get the initial refresh token | Prints the tokens; you paste them into GitHub secrets. Not needed once `sync.py` is running because it self-rotates the refresh token |
 
 ### `body/`

@@ -10,7 +10,7 @@
   "components": [
     { "id": "wf-fin",   "type": "backend",  "label": "pull-finances.yml",       "sublabel": "daily 13:00 UTC",     "pos": [30, 30],  "size": [220, 62] },
     { "id": "wf-inv",   "type": "backend",  "label": "pull-investments.yml",    "sublabel": "weekdays 22:00 UTC",  "pos": [30, 120], "size": [220, 62] },
-    { "id": "wf-whoop", "type": "backend",  "label": "whoop-daily-sync.yml",    "sublabel": "daily 08:00 UTC",     "pos": [30, 210], "size": [220, 62] },
+    { "id": "wf-whoop", "type": "backend",  "label": "whoop-daily-sync.yml",    "sublabel": "5x/day (9a/12p/3p/6p/10p ET)", "pos": [30, 210], "size": [220, 62] },
     { "id": "wf-body",  "type": "backend",  "label": "pull-body.yml",           "sublabel": "daily 14:00 UTC",     "pos": [30, 300], "size": [220, 62] },
     { "id": "wf-labs",  "type": "backend",  "label": "medical-ingest-labs.yml", "sublabel": "weekly Mon 09:00 UTC","pos": [30, 390], "size": [220, 62] },
 

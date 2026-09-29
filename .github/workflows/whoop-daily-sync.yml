@@ -1,8 +1,10 @@
-name: Whoop Daily Sync
+name: Whoop Sync
 
 on:
   schedule:
-    - cron: '0 8 * * *'  # Daily at 8 AM UTC
+    # 5x/day at 9am/12pm/3pm/6pm/10pm ET (EDT).
+    # In winter (EST) these shift 1 hour earlier ET — cron is fixed UTC.
+    - cron: '0 2,13,16,19,22 * * *'
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
