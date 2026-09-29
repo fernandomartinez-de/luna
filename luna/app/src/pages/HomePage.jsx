@@ -164,7 +164,7 @@ export default function HomePage() {
     const { data, error } = await supabase
       .from('whoop_workouts')
       .select('start_time, sport_name, strain')
-      .in('sport_name', ['Weightlifting', 'Golf', 'Running', 'Soccer'])
+      .not('sport_name', 'in', '("Walking","Activity")')
       .gte('start_time', startDate.toISOString())
       .lte('start_time', endDate.toISOString())
 
