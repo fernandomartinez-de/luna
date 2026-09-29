@@ -491,23 +491,26 @@ export default function WorkoutDetailPage() {
         )
       })}
 
-      {editing && (
-        <button
-          type="button"
-          onClick={() => setShowPicker(true)}
-          style={{
-            border: '1px dashed var(--brand-400)',
-            background: 'rgba(0, 184, 217, 0.05)',
-            color: 'var(--brand-400)',
-            borderRadius: '12px',
-            padding: '14px',
-            fontSize: '0.95rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            width: '100%'
-          }}
-        >+ Add exercises</button>
-      )}
+      <button
+        type="button"
+        onClick={() => {
+          // If we aren't in edit mode yet, enter it now — the picker only
+          // makes sense while editing.
+          if (!editing) beginEdit()
+          setShowPicker(true)
+        }}
+        style={{
+          border: '1px dashed var(--brand-400)',
+          background: 'rgba(0, 184, 217, 0.05)',
+          color: 'var(--brand-400)',
+          borderRadius: '12px',
+          padding: '14px',
+          fontSize: '0.95rem',
+          fontWeight: 600,
+          cursor: 'pointer',
+          width: '100%'
+        }}
+      >+ Add exercises</button>
 
       {showPicker && (
         <ExercisePickerModal
