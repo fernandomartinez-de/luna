@@ -72,8 +72,9 @@ export default function WorkoutsPage() {
       if (whoopRes.error) throw whoopRes.error
       setSaved(savedRes.data || [])
       setCompleted(completedRes.data || [])
-      const assigned = new Set((completedRes.data || []).map((c) => c.whoop_workout_id).filter(Boolean))
-      setSessions((whoopRes.data || []).filter((s) => !assigned.has(s.workout_id)))
+      // Keep every WHOOP session; the row decides how to render based on
+      // whether a completed_workouts row is attached and what sport it was.
+      setSessions(whoopRes.data || [])
     } catch (err) {
       setError(err.message || String(err))
     } finally {
@@ -219,31 +220,50 @@ export default function WorkoutsPage() {
         </div>
       )}
 
-      {view === 'log' && (
-        <>
+      {view === 'log' && (() => {
+        const completedByWhoopId = {}
+        completed.forEach((c) => {
+          if (c.whoop_workout_id) completedByWhoopId[c.whoop_workout_id] = c
+        })
+        return (
           <section>
-            <p style={label}>Completed · {completed.length}</p>
-            {completed.length === 0 ? (
-              <div className="status-block">Nothing logged yet. Assign a saved workout to a WHOOP session below.</div>
+            {sessions.length === 0 ? (
+              <div className="status-block">No WHOOP sessions yet. New ones appear here after your watch syncs.</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {completed.map((c) => {
-                  const exs = c.workouts && c.workouts.workout_exercises ? [...c.workouts.workout_exercises].sort((a, b) => (a.order_index || 0) - (b.order_index || 0)) : []
-                  const open = expanded === c.id
+                {sessions.map((s) => {
+                  const c = completedByWhoopId[s.workout_id]
+                  const isWeightlifting = s.sport_name === 'Weightlifting'
+                  const exs = c && c.workouts && c.workouts.workout_exercises ? [...c.workouts.workout_exercises].sort((a, b) => (a.order_index || 0) - (b.order_index || 0)) : []
+                  const open = c && expanded === c.id
+                  const displayName = c ? (c.workout_name || (c.workouts && c.workouts.name) || s.sport_name) : (s.sport_name || 'Activity')
+
                   return (
-                    <div key={c.id} style={card}>
+                    <div key={s.workout_id} style={card}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: strainColor(s.strain), flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--tx-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.workout_name || (c.workouts && c.workouts.name) || 'Workout'}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--tx-muted)' }}>{fmtDate(c.performed_at)}{c.sport_name ? ` · ${c.sport_name}` : ''}</div>
+                          <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--tx-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--tx-muted)' }}>{fmtDate(s.start_time)}{c && s.sport_name ? ` · ${s.sport_name}` : ''}</div>
                         </div>
-                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: strainColor(c.strain) }}>{c.strain != null ? Number(c.strain).toFixed(1) : '—'}</div>
-                          <div style={{ fontSize: '9px', color: 'var(--tx-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>strain</div>
-                        </div>
-                        <button onClick={() => removeCompleted(c.id)} title="Remove" style={{ border: 'none', background: 'transparent', color: 'var(--tx-muted)', cursor: 'pointer', fontSize: '18px', lineHeight: 1, flexShrink: 0 }}>×</button>
+                        {isWeightlifting && !c && saved.length > 0 ? (
+                          <select defaultValue="" disabled={busy === s.workout_id} onChange={(e) => assign(s, e.target.value)} style={{ fontSize: '16px', padding: '6px 8px', borderRadius: '8px', border: '1px solid var(--surface-border)', background: 'var(--surface-base)', color: 'var(--tx-primary)', maxWidth: '48%' }}>
+                            <option value="" disabled>Assign…</option>
+                            {saved.map((w) => (<option key={w.id} value={w.id}>{w.name}</option>))}
+                          </select>
+                        ) : (
+                          <>
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: strainColor(s.strain) }}>{s.strain != null ? Number(s.strain).toFixed(1) : '—'}</div>
+                              <div style={{ fontSize: '9px', color: 'var(--tx-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>strain</div>
+                            </div>
+                            {c && (
+                              <button onClick={() => removeCompleted(c.id)} title="Unassign workout" style={{ border: 'none', background: 'transparent', color: 'var(--tx-muted)', cursor: 'pointer', fontSize: '18px', lineHeight: 1, flexShrink: 0 }}>×</button>
+                            )}
+                          </>
+                        )}
                       </div>
-                      {exs.length > 0 && (
+                      {c && exs.length > 0 && (
                         <>
                           <button onClick={() => setExpanded(open ? null : c.id)} style={{ marginTop: '8px', border: 'none', background: 'transparent', color: 'var(--brand-400)', cursor: 'pointer', fontSize: '12px', padding: 0 }}>{open ? 'Hide exercises' : `${exs.length} exercise${exs.length !== 1 ? 's' : ''}`}</button>
                           {open && (
@@ -264,33 +284,8 @@ export default function WorkoutsPage() {
               </div>
             )}
           </section>
-
-          <section>
-            <p style={label}>Log a workout · assign to a WHOOP session</p>
-            {saved.length === 0 ? (
-              <div className="status-block">Build a workout on the Exercises tab first, then assign it here.</div>
-            ) : sessions.length === 0 ? (
-              <div className="status-block">No unassigned WHOOP sessions. New ones appear here after your watch syncs.</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {sessions.map((s) => (
-                  <div key={s.workout_id} style={{ ...card, display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: strainColor(s.strain), flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--tx-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.sport_name || 'Activity'}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--tx-muted)' }}>{fmtDate(s.start_time)} · strain {Number(s.strain || 0).toFixed(1)}</div>
-                    </div>
-                    <select defaultValue="" disabled={busy === s.workout_id} onChange={(e) => assign(s, e.target.value)} style={{ fontSize: '16px', padding: '6px 8px', borderRadius: '8px', border: '1px solid var(--surface-border)', background: 'var(--surface-base)', color: 'var(--tx-primary)', maxWidth: '48%' }}>
-                      <option value="" disabled>Assign…</option>
-                      {saved.map((w) => (<option key={w.id} value={w.id}>{w.name}</option>))}
-                    </select>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </>
-      )}
+        )
+      })()}
 
       {view === 'suggest' && (
         !sug ? (
