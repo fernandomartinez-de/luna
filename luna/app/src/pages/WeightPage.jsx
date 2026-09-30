@@ -26,15 +26,15 @@ export default function WeightPage() {
     console.log('Weight data:', data)
 
     if (data && data.length > 0) {
-      // Convert kg to lb and format
+      // Renpho stores kg natively — keep as kg, one decimal.
       const formatted = data.map((entry, index) => {
-        const weightLb = (entry.weight_kg * 2.20462).toFixed(1)
-        const prevWeight = data[index + 1] ? (data[index + 1].weight_kg * 2.20462).toFixed(1) : null
-        const change = prevWeight ? (weightLb - prevWeight).toFixed(1) : null
+        const weightKg = Number(entry.weight_kg).toFixed(1)
+        const prevWeight = data[index + 1] ? Number(data[index + 1].weight_kg).toFixed(1) : null
+        const change = prevWeight ? (weightKg - prevWeight).toFixed(1) : null
 
         return {
           date: new Date(entry.measured_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-          weight: Math.round(weightLb),
+          weight: parseFloat(weightKg),
           change: change ? (change > 0 ? `+${change}` : change) : null
         }
       })
@@ -42,12 +42,11 @@ export default function WeightPage() {
       setWeightHistory(formatted)
       setCurrentWeight(formatted[0].weight)
 
-      // Calculate stats
       const weights = formatted.map(e => parseFloat(e.weight))
       setStats({
         avg: (weights.reduce((a, b) => a + b, 0) / weights.length).toFixed(1),
-        low: Math.min(...weights),
-        high: Math.max(...weights)
+        low: Math.min(...weights).toFixed(1),
+        high: Math.max(...weights).toFixed(1)
       })
     }
   }
@@ -67,7 +66,7 @@ export default function WeightPage() {
       {/* Current Weight Card */}
       <div style={{ backgroundColor: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: '12px', padding: '24px', marginBottom: '16px', textAlign: 'center' }}>
         <p style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tx-muted)', fontWeight: 500, margin: '0 0 8px 0' }}>
-          WEIGHT (LB)
+          WEIGHT (KG)
         </p>
         <p style={{ fontSize: '3rem', fontWeight: 700, color: 'var(--tx-primary)', lineHeight: 1, margin: 0 }}>
           {currentWeight || '—'}
@@ -259,7 +258,7 @@ export default function WeightPage() {
                 </div>
                 <div>
                   <p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--tx-primary)', margin: 0 }}>
-                    {entry.weight} lb
+                    {entry.weight} kg
                   </p>
                   <p style={{ fontSize: '0.75rem', color: 'var(--tx-muted)', margin: '2px 0 0 0' }}>
                     {entry.date}
