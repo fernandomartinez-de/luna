@@ -85,3 +85,7 @@ luna/app/vite/deps/
 luna/app/dist/
 
 .vite/
+
+# Never publish generated medical reports
+**/medical/*.html
+V1/

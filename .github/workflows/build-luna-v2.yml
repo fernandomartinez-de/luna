@@ -44,6 +44,9 @@ jobs:
         run: |
           # Copy dist contents into luna/, but explicitly not into luna/app/.
           # Vite's dist doesn't contain an "app" directory, so cp -r is safe.
+          # Clear previous bundles first so old builds (and anything baked
+          # into them) are never left behind on the published site.
+          rm -rf luna/assets
           cp -r luna/app/dist/* luna/
           # GitHub Pages SPA fallback: any deep-link 404 serves the SPA shell
           # so react-router can take over.
