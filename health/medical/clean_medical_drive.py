@@ -1,6 +1,11 @@
 """
 Medical Drive folder cleaner.
 
+NOTE (2026-10): the day-to-day flow is now medical_inbox.py (upload to
+Medical/IN, run the "Medical - Process Inbox" workflow). This module holds
+the shared classification and date rules it uses. Running it directly is a
+manual, whole-archive audit; no workflow schedules it anymore.
+
 Sweeps the whole Google Drive "Medical" tree, reads each PDF/image's actual
 content (text layer, or Claude vision for scanned docs), and works out the
 real collection date, category and provider — then renames the file IN
@@ -80,7 +85,7 @@ from openpyxl.utils import get_column_letter
 # ── Config ────────────────────────────────────────────────────────────────────
 GDRIVE_FOLDER_ID = "1_pB5M_-xqWU-jNYykK83fhZiWc5ldrS2"  # Medical/
 SCOPES = ["https://www.googleapis.com/auth/drive"]  # needs write (Editor on the folder)
-MODEL = "claude-sonnet-5"  # claude-sonnet-4-20250514 has been retired — every call 404'd
+MODEL = os.environ.get("MEDICAL_MODEL", "claude-sonnet-5-5")
 
 MAX_IMAGE_BYTES = 10 * 1024 * 1024  # Anthropic's vision API hard limit on base64-decoded image size
 

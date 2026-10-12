@@ -15,7 +15,7 @@ from supabase import create_client, Client
 # ── Config ────────────────────────────────────────────────────────────────────
 GDRIVE_FOLDER_ID = "1_pB5M_-xqWU-jNYykK83fhZiWc5ldrS2"
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
-MODEL = "claude-sonnet-5"  # claude-sonnet-4-20250514 has been retired — every call 404'd
+MODEL = os.environ.get("MEDICAL_MODEL", "claude-sonnet-5-5")
 
 LAB_EXTRACT_PROMPT = """You are a medical lab result parser. Extract ALL numeric lab values from the text below.
 
@@ -418,104 +418,14 @@ def insert_inbody(supabase, data, archivo, proveedor):
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
-    print("Connecting to Supabase...")
-    # Prefer service_role when set (bypasses RLS); fall back to anon.
-    sb_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ["SUPABASE_KEY"]
-    supabase: Client = create_client(os.environ["SUPABASE_URL"], sb_key)
-
-    print("Connecting to Google Drive...")
-    service = get_drive_service()
-
-    processed_labs = get_processed_labs(supabase)
-    processed_inbody = get_processed_inbody(supabase)
-    print(f"  {len(processed_labs)} lab files already processed")
-    print(f"  {len(processed_inbody)} InBody files already processed")
-
-    print("Scanning Google Drive Medical folder...")
-    all_files = list_files_recursive(service, GDRIVE_FOLDER_ID, [
-        "application/pdf",
-        "image/jpeg",
-        "image/png",
-        "image/jpg",
-    ])
-    print(f"  {len(all_files)} files found")
-
-    # Split into labs and InBody
-    new_labs = [
-        f for f in all_files
-        if f["mimeType"] == "application/pdf"
-        and "_labs_" in f["name"]
-        and f["name"] not in processed_labs
-    ]
-    new_inbody = [
-        f for f in all_files
-        if f["mimeType"] in ("image/jpeg", "image/png", "image/jpg")
-        and "inbody" in f["name"].lower()
-        and f["name"] not in processed_inbody
-    ]
-
-    print(f"  {len(new_labs)} new lab PDFs to process")
-    print(f"  {len(new_inbody)} new InBody images to process")
-
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-    total_lab_rows = 0
-    total_inbody = 0
-    skipped_labs = []
-
-    # ── Process labs ──────────────────────────────────────────────────────────
-    for pdf in new_labs:
-        filename = pdf["name"]
-        print(f"\nLab: {filename}")
-        fecha, año, proveedor, estimulada = parse_filename(filename)
-        if fecha is None:
-            print(f"  SKIPPED — filename date unparseable, not inserting "
-                  f"(run clean_medical_drive.py to fix the name, then re-run ingest)")
-            skipped_labs.append(filename)
-            continue
-        print(f"  {fecha} | {proveedor} | estimulada={estimulada}")
-        try:
-            pdf_bytes = download_file(service, pdf["id"])
-        except Exception as e:
-            print(f"  Download failed: {e}"); continue
-        text = extract_text_from_pdf(pdf_bytes)
-        if not text:
-            print(f"  No text extracted — skipping"); continue
-        try:
-            rows = parse_labs_with_claude(text, client)
-        except Exception as e:
-            print(f"  Parse error: {e}"); continue
-        inserted = insert_labs(supabase, fecha, año, proveedor, filename, rows, estimulada)
-        print(f"  {len(rows)} markers found, {inserted} inserted")
-        total_lab_rows += inserted
-
-    # ── Process InBody ────────────────────────────────────────────────────────
-    for img in new_inbody:
-        filename = img["name"]
-        print(f"\nInBody: {filename}")
-        _, _, proveedor, _ = parse_filename(filename)
-        mime = img["mimeType"]
-        if mime == "image/jpg":
-            mime = "image/jpeg"
-        try:
-            img_bytes = download_file(service, img["id"])
-        except Exception as e:
-            print(f"  Download failed: {e}"); continue
-        try:
-            data = parse_inbody_with_claude(img_bytes, mime, client)
-        except Exception as e:
-            print(f"  Parse error: {e}"); continue
-        print(f"  Extracted: peso={data.get('peso')} score={data.get('score')}")
-        inserted = insert_inbody(supabase, data, filename, proveedor)
-        print(f"  {'Inserted' if inserted else 'Already exists or error'}")
-        total_inbody += inserted
-
-    print(f"\n{'='*50}")
-    print(f"DONE — Lab rows inserted: {total_lab_rows} | InBody records inserted: {total_inbody}")
-    if skipped_labs:
-        print(f"SKIPPED {len(skipped_labs)} lab file(s) with an unparseable filename date "
-              f"(not inserted — run clean_medical_drive.py):")
-        for f in skipped_labs:
-            print(f"  - {f}")
+    # Retired: this used to scan the whole Medical tree and load any lab file
+    # whose NAME wasn't in Supabase yet. Renaming archived files made old
+    # results look new, and on 2026-08-30 they were loaded a second time.
+    # Loading now happens only in medical_inbox.py, for files it files from
+    # Medical/IN, tracked by Drive file (appProperties), never by name.
+    # The helpers above are still used by medical_inbox.py.
+    print("ingest_labs_gdrive.py no longer scans Drive. Run medical_inbox.py instead.")
+    sys.exit(2)
 
 if __name__ == "__main__":
     main()

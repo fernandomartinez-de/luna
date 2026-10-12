@@ -1,32 +1,49 @@
-# tracker/
+# Medical inbox and inventory
 
-Holds `master_tracker.xlsx` — a standing inventory of everything in the Google
-Drive "Medical" folder, one tab per year (grouped by each document's real
-resolved date, independent of whatever Drive folder it's actually sitting in
-— the cleaner renames files but no longer moves confidently-resolved ones),
-each row tagged with its category, plus a `Resumen` summary tab and a
-`_REVISAR` tab.
+## How it works
 
-`clean_medical_drive.py` only renames confidently-resolved files in place —
-folder placement (which `{year}/{category}/` folder a file lives in) is a
-human job, and the script trusts a file's current folder as a fallback
-category signal when the document content itself is unclear. If it can't
-confidently work out a file's date and/or category, even after that folder
-fallback, it moves the file into `Medical/_REVISAR` (prefixed `REVISAR_`) for
-a human to sort out by hand and check the folder daily — files inside
-`_REVISAR` are skipped on every subsequent scan, so moving one back out is
-what puts it back in play. Confirmed duplicates (identical content) go into
-`Medical/_REVISAR` too, prefixed `DUP_` instead.
+1. Upload new medical documents (PDFs or photos) to **Google Drive › Medical › IN**.
+   If you already know the category, you can drop them into a subfolder such as
+   `IN/labs` or `IN/radiologia`; that's used as a hint when the document itself
+   is hard to read.
+2. Run **Actions › Medical - Process Inbox** (it also runs daily on its own).
+   Tick "Preview only" to see the plan without changing anything.
+3. Each file is read (PDF text, or Claude vision for scans and photos) and:
+   - **Filed**: renamed `YYYY-MM-DD_{category}_{provider}_{type}.ext` and moved to
+     `Medical/{year}/{category}/` when the date and category are clear.
+   - **_REVISAR**: moved to `Medical/_REVISAR` with a `REVISAR_` prefix when it
+     can't be placed confidently (ambiguous day/month, unknown category,
+     unreadable, unsupported type). The reason is in the file's Drive
+     description (Drive › file › Details). Exact copies of a file already in the
+     archive go there too, prefixed `DUP_`.
+4. Filed lab PDFs and InBody images are loaded into Supabase
+   (`lab_results`, `inbody_results`). If the same results are already stored for
+   that date (a rescan or re-download), they're not loaded twice.
+5. `Medical/master_tracker.xlsx` is rebuilt as a full inventory of every file in
+   the Medical tree: a summary, one sheet with everything, one sheet per year,
+   and sheets for `_REVISAR` and anything still in `IN`.
 
-This file is generated and committed automatically by
-`clean_medical_drive.py` every time it runs — dry run or `--apply` — via the
-`clean-medical-drive.yml` workflow, which now runs fully unattended every
-night at 7am UTC WITH `--apply` (no manual click needed), plus manual runs
-that default to a dry run unless "apply" is checked. Don't hand-edit
-`master_tracker.xlsx`; the next run overwrites it from scratch.
+To fix something in `_REVISAR`, rename or move it yourself, or move it back into
+`IN` (remove the `REVISAR_` prefix) and run the workflow again.
 
-Every run also uploads/updates a loose copy of this same file directly in the
-Medical Drive folder root, next to the year folders — so it's visible from
-Drive itself without needing to go find it in this repo. That copy is purely
-informational; the script never reads it back or treats it as a source of
-truth.
+## Rules
+
+- Nothing is ever deleted.
+- Only files that start in `IN` are renamed or moved. The organized archive is
+  only read (to check for duplicates and build the inventory).
+- Supabase loading only happens for files this pipeline filed, tracked on the
+  Drive file itself (`appProperties.luna_filed` / `luna_ingested`), never by
+  file name, so renaming archived files can't reload old results. A failed load
+  is retried on the next run and makes the workflow show as failed.
+- Ambiguous day/month dates (both numbers 12 or under) are never guessed unless
+  a second date on the same document or the uploaded file name settles it.
+
+## Code
+
+- `medical_inbox.py`: the pipeline above.
+- `clean_medical_drive.py`: shared classification and date rules (can also be
+  run by hand as a whole-archive audit; no workflow schedules it).
+- `ingest_labs_gdrive.py`: Supabase loaders used by the pipeline. Its old
+  "scan Drive and load by file name" entry point is retired.
+
+The inventory lives only in Drive (it isn't committed here).
