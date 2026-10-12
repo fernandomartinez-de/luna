@@ -29,7 +29,7 @@ This walks through setting up Luna from nothing: your own database, your own app
 
 ### 1. Copy the repo
 
-Fork this repo on GitHub (or create a new repo and push a copy). If you name it something other than `personal`, remember the name; you'll need it in step 4.
+Fork this repo on GitHub (or create a new repo and push a copy). Remember the repo name; it becomes part of the app's address (`https://<your-github-username>.github.io/<repo-name>/`).
 
 ### 2. Create the database
 
@@ -46,8 +46,8 @@ Fork this repo on GitHub (or create a new repo and push a copy). If you name it 
 In Supabase, under **Authentication**:
 
 1. **URL Configuration**
-   * Site URL: `https://<your-github-username>.github.io/<repo-name>/luna/`
-   * Redirect URLs: add `https://<your-github-username>.github.io/<repo-name>/luna/**`
+   * Site URL: `https://<your-github-username>.github.io/<repo-name>/`
+   * Redirect URLs: add `https://<your-github-username>.github.io/<repo-name>/**`
 2. **Sign In / Providers → Email**: make sure Email is enabled and set **Email OTP length** to 6.
 3. **Emails → Magic Link** template: add a line with `Your code: {{ .Token }}` so the email includes a code you can type (needed for the home screen app on iPhone).
 4. Optional but recommended: **Emails → SMTP Settings**. Supabase's built in email only sends a couple of emails per hour. Sending through Gmail removes that limit: host `smtp.gmail.com`, port `465`, your Gmail address as the username, and a [Gmail app password](https://myaccount.google.com/apppasswords) (16 characters, no spaces) as the password.
@@ -56,13 +56,12 @@ Leave **Allow new users to sign up** on for now. You'll turn it off after your f
 
 ### 4. Point the app at your copy
 
-Three small edits:
+Two small edits:
 
 | File | Change |
 |------|--------|
-| `luna/app/vite.config.js` | `base: '/personal/luna/'` → `'/<repo-name>/luna/'` |
-| `luna/app/src/components/AuthGate.jsx` | the default email in `OWNER_EMAIL` → your email |
-| `404.html` | the two `/personal/` paths → `/<repo-name>/` |
+| `app/vite.config.js` | `base: '/luna/'` → `'/<repo-name>/'` |
+| `app/src/components/AuthGate.jsx` | the default email in `OWNER_EMAIL` → your email |
 
 If you'll use money alerts, also change the default `LUNA_URL` near the top of `finances/scripts/finance_alerts.py` to your app's address.
 
@@ -78,9 +77,9 @@ In your repo: **Settings → Secrets and variables → Actions → New repositor
 
 ### 6. Turn on GitHub Pages and build the app
 
-1. **Settings → Pages**: Source **Deploy from a branch**, branch `main`, folder `/ (root)`. Save.
+1. **Settings → Pages**: Source **GitHub Actions**.
 2. **Actions** tab: if GitHub asks, enable workflows for the repo.
-3. Open **Build Luna v2** → **Run workflow**. When it turns green (about 2 minutes), the app is live at `https://<your-github-username>.github.io/<repo-name>/luna/`.
+3. Open **Deploy Luna** → **Run workflow**. When it turns green (about 2 minutes), the app is live at `https://<your-github-username>.github.io/<repo-name>/`.
 
 ### 7. Sign in and install
 
@@ -153,9 +152,9 @@ Each source is independent. Add its secrets, do its one time step, then run its 
 
 - [ ] Database created from `supabase/schema.sql` with your email
 - [ ] Sign in URLs set, OTP length 6, code added to the email template
-- [ ] `vite.config.js`, `AuthGate.jsx`, `404.html` updated for your repo
+- [ ] `vite.config.js` and `AuthGate.jsx` updated for your repo
 - [ ] Three Supabase secrets added
-- [ ] GitHub Pages on, Build Luna v2 green
+- [ ] GitHub Pages on, Deploy Luna green
 - [ ] Signed in, then sign ups turned off
 - [ ] Data sources connected and each workflow run once successfully
 

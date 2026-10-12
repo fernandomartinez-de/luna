@@ -8,15 +8,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Luna" />
-    <link rel="icon" type="image/svg+xml" href="/personal/luna/favicon.svg" />
-    <link rel="apple-touch-icon" href="/personal/luna/apple-touch-icon.png" />
-    <link rel="manifest" href="/personal/luna/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>Luna</title>
     <script>
-      // Restore the URL the visitor originally asked for. The root
-      // /personal/404.html stashes the intended path in sessionStorage
-      // and redirects here; we replace history so react-router sees
-      // the real route on load.
+      // Legacy deep link restore: if an older 404 page stashed the
+      // intended path in sessionStorage, put it back before the router
+      // loads. Today 404.html is a copy of this page, so deep links
+      // load directly and this is a no-op.
       (function () {
         try {
           var target = sessionStorage.getItem('luna:redirect');
@@ -29,10 +29,9 @@
         } catch (e) { /* ignore */ }
       })();
     </script>
-    <script type="module" crossorigin src="/personal/luna/assets/index-D5KNVh10.js"></script>
-    <link rel="stylesheet" crossorigin href="/personal/luna/assets/index-CGp8gRWp.css">
   </head>
   <body>
     <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

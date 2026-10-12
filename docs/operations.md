@@ -8,8 +8,8 @@ How Luna runs day to day, how to do common tasks, and what to do when something 
 
 | What | Where |
 |------|-------|
-| The app | https://fernandomartinez-de.github.io/personal/luna/ |
-| Workflow runs and logs | https://github.com/fernandomartinez-de/personal/actions |
+| The app | https://fernandomartinez-de.github.io/luna/ |
+| Workflow runs and logs | https://github.com/fernandomartinez-de/luna/actions |
 | Database, sign in settings, logs | https://supabase.com/dashboard/project/uuvsvtpfcexhqojlrsxy |
 | Plaid | https://dashboard.plaid.com/ |
 | Secrets | GitHub repo → Settings → Secrets and variables → Actions |
@@ -27,7 +27,7 @@ All workflows can also be started by hand: **Actions** tab → pick the workflow
 | Pull Body Composition (Renpho) | Daily ~10:00 AM | Scale readings | `body_composition` |
 | Whoop Sync | ~9 AM, 12 PM, 3 PM, 6 PM, 10 PM | Recovery, sleep, strain, workouts | `whoop_*` tables |
 | Medical - Process Inbox | Daily ~8:15 AM | New files in Drive `Medical/IN` | `lab_results`, `inbody_results` |
-| Build Luna v2 | Every push that changes `luna/app/` | Rebuilds and publishes the app | the built files in `luna/` |
+| Deploy Luna | Every push that changes `app/` | Builds the app and publishes it to GitHub Pages | nothing in the repo |
 
 Times shift by an hour in winter because the schedules are set in UTC.
 
@@ -56,17 +56,17 @@ Times shift by an hour in winter because the schedules are set in UTC.
 
 ### Change the app
 
-Edit files in `luna/app/` and push to `main`. The build workflow publishes the new version in about 2 minutes. Never edit the built files directly in `luna/` (outside `app/`); the next build overwrites them.
+Edit files in `app/` and push to `main`. The Deploy Luna workflow publishes the new version in about 2 minutes.
 
 To work locally:
 
 ```
-cd luna/app
+cd app
 npm install
 npm run dev      # opens http://localhost:5173
 ```
 
-You'll need `luna/app/.env.local` with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (see `.env.example`), and you'll sign in with the same email code as on the phone.
+You'll need `app/.env.local` with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (see `.env.example`), and you'll sign in with the same email code as on the phone.
 
 ### Add a new table
 
@@ -121,4 +121,4 @@ Open the app, enter the quick code, then sign in with the emailed code. Each dev
 - **Never commit secrets.** Keys go in GitHub Secrets or a local `.env`, both kept out of git.
 - **Never commit personal notes or numbers.** Personal notes belong in the private `vault` repo, not here (`vault/` is gitignored).
 - **Never commit medical reports or data exports.** Generated medical HTML, CSVs, PDFs and spreadsheets are blocked by `.gitignore`.
-- **Edit the app in `luna/app/` only.** The build owns everything else in `luna/`.
+- **Build output is never committed.** The deploy workflow builds `app/` and publishes it directly.
