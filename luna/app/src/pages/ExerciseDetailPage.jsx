@@ -32,15 +32,31 @@ export default function ExerciseDetailPage() {
 
     async function loadWorkoutData(exerciseId) {
       try {
-        // Fetch workout logs
-        const { data: logs, error: logsError } = await supabase
-          .from('workout_logs')
-          .select('*')
+        // Every set logged for this exercise, from the Log Workout screen.
+        // Each completed exercise stores its sets as [{ reps, weight }, ...];
+        // the date comes from the parent completed workout.
+        const { data: rows, error: logsError } = await supabase
+          .from('completed_workout_exercises')
+          .select('id, set_details, completed_workouts(performed_at)')
           .eq('exercise_id', exerciseId)
-          .order('logged_at', { ascending: false })
 
         if (logsError) throw logsError
-        if (!cancelled) setWorkoutLogs(logs || [])
+
+        const logs = (rows || [])
+          .flatMap((row) => {
+            const loggedAt = row.completed_workouts?.performed_at
+            const sets = Array.isArray(row.set_details) ? row.set_details : []
+            return sets.map((s, i) => ({
+              id: `${row.id}-${i}`,
+              weight: Number(s.weight),
+              reps: Number(s.reps),
+              logged_at: loggedAt
+            }))
+          })
+          .filter((l) => l.logged_at && l.weight > 0 && l.reps > 0)
+          .sort((a, b) => new Date(b.logged_at) - new Date(a.logged_at))
+
+        if (!cancelled) setWorkoutLogs(logs)
 
         // Calculate personal record (best estimated 1RM)
         if (logs && logs.length > 0) {

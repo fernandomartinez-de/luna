@@ -56,20 +56,33 @@ export default function LogWorkoutModal({ workout, exercises, onClose, onLogged 
       const dayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
       const { data: whoopMatch } = await supabase
         .from('whoop_workouts')
-        .select('workout_id, strain, calories_kcal')
+        .select('workout_id, strain, calories_kcal, start_time')
         .eq('sport_name', 'Weightlifting')
         .gte('start_time', dayStart.toISOString())
         .lte('start_time', dayEnd.toISOString())
         .order('start_time', { ascending: false })
         .limit(1)
 
-      const linked = whoopMatch && whoopMatch[0] ? whoopMatch[0] : null
+      let linked = whoopMatch && whoopMatch[0] ? whoopMatch[0] : null
+
+      // A WHOOP session can only be linked to one logged workout. If it was
+      // already assigned (e.g. from the Workouts page), log without the link.
+      if (linked) {
+        const { data: taken } = await supabase
+          .from('completed_workouts')
+          .select('id')
+          .eq('whoop_workout_id', linked.workout_id)
+          .limit(1)
+        if (taken && taken.length > 0) linked = null
+      }
 
       const { data: cw, error: cwErr } = await supabase
         .from('completed_workouts')
         .insert({
           workout_id: workout.id,
+          workout_name: workout.name,
           sport_name: workout.name,
+          performed_at: linked && linked.start_time ? linked.start_time : now.toISOString(),
           notes: notes || null,
           whoop_workout_id: linked ? linked.workout_id : null,
           strain: linked ? linked.strain : null,
