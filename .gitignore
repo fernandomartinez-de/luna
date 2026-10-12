@@ -89,3 +89,6 @@ luna/app/dist/
 # Never publish generated medical reports
 **/medical/*.html
 V1/
+
+# Personal notes live in the private vault repo
+vault/

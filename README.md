@@ -79,7 +79,6 @@ personal/
 ├── health/         Scripts that pull WHOOP, Renpho and lab result data.
 ├── supabase/       schema.sql: recreates the whole database in one step.
 ├── docs/           Setup guide, operations guide, database reference.
-├── vault/          My personal notes (Obsidian). Not used by the app.
 ├── .github/        The scheduled and build workflows.
 ├── index.html      Sends visitors from /personal/ to the app.
 └── 404.html        Lets links deep inside the app work on GitHub Pages.
@@ -94,4 +93,4 @@ The repo is public, so everything here is designed to be safe to read:
 - **No passwords or keys in the code.** They live in GitHub Secrets and local `.env` files that are never committed.
 - **The app requires a real sign in.** Supabase emails a one time code to my address. The 4 digit code on open is only a quick lock screen.
 - **The database only answers my account.** Every table allows reads and writes only for my signed in email. The public key built into the app gets nothing on its own. The sync workflows use a private service key kept in GitHub Secrets.
-- **Personal numbers are masked.** Notes in `vault/` show only the last few characters of any ID or account number. Full values live in my private Google Drive.
+- **No personal notes here.** My notes live in a separate private repo; nothing personal beyond the app's code is published.

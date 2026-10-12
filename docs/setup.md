@@ -31,8 +31,6 @@ This walks through setting up Luna from nothing: your own database, your own app
 
 Fork this repo on GitHub (or create a new repo and push a copy). If you name it something other than `personal`, remember the name; you'll need it in step 4.
 
-Delete the `vault/` folder. It holds my personal notes and isn't used by the app.
-
 ### 2. Create the database
 
 1. In Supabase, create a new project. Save the database password somewhere safe.

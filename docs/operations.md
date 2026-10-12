@@ -119,6 +119,6 @@ Open the app, enter the quick code, then sign in with the emailed code. Each dev
 ## Rules for this repo
 
 - **Never commit secrets.** Keys go in GitHub Secrets or a local `.env`, both kept out of git.
-- **Never commit full personal numbers.** In `vault/` notes, mask ID, account, policy and member numbers to the last 4 characters. Full values belong only in the private Drive vault.
+- **Never commit personal notes or numbers.** Personal notes belong in the private `vault` repo, not here (`vault/` is gitignored).
 - **Never commit medical reports or data exports.** Generated medical HTML, CSVs, PDFs and spreadsheets are blocked by `.gitignore`.
 - **Edit the app in `luna/app/` only.** The build owns everything else in `luna/`.
