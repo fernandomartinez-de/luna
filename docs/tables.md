@@ -70,9 +70,12 @@ Everything lives in one Supabase project (**`uuvsvtpfcexhqojlrsxy`**, "Personal"
 
 ## Row-level security
 
-Every table has RLS on. Two roles matter:
+Every table has RLS on with a single `owner_only` policy (set by `luna/app/supabase/security_2_owner_only_lockdown.sql`). Three roles matter:
 
-- **`anon`** — used by the Luna frontend. Read-most, write only where an "anon write" policy exists (`completed_workouts`, `completed_workout_exercises`, `workouts`, `workout_exercises`, `nutrition_log`, `real_estate_history`, `stocks_crypto_history`).
+- **`authenticated`** (my signed in Luna session) — full read and write on every table, but only when the session email is `fernandopv2655@gmail.com`.
+- **`anon`** (the public key in the app bundle) — no table access at all. Views run as `security_invoker`, so they follow the same rule.
 - **`service_role`** — used by every backend workflow. Bypasses RLS entirely. Never sent to the browser. Stored as GitHub secret `SUPABASE_SERVICE_ROLE_KEY`.
+
+**Adding a table:** enable RLS and add the same `owner_only` policy (the statement is in [maintainers.md](maintainers.md)), or Luna will get empty results.
 
 If a new backend script gets "new row violates row-level security policy" it's missing the service_role key. See [maintainers.md](maintainers.md#secrets).

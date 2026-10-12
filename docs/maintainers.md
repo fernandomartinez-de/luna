@@ -48,7 +48,7 @@ Set in **Settings → Secrets and variables → Actions**:
 | Secret | Who uses it |
 |--------|------------|
 | `SUPABASE_URL` | All backend scripts + build |
-| `SUPABASE_KEY` | Frontend build (anon key baked into JS bundle) |
+| `SUPABASE_KEY` | Frontend build (public anon key baked into JS bundle; useless without my signed in session, see Row-level security) |
 | `SUPABASE_SERVICE_ROLE_KEY` | All backend scripts (bypasses RLS). **Never expose to frontend.** |
 | `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ACCESS_TOKEN`, `PLAID_FIDELITY_ACCESS_TOKEN` | Plaid syncs |
 | `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET`, `WHOOP_REFRESH_TOKEN` | WHOOP sync |
@@ -87,4 +87,9 @@ env:
 - **WHOOP token** auto-refreshes daily via `whoop-daily-sync.yml`.
 - **Real estate:** Zillow refreshes via the app's Refresh Prices button; Redfin is manual (CORS blocks in-browser fetch), run `finances/scripts/fetch_redfin_property_value.py` monthly.
 - **SPA fallback.** GitHub Pages serves `/404.html` from repo root for any missing URL under `/personal/`. It redirects Luna paths back into the app shell; other 404s (v1 typos) show a small "Back to hub" page.
-- **v1 is archived.** Everything under `V1/` is frozen. If you need to revive the Overload dashboard rebuild, `build-fitness.yml` and `medical-rebuild-dashboards.yml` are recoverable from git history.
+- **v1 is removed.** `V1/` was deleted in Oct 2026 (the code is still in git history, except the medical report pages, which were purged).
+- **Sign in.** Luna uses Supabase Auth (email one time code). Settings live in Supabase → Authentication: Site URL and redirect `https://fernandomartinez-de.github.io/personal/luna/**`, custom SMTP through Gmail, sign ups turned off. Only `fernandopv2655@gmail.com` is allowed (`luna/app/src/components/AuthGate.jsx` and the database policy both check it).
+- **Database lockdown.** `luna/app/supabase/security_2_owner_only_lockdown.sql` gives every table one `owner_only` policy. **A new table needs the same policy**, or Luna can't see it:
+  `create policy owner_only on public.<table> for all to authenticated using ((select auth.jwt() ->> 'email') = 'fernandopv2655@gmail.com') with check ((select auth.jwt() ->> 'email') = 'fernandopv2655@gmail.com');`
+- **Vault redaction.** Never commit full ID, account, policy or member numbers, family phones or emails. Mask to the last 4 characters; the full values belong only in the private Drive vault.
+- **Build hygiene.** `build-luna-v2.yml` deletes `luna/assets/` before copying the new build, so old bundles never linger on the site.

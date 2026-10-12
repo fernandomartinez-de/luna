@@ -85,7 +85,10 @@ Same on Android via Chrome menu → **Add to Home Screen**.
 The repo is public. Nothing sensitive is in it:
 
 - Passwords and API keys live in **GitHub Secrets** (not the code).
-- The Supabase anon key that ships with the app is read-mostly; **row-level security** blocks writes on every table except the ones the app is supposed to write to.
+- **Luna requires a real sign in.** Supabase Auth emails a one time code (or link) to my address, once per device. The 4 digit code on open is only a quick unlock screen, not security.
+- **The database only answers my signed in account.** Every table has a single `owner_only` row level security policy; the public key built into the app can't read or write anything on its own. Backend workflows use the service role key, which stays in GitHub Secrets.
+- **Vault notes are redacted.** ID, account, policy and member numbers, family contact details and my home address are masked to the last few characters (full values live only in my private Google Drive vault). This was also applied to all past commits.
+- **No medical reports or data exports are published.** Generated medical HTML is gitignored, and the build wipes old bundles on every deploy.
 - No client work or company data here — this is my personal setup.
 
 ---

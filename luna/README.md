@@ -29,8 +29,7 @@ luna/
     ├── favicon.svg
     ├── manifest.webmanifest     # PWA manifest
     ├── apple-touch-icon.png     # iOS home-screen icon
-    ├── icon-192.png, icon-512.png
-    └── medical/                 # legacy provider-facing static pages
+    └── icon-192.png, icon-512.png
 ```
 
 ## The rule

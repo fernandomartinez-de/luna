@@ -7,10 +7,11 @@ React 18 + Vite 5 personal dashboard app integrating fitness tracking, nutrition
 **Pages:** Home, Hub, Exercises (list + detail), Workouts (list + detail), Programs, Weight, Food, Finances (Expenses + Investments tabs), Medical (Oncologist + Nutritionist views).
 
 **Notable features:**
-- Finances → Investments has a manual **Refresh Prices** button that writes a fresh snapshot to `stocks_crypto_history` (Finnhub stocks, CoinGecko crypto, Zillow via RapidAPI for property)
-- Medical page embeds the same provider dashboards as the v1 medical wrapper
+- **Sign in:** `AuthGate` requires a Supabase Auth session (email one time code or link) for `fernandopv2655@gmail.com`, once per device. The 4 digit `AppLock` screen still shows on each open as a quick unlock.
+- Finances → Investments has a **Refresh Prices** button that fetches live prices for display (Finnhub stocks, CoinGecko crypto, Zillow via RapidAPI for property). Stored history comes from the scheduled workflows.
+- Medical page renders Oncologist and Nutritionist views from `lab_results`
 - Exercise detail pages show anatomical muscle diagrams using [`react-body-highlighter`](https://github.com/giavinh79/react-body-highlighter) 2.0.5
-- Reads/writes Supabase via the anon client using `VITE_*` env vars from `.env.local` (gitignored)
+- Reads/writes Supabase as the signed in user (every table is locked to the owner account) using `VITE_*` env vars from `.env.local` (gitignored)
 
 ## Architecture
 
@@ -241,9 +242,8 @@ npm run preview
 - **Refresh Prices button:** Manually fetch live prices from Finnhub (stocks), CoinGecko (crypto), and Zillow (property) and write fresh snapshot to database
 
 **Medical:**
-- Embeds Oncologist dashboard (`martinez_oncologist_dashboard.html`)
-- Embeds Nutritionist dashboard (`martinez_nutritionist_dashboard.html`)
-- Both read from `labs` table (auto-synced weekly from Google Drive PDFs)
+- Oncologist and Nutritionist views (`src/pages/medical/`)
+- Both read from `lab_results` (auto-synced weekly from Google Drive PDFs)
 
 **Weight:**
 - Body composition tracking from `body_composition` (auto-synced daily from Renpho scale)
@@ -279,19 +279,21 @@ luna/app/
 ├── vite.config.js
 ├── .env.local                    # Gitignored (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
 ├── .env.example
-├── public/
-│   └── medical/                  # Embedded medical dashboards
-│       ├── martinez_oncologist_dashboard.html
-│       └── martinez_nutritionist_dashboard.html
+├── public/                       # Icons and PWA manifest
 ├── supabase/
 │   ├── create_workouts.sql
-│   └── create_workout_logs.sql
+│   ├── create_workout_logs.sql
+│   ├── recategorize_transaction.sql
+│   ├── security_1_safe_hardening.sql     # Removed unused public access (applied)
+│   └── security_2_owner_only_lockdown.sql  # One owner_only policy per table (applied)
 ├── src/
 │   ├── main.jsx
 │   ├── App.jsx / App.css
 │   ├── index.css
 │   ├── supabaseClient.js
 │   ├── components/
+│   │   ├── AppLock.jsx           # Quick 4 digit unlock screen
+│   │   ├── AuthGate.jsx          # Supabase email sign in (real security)
 │   │   ├── BodyDiagram.jsx
 │   │   ├── ExerciseCard.jsx
 │   │   ├── MuscleFilter.jsx
