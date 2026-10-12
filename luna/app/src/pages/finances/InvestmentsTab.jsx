@@ -145,8 +145,16 @@ function deriveFromData(scDataAll, reDataAll, asOfDate, livePrices = null) {
   const retirementRows = scData.filter((r) => r.asset_type === 'Retirement' || r.asset_type === 'Brokerage')
   const latestRetirementDate = retirementRows.length > 0 ? retirementRows[retirementRows.length - 1].snapshot_date : null
 
+  // Stocks and crypto are snapshotted on their own cadence (retirement now
+  // gets a daily row), so use each type's own latest snapshot date rather
+  // than the newest date in the whole table.
+  const latestByType = {}
+  scData.forEach((r) => {
+    if (r.asset_type === 'Stock' || r.asset_type === 'Crypto') latestByType[r.asset_type] = r.snapshot_date
+  })
+
   if (latestSc) {
-    scData.filter((r) => r.snapshot_date === latestSc).forEach((r) => {
+    scData.filter((r) => (r.asset_type === 'Stock' || r.asset_type === 'Crypto') && r.snapshot_date === latestByType[r.asset_type]).forEach((r) => {
       let price = Number(r.price_per_unit) || 0
       let v = Number(r.total_value) || 0
       const qty = Number(r.quantity) || 0
@@ -283,8 +291,25 @@ function deriveFromData(scDataAll, reDataAll, asOfDate, livePrices = null) {
       reFlat[date] = avg + v.other
     }
   })
+  // Snapshots for each asset class land on different dates, so on any given
+  // date carry forward the last known value of every holding (and of real
+  // estate) instead of summing only the rows that happen to share that date.
+  const scGroupDate = {}
+  scData.forEach((r) => {
+    const key = r.asset_type === 'Retirement' || r.asset_type === 'Brokerage' ? 'Retirement' : r.asset_type
+    scGroupDate[r.snapshot_date] = scGroupDate[r.snapshot_date] || {}
+    scGroupDate[r.snapshot_date][key] = (scGroupDate[r.snapshot_date][key] || 0) + (Number(r.total_value) || 0)
+  })
   const allDates = [...new Set([...Object.keys(byDate), ...Object.keys(reFlat)])].sort()
-  const portfolioHistory = allDates.map((d) => ({ date: d, total: (byDate[d] || 0) + (reFlat[d] || 0) })).slice(-12)
+  const lastGroup = {}
+  let lastRe = 0
+  const fullHistory = allDates.map((d) => {
+    if (scGroupDate[d]) Object.assign(lastGroup, scGroupDate[d])
+    if (reFlat[d] != null) lastRe = reFlat[d]
+    const scTotal = Object.values(lastGroup).reduce((a, v) => a + v, 0)
+    return { date: d, total: scTotal + lastRe }
+  })
+  const portfolioHistory = fullHistory.slice(-12)
 
   const condoByDate = {}
   reData.filter((r) => r.asset_name === 'Condo').forEach((r) => {
