@@ -30,9 +30,14 @@ const PANEL_CATEGORIES = [
   { key: 'Other', emoji: '🧪', match: () => true }
 ]
 
+const stripAccents = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '')
+
 function categorizePanel(marker, rawPanel) {
-  const m = (marker || '').toLowerCase().trim()
-  const p = (rawPanel || '').toLowerCase().trim()
+  // The ingest already stores one of the canonical panel names; trust it.
+  const stored = PANEL_CATEGORIES.find((c) => c.key !== 'Other' && c.key.toLowerCase() === (rawPanel || '').toLowerCase().trim())
+  if (stored) return stored
+  const m = stripAccents((marker || '').toLowerCase().trim())
+  const p = stripAccents((rawPanel || '').toLowerCase().trim())
   for (const cat of PANEL_CATEGORIES) {
     if (cat.match(m, p)) return cat
   }
