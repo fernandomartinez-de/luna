@@ -40,13 +40,15 @@ function groupFor(t, groupByCategory) {
   return g
 }
 
-export default function MonthTransactionsModal({ month, onClose }) {
+export default function MonthTransactionsModal({ month, onClose, onChanged }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [txns, setTxns] = useState([])
   const [groupByCategory, setGroupByCategory] = useState({})
   const [view, setView] = useState('discretionary')
   const [query, setQuery] = useState('')
+  const [editing, setEditing] = useState(null)
+  const [toast, setToast] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -56,7 +58,7 @@ export default function MonthTransactionsModal({ month, onClose }) {
       try {
         const [txRes, grpRes] = await Promise.all([
           supabase.from('expense_transactions')
-            .select('id, transaction_date, description, amount, category, source')
+            .select('*') // '*' so this still loads before category_manual exists
             .eq('month', month)
             .order('transaction_date', { ascending: false })
             .limit(5000),
@@ -80,10 +82,60 @@ export default function MonthTransactionsModal({ month, onClose }) {
   }, [month])
 
   useEffect(() => {
-    function onKey(e) { if (e.key === 'Escape') onClose() }
+    function onKey(e) {
+      if (e.key !== 'Escape') return
+      if (editing) setEditing(null)
+      else onClose()
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [onClose, editing])
+
+  useEffect(() => {
+    if (!toast) return
+    const id = setTimeout(() => setToast(null), 3500)
+    return () => clearTimeout(id)
+  }, [toast])
+
+  const categoryOptions = useMemo(() => {
+    const byGroup = {}
+    Object.entries(groupByCategory).forEach(([cat, g]) => {
+      if (!cat || cat === 'null') return
+      byGroup[g] = byGroup[g] || []
+      byGroup[g].push(cat)
+    })
+    Object.values(byGroup).forEach((list) => list.sort((a, b) => a.localeCompare(b)))
+    return ['Discretionary', 'Fixed Costs', 'Excluded']
+      .filter((g) => byGroup[g])
+      .map((g) => ({ group: g, cats: byGroup[g] }))
+  }, [groupByCategory])
+
+  async function saveCategory(txn, category, rememberPattern) {
+    const { data, error: rpcError } = await supabase.rpc('recategorize_transaction', {
+      p_id: txn.id,
+      p_category: category || null,
+      p_remember_pattern: rememberPattern || null
+    })
+    if (rpcError) {
+      if (rpcError.code === 'PGRST202' || /recategorize_transaction/.test(rpcError.message || '')) {
+        throw new Error('Saving categories needs the latest database update. It has not been applied yet.')
+      }
+      throw rpcError
+    }
+    const pat = (rememberPattern || '').trim().toUpperCase()
+    setTxns((prev) => prev.map((t) => {
+      if (t.id === txn.id) return { ...t, category: category || null, category_manual: !!category }
+      if (pat && category && !t.category && String(t.description || '').toUpperCase().includes(pat)) return { ...t, category }
+      return t
+    }))
+    if (category && !groupByCategory[category]) {
+      setGroupByCategory((prev) => ({ ...prev, [category]: 'Discretionary' }))
+    }
+    const extra = data && data.also_applied ? ` and ${data.also_applied} similar` : ''
+    setToast(category ? `Moved to ${category}${extra}` : 'Category cleared')
+    setEditing(null)
+    if (onChanged) onChanged()
+  }
 
   const groups = useMemo(() => {
     const byGroup = {}
@@ -207,15 +259,23 @@ export default function MonthTransactionsModal({ month, onClose }) {
                           const amt = Number(t.amount) || 0
                           const credit = amt > 0
                           return (
-                            <div key={t.id} style={{ display: 'flex', gap: '10px', fontSize: '12px', padding: '4px 0', borderBottom: '1px dashed rgba(148,163,184,0.12)' }}>
+                            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', padding: '4px 0', borderBottom: '1px dashed rgba(148,163,184,0.12)' }}>
                               <span style={{ width: '44px', flexShrink: 0, color: 'var(--tx-muted)', fontVariantNumeric: 'tabular-nums' }}>{dayLabel(t.transaction_date)}</span>
                               <span style={{ flex: 1, color: 'var(--tx-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={t.description}>
                                 {t.description}
                                 {t.source && <span style={{ color: 'var(--tx-muted)', fontSize: '10px', marginLeft: '6px' }}>{t.source}</span>}
+                                {t.category_manual && <span title="Set by you; the bank sync won't change it" style={{ color: 'var(--brand-500)', fontSize: '10px', marginLeft: '6px' }}>edited</span>}
                               </span>
                               <span style={{ color: credit ? '#10b981' : 'var(--tx-primary)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
                                 {credit ? `+${usd(amt)}` : usd(Math.abs(amt))}
                               </span>
+                              <button
+                                type="button"
+                                onClick={() => setEditing(t)}
+                                aria-label={`Change category for ${t.description}`}
+                                title="Change category"
+                                style={{ border: 'none', background: 'transparent', color: 'var(--tx-muted)', cursor: 'pointer', padding: '0 2px', margin: '-4px -4px -4px 0', fontSize: '16px', lineHeight: 1, width: '24px', flexShrink: 0, alignSelf: 'center' }}
+                              >⋯</button>
                             </div>
                           )
                         })}
@@ -257,7 +317,138 @@ export default function MonthTransactionsModal({ month, onClose }) {
           )}
         </div>
       </div>
+      {editing && (
+        <CategorizeSheet
+          txn={editing}
+          options={categoryOptions}
+          onCancel={() => setEditing(null)}
+          onSave={saveCategory}
+        />
+      )}
+      {toast && (
+        <div role="status" style={{ position: 'fixed', left: '50%', bottom: 'calc(var(--sa-bottom, 0px) + 24px)', transform: 'translateX(-50%)', background: 'var(--surface-raised)', border: '1px solid var(--brand-500)', color: 'var(--tx-primary)', fontSize: '13px', padding: '8px 14px', borderRadius: '999px', zIndex: 1200, boxShadow: '0 6px 24px rgba(0,0,0,0.4)' }}>
+          {toast}
+        </div>
+      )}
     </div>,
     document.body
+  )
+}
+
+function defaultPattern(description) {
+  const words = String(description || '')
+    .toUpperCase()
+    .replace(/^(TST\*|SQ \*|CPP\*|SP |GLF\*)\s*/, '')
+    .replace(/[^A-Z&' ]+/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+  return words.slice(0, 3).join(' ')
+}
+
+function CategorizeSheet({ txn, options, onCancel, onSave }) {
+  const [selected, setSelected] = useState(txn.category || '')
+  const [custom, setCustom] = useState('')
+  const [remember, setRemember] = useState(!txn.category)
+  const [pattern, setPattern] = useState(defaultPattern(txn.description))
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState(null)
+
+  const finalCategory = custom.trim() || selected
+  const amt = Number(txn.amount) || 0
+
+  async function submit() {
+    setSaving(true)
+    setErr(null)
+    try {
+      await onSave(txn, finalCategory, remember && finalCategory ? pattern : null)
+    } catch (e) {
+      setErr(e.message || String(e))
+      setSaving(false)
+    }
+  }
+
+  const chipStyle = (active) => ({
+    fontSize: '12px', padding: '6px 10px', borderRadius: '999px', cursor: 'pointer',
+    border: active ? '1px solid var(--brand-500)' : '1px solid var(--surface-border)',
+    background: active ? 'var(--brand-500)' : 'transparent',
+    color: active ? '#fff' : 'var(--tx-secondary)', fontWeight: active ? 600 : 500
+  })
+
+  return (
+    <div
+      onClick={(e) => { e.stopPropagation(); onCancel() }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1100, padding: '0 calc(var(--sa-right, 0px) + 8px) 0 calc(var(--sa-left, 0px) + 8px)' }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-label="Change category"
+        style={{ width: '100%', maxWidth: '520px', maxHeight: '80vh', overflowY: 'auto', backgroundColor: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: '14px 14px 0 0', padding: '16px 16px calc(var(--sa-bottom, 0px) + 16px) 16px' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--tx-muted)', margin: 0 }}>Change category</p>
+            <p style={{ fontSize: '14px', color: 'var(--tx-primary)', fontWeight: 600, margin: '6px 0 2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{txn.description}</p>
+            <p style={{ fontSize: '12px', color: 'var(--tx-muted)', margin: 0 }}>
+              {dayLabel(txn.transaction_date)} · {amt > 0 ? `+${usd(amt)}` : usd(Math.abs(amt))} · now {txn.category || 'uncategorized'}
+            </p>
+          </div>
+          <button onClick={onCancel} aria-label="Close" style={{ border: 'none', background: 'transparent', color: 'var(--tx-muted)', cursor: 'pointer', fontSize: '22px', lineHeight: 1, padding: '0 4px' }}>×</button>
+        </div>
+
+        {options.map((o) => (
+          <div key={o.group} style={{ marginBottom: '12px' }}>
+            <p style={{ fontSize: '11px', color: 'var(--tx-muted)', margin: '0 0 6px 0' }}>{o.group}</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {o.cats.map((c) => (
+                <button key={c} type="button" onClick={() => { setSelected(c); setCustom('') }} style={chipStyle(!custom.trim() && selected === c)}>{c}</button>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        <input
+          type="text"
+          value={custom}
+          onChange={(e) => setCustom(e.target.value)}
+          placeholder="Or type a new category"
+          maxLength={60}
+          style={{ width: '100%', boxSizing: 'border-box', fontSize: '13px', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--surface-border)', background: 'var(--surface-base)', color: 'var(--tx-primary)', marginBottom: '12px' }}
+        />
+
+        <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '12px', color: 'var(--tx-secondary)', marginBottom: remember ? '6px' : '14px', cursor: 'pointer' }}>
+          <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} style={{ marginTop: '2px' }} />
+          <span>Remember this: future transactions containing the text below get this category, and so do uncategorized ones already here.</span>
+        </label>
+        {remember && (
+          <input
+            type="text"
+            value={pattern}
+            onChange={(e) => setPattern(e.target.value.toUpperCase())}
+            aria-label="Text to match"
+            style={{ width: '100%', boxSizing: 'border-box', fontSize: '12px', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--surface-border)', background: 'var(--surface-base)', color: 'var(--tx-primary)', marginBottom: '14px', fontFamily: 'ui-monospace, monospace' }}
+          />
+        )}
+
+        {err && <p style={{ fontSize: '12px', color: '#f87171', margin: '0 0 10px 0' }}>Couldn't save: {err}</p>}
+
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {txn.category && (
+            <button type="button" disabled={saving} onClick={() => onSave(txn, null, null).catch((e) => setErr(e.message || String(e)))}
+              style={{ fontSize: '13px', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--surface-border)', background: 'transparent', color: 'var(--tx-muted)', cursor: 'pointer' }}>
+              Clear
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={submit}
+            disabled={saving || !finalCategory || (remember && pattern.trim().length < 3) || (finalCategory === (txn.category || '') && !remember)}
+            style={{ flex: 1, fontSize: '14px', fontWeight: 700, padding: '10px 12px', borderRadius: '10px', border: 'none', background: 'var(--brand-500)', color: '#fff', cursor: 'pointer', opacity: saving || !finalCategory ? 0.5 : 1 }}
+          >
+            {saving ? 'Saving…' : finalCategory ? `Save as ${finalCategory}` : 'Pick a category'}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }

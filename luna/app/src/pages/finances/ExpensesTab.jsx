@@ -209,8 +209,11 @@ export default function ExpensesTab() {
 
   useEffect(() => { loadAll() }, [])
 
-  async function loadAll() {
-    setLoading(true)
+  // Re-pull card data after a recategorization without the loading spinner.
+  function refreshQuietly() { loadAll(true) }
+
+  async function loadAll(quiet = false) {
+    if (!quiet) setLoading(true)
     setError(null)
     try {
       const lastMonth = lastCompleteMonthKey()
@@ -271,7 +274,7 @@ export default function ExpensesTab() {
       setNetRemainingTrend(trend)
 
       const months = [...new Set((discRes.data || []).map((r) => r.month))].sort()
-      if (months.length > 0) setMonthFilter(months[months.length - 1])
+      if (months.length > 0) setMonthFilter((prev) => (quiet && prev && months.includes(prev) ? prev : months[months.length - 1]))
     } catch (err) {
       setError(err.message || String(err))
     } finally {
@@ -591,7 +594,7 @@ export default function ExpensesTab() {
       </div>
 
       {txnModalOpen && monthFilter && (
-        <MonthTransactionsModal month={monthFilter} onClose={() => setTxnModalOpen(false)} />
+        <MonthTransactionsModal month={monthFilter} onClose={() => setTxnModalOpen(false)} onChanged={refreshQuietly} />
       )}
 
       <div style={card}>
