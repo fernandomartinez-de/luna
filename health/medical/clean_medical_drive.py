@@ -138,6 +138,7 @@ markdown, no explanation:
   "fecha_label": "which label it was next to, e.g. 'Fecha Toma Muestra'",
   "fecha_secundaria_texto": "any OTHER date printed anywhere else on the same document — report date, print date, review date, validation date, whatever else appears — exactly as printed, same no-reorder rule as above. null if there truly isn't a second date anywhere on the page.",
   "fecha_secundaria_label": "which label that second date was next to, e.g. 'Fecha de Reporte'",
+  "fecha_nacimiento_texto": "the patient's birth date exactly as printed (labels like Fecha Nac., F.Nac, Fecha de Nacimiento, DOB), same no-reorder rule. null if not printed.",
   "categoria": one of "labs", "radiologia", "ultrasonidos", "inbody", "patologia", or null if you cannot tell confidently,
   "categoria_confianza": "alta" or "baja",
   "proveedor": a short kebab-case slug for the lab/clinic/hospital that issued the document (use "quest-mx" for Quest Diagnostics Mexico, "quest-usa" for Quest Diagnostics USA, "labcorp" for LabCorp, "hospital-angeles-lomas" for Hospital Angeles Lomas; otherwise invent a short kebab-case slug from the letterhead, e.g. "clinica-san-jose"), or null if you truly cannot tell,
@@ -445,6 +446,25 @@ def numeric_order_hint(text):
     if b > 12 and a <= 12:
         return "MD"
     return None
+
+
+# Slash dates only, not glued to other digits, for scanning whole documents
+# (dots and dashes show up in lab values and ranges far too often).
+_DOC_DATE_RE = re.compile(r"(?<![\d/])(\d{1,2})/(\d{1,2})/(\d{2,4})(?![\d/])")
+
+
+def document_order_hint(text):
+    """'DM' or 'MD' when every slash date in the document that reveals its
+    order agrees (e.g. a birth date 22/12/1997 printed on the same page), else
+    None. Real evidence from the same document, never a guess."""
+    hints = set()
+    for m in _DOC_DATE_RE.finditer(text or ""):
+        a, b = int(m.group(1)), int(m.group(2))
+        if a > 12 and b <= 12:
+            hints.add("DM")
+        elif b > 12 and a <= 12:
+            hints.add("MD")
+    return hints.pop() if len(hints) == 1 else None
 
 
 def both_date_interpretations(fecha_texto):

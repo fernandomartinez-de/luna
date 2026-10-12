@@ -128,11 +128,24 @@ def unique_name(service, folder_id, name, taken):
 
 
 # ── Deciding where a file goes ───────────────────────────────────────────────
-def decide(classification, filename, hint_category=None):
+def date_order_hint(c, doc_text=""):
+    """How this document orders day and month, from evidence on the document
+    itself: a second date, the printed birth date, or any other slash date in
+    its text. Returns (hint or None, where it came from)."""
+    for source, text in (("second date", c.get("fecha_secundaria_texto")),
+                         ("birth date", c.get("fecha_nacimiento_texto"))):
+        h = cmd.numeric_order_hint(text)
+        if h:
+            return h, f"{source} {text!r}"
+    h = cmd.document_order_hint(doc_text)
+    return (h, "other dates in the document") if h else (None, None)
+
+
+def decide(classification, filename, hint_category=None, doc_text=""):
     """Port of clean_medical_drive's per-file rules. Returns dict with either
     {ok: True, fecha, categoria, proveedor, tipo, note} or {ok: False, reason}."""
     c = classification or {}
-    order_hint = cmd.numeric_order_hint(c.get("fecha_secundaria_texto"))
+    order_hint, hint_source = date_order_hint(c, doc_text)
     fecha, date_reason, via_hint = cmd.resolve_date(c.get("fecha_texto"), order_hint)
     categoria = c.get("categoria")
     confianza = c.get("categoria_confianza", "baja")
@@ -156,7 +169,7 @@ def decide(classification, filename, hint_category=None):
             notes.append(f"no collection date on document; used {c.get('fecha_secundaria_label') or 'report date'} "
                          f"{c.get('fecha_secundaria_texto')!r}")
     if via_hint:
-        notes.append(f"day/month order taken from second date {c.get('fecha_secundaria_texto')!r}")
+        notes.append(f"day/month order of {c.get('fecha_texto')!r} taken from {hint_source}")
 
     problems = []
     if fecha is None:
@@ -445,7 +458,8 @@ def main():
         consecutive_errors = 0
 
         hint = sub[0] if sub and sub[0] in cmd.CATEGORIES else None
-        d = decide(classification, f["name"], hint)
+        doc_text = cmd.extract_pdf_text(file_bytes) if f["mimeType"] == "application/pdf" else ""
+        d = decide(classification, f["name"], hint, doc_text)
         if not d["ok"]:
             quarantine("REVISAR_", d["reason"])
             continue
