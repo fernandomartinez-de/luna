@@ -39,7 +39,7 @@ from statistics import median
 LOOKBACK_DAYS = int(os.environ.get("ALERT_LOOKBACK_DAYS", "35"))   # only alert on recent activity
 HISTORY_DAYS = 400                                                 # baselines look back this far
 DUP_WINDOW_DAYS = 2
-LUNA_URL = os.environ.get("LUNA_URL", "https://fernandomartinez-de.github.io/personal/luna/finances")
+LUNA_URL = os.environ.get("LUNA_URL", "https://fernandomartinez-de.github.io/luna/finances")
 
 FIXED_CATEGORIES = {"Mortgage Payment", "HOA", "Electricity", "Internet / Cell Phone Provider", "Insurance", "Verizon"}
 # Categories that are the same bill under different names, compared as one.

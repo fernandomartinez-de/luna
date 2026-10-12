@@ -2,7 +2,7 @@
 
 A personal dashboard that lives on my phone. My spending, investments, sleep, workouts, weight and lab results, all in one app and updated automatically every day.
 
-**App:** https://fernandomartinez-de.github.io/personal/luna/ (requires my sign in)
+**App:** https://fernandomartinez-de.github.io/luna/ (requires my sign in)
 
 ---
 
@@ -51,7 +51,7 @@ flowchart LR
 
 1. **Scheduled workflows** (GitHub Actions) wake up on a timer, pull new data from each service, and save it to the database.
 2. **Supabase** stores everything in one Postgres database.
-3. **Luna** is a React app hosted for free on GitHub Pages. It installs on the phone's home screen and reads from the database after I sign in.
+3. **Luna** is a React app hosted for free on GitHub Pages (only the built app is published, not the rest of the repo). It installs on the phone's home screen and reads from the database after I sign in.
 
 No servers to run and nothing to pay for beyond the services themselves.
 
@@ -64,7 +64,7 @@ No servers to run and nothing to pay for beyond the services themselves.
 | Build my own copy of this | [docs/setup.md](docs/setup.md) |
 | Run it day to day, fix something, or add a feature | [docs/operations.md](docs/operations.md) |
 | Know what's in the database | [docs/tables.md](docs/tables.md) |
-| Work on the app | [luna/README.md](luna/README.md) |
+| Work on the app | [app/README.md](app/README.md) |
 | Understand the money syncs | [finances/README.md](finances/README.md) |
 | Understand the health syncs | [health/README.md](health/README.md) |
 
@@ -73,15 +73,13 @@ No servers to run and nothing to pay for beyond the services themselves.
 ## Repo layout
 
 ```
-personal/
-├── luna/           The app. Source code in luna/app/, the built site next to it.
+luna/
+├── app/            The app (React source). Built and published by a workflow; build output isn't committed.
 ├── finances/       Scripts that pull bank, investment and home value data.
 ├── health/         Scripts that pull WHOOP, Renpho and lab result data.
 ├── supabase/       schema.sql: recreates the whole database in one step.
 ├── docs/           Setup guide, operations guide, database reference.
-├── .github/        The scheduled and build workflows.
-├── index.html      Sends visitors from /personal/ to the app.
-└── 404.html        Lets links deep inside the app work on GitHub Pages.
+└── .github/        The scheduled syncs and the deploy workflow.
 ```
 
 ---
