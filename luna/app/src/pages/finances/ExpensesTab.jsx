@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import MonthTransactionsModal from './MonthTransactionsModal.jsx'
 import { supabase } from '../../supabaseClient'
 import CodeSlots from '../../components/CodeSlots/CodeSlots.jsx'
 
@@ -204,6 +205,7 @@ export default function ExpensesTab() {
   const [payrollByMonth, setPayrollByMonth] = useState({})
   const [netRemainingTrend, setNetRemainingTrend] = useState([])
   const [monthFilter, setMonthFilter] = useState(null)
+  const [txnModalOpen, setTxnModalOpen] = useState(false)
 
   useEffect(() => { loadAll() }, [])
 
@@ -545,11 +547,19 @@ export default function ExpensesTab() {
         )}
       </div>
 
-      <div style={card}>
+      <div
+        style={{ ...card, cursor: monthFilter ? 'pointer' : 'default' }}
+        role="button"
+        tabIndex={0}
+        onClick={() => { if (monthFilter) setTxnModalOpen(true) }}
+        onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && monthFilter) { e.preventDefault(); setTxnModalOpen(true) } }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <p style={{ ...label, margin: 0 }}>Discretionary Spending</p>
           <select
             value={monthFilter || ''}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
             onChange={(e) => setMonthFilter(e.target.value)}
             style={{ fontSize: '12px', padding: '4px 8px', borderRadius: '8px', border: '1px solid var(--surface-border)', background: 'var(--surface-base)', color: 'var(--tx-primary)' }}
           >
@@ -574,7 +584,15 @@ export default function ExpensesTab() {
             )
           })}
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid var(--surface-border)', fontSize: '12px', color: 'var(--brand-500)', fontWeight: 600 }}>
+          <span>View all transactions</span>
+          <span aria-hidden="true">›</span>
+        </div>
       </div>
+
+      {txnModalOpen && monthFilter && (
+        <MonthTransactionsModal month={monthFilter} onClose={() => setTxnModalOpen(false)} />
+      )}
 
       <div style={card}>
         <p style={label}>Monthly Discretionary Trend</p>
