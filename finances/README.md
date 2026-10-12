@@ -20,7 +20,7 @@ The Investments tab shows a live Zillow value but doesn't save it. To keep a mon
 **Zillow** (from your computer, in the repo folder):
 
 ```
-pip install -r finances/requirements.txt
+pip install -r finances/requirements.txt requests beautifulsoup4
 set SUPABASE_URL=https://uuvsvtpfcexhqojlrsxy.supabase.co
 set SUPABASE_SERVICE_ROLE_KEY=<service role key>
 set ZILLOW_API_KEY=<RapidAPI key>
