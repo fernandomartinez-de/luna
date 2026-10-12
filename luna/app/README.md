@@ -280,12 +280,6 @@ luna/app/
 ├── .env.local                    # Gitignored (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
 ├── .env.example
 ├── public/                       # Icons and PWA manifest
-├── supabase/
-│   ├── create_workouts.sql
-│   ├── create_workout_logs.sql
-│   ├── recategorize_transaction.sql
-│   ├── security_1_safe_hardening.sql     # Removed unused public access (applied)
-│   └── security_2_owner_only_lockdown.sql  # One owner_only policy per table (applied)
 ├── src/
 │   ├── main.jsx
 │   ├── App.jsx / App.css

@@ -16,9 +16,7 @@ finances/
 ├── .env.example                          # Template for local .env (never committed)
 ├── requirements.txt                      # Python deps: plaid-python, supabase, python-dotenv
 ├── scripts/
-│   ├── plaid_chase_link.py               # ONE-TIME: link Chase via Plaid Hosted Link
 │   ├── plaid_chase_sync.py               # DAILY: pull Chase transactions -> expense_transactions
-│   ├── plaid_investments_link.py         # ONE-TIME: link Fidelity (uses Plaid Investments API)
 │   ├── plaid_investments_sync.py         # WEEKDAYS: pull Fidelity holdings -> stocks_crypto_history
 │   └── fetch_zillow_property_value.py    # MANUAL FALLBACK: pull Zillow Zestimate -> real_estate_history
 └── assets/
@@ -31,9 +29,7 @@ finances/
 |--------|--------------|----------------|
 | `plaid_chase_sync.py` | GitHub Actions daily 13:00 UTC (`pull-finances.yml`) | `expense_transactions`, `plaid_sync_state`; reads `plaid_accounts` + `category_mapping` |
 | `plaid_investments_sync.py` | GitHub Actions weekdays 22:00 UTC (`pull-investments.yml`) | `stocks_crypto_history` (Retirement + Brokerage rows only — Stocks/Crypto rows are untouched) |
-| `plaid_chase_link.py` | Manual, once, to authorize Chase | Populates `plaid_accounts` and returns the `PLAID_ACCESS_TOKEN` you paste into GitHub Secrets |
-| `plaid_investments_link.py` | Manual, once, to authorize Fidelity | Same, but returns `PLAID_FIDELITY_ACCESS_TOKEN` |
-| `fetch_zillow_property_value.py` | Manual, monthly | `real_estate_history` (Zillow row). Luna's Refresh Prices button does this automatically; the script is the fallback |
+| `fetch_zillow_property_value.py` | Manual, monthly | `real_estate_history` (Zillow row). Luna's Refresh Prices button only shows live prices; this script is what saves the monthly Zillow value. Needs `SUPABASE_SERVICE_ROLE_KEY` set locally |
 
 ## Naming convention
 

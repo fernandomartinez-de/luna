@@ -7,7 +7,7 @@ Everything lives in one Supabase project (**`uuvsvtpfcexhqojlrsxy`**, "Personal"
 | Table | Purpose | Written by | Read by |
 |-------|---------|------------|---------|
 | `expense_transactions` | Categorized Chase transactions (checking + 2 credit cards) | `pull-finances.yml` (`plaid_chase_sync.py`); manual backfills | v1 finances, v2 Luna Expenses, `vw_dashboard_summary` |
-| `plaid_accounts` | Map of Plaid account IDs to masked account + source label | One-time `finances/scripts/plaid_chase_link.py` | `plaid_chase_sync.py` |
+| `plaid_accounts` | Map of Plaid account IDs to masked account + source label | One-time Plaid link (script removed; see maintainers.md) | `plaid_chase_sync.py` |
 | `plaid_sync_state` | Plaid `/transactions/sync` cursor per item | `plaid_chase_sync.py` (every run) | `plaid_chase_sync.py` |
 | `category_mapping` | Merchant pattern → category rules | Manual SQL | `plaid_chase_sync.py`, `vw_category_mapping` |
 | `stocks_crypto_history` | Daily snapshot of stocks, crypto, retirement, brokerage holdings | `pull-investments.yml`; v2 Luna Refresh Prices (Finnhub + CoinGecko) | v1 finances, v2 Luna Investments |
@@ -70,7 +70,7 @@ Everything lives in one Supabase project (**`uuvsvtpfcexhqojlrsxy`**, "Personal"
 
 ## Row-level security
 
-Every table has RLS on with a single `owner_only` policy (set by `luna/app/supabase/security_2_owner_only_lockdown.sql`). Three roles matter:
+Every table has RLS on with a single `owner_only` policy (applied Oct 2026). Three roles matter:
 
 - **`authenticated`** (my signed in Luna session) — full read and write on every table, but only when the session email is `fernandopv2655@gmail.com`.
 - **`anon`** (the public key in the app bundle) — no table access at all. Views run as `security_invoker`, so they follow the same rule.

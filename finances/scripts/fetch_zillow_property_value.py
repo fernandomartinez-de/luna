@@ -7,7 +7,7 @@ Usage:
 
 Environment Variables:
     SUPABASE_URL - Your Supabase project URL
-    SUPABASE_KEY - Your Supabase anon/service key
+    SUPABASE_SERVICE_ROLE_KEY - Supabase service role key (the public key can no longer write)
     ZILLOW_API_KEY - (Optional) RapidAPI key for Zillow API access
 
 Author: Fernando Martinez
@@ -238,13 +238,13 @@ def update_supabase(snapshot_date, home_value, mortgage_balance):
         bool: True if successful, False otherwise
     """
     supabase_url = os.getenv('SUPABASE_URL')
-    supabase_key = os.getenv('SUPABASE_KEY')
+    supabase_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY') or os.getenv('SUPABASE_KEY')
 
     if not supabase_url or not supabase_key:
-        print("ERROR: SUPABASE_URL and SUPABASE_KEY environment variables not set")
+        print("ERROR: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables not set")
         print("\nSet them with:")
         print('  [System.Environment]::SetEnvironmentVariable(\'SUPABASE_URL\', \'https://uuvsvtpfcexhqojlrsxy.supabase.co\', \'User\')')
-        print('  [System.Environment]::SetEnvironmentVariable(\'SUPABASE_KEY\', \'your_key_here\', \'User\')')
+        print('  [System.Environment]::SetEnvironmentVariable(\'SUPABASE_SERVICE_ROLE_KEY\', \'your_service_role_key\', \'User\')')
         return False
 
     try:

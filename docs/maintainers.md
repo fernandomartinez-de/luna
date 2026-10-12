@@ -10,14 +10,14 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-## One-time setup
+## Re-linking a bank or account (rare)
 
-Chase + Fidelity Plaid links (run once each):
+The one-time setup scripts were removed from the repo once everything was connected. If Chase or Fidelity ever needs to be re-linked through Plaid, or WHOOP needs a brand new refresh token, restore the script from history:
 
 ```powershell
-cd finances\scripts
-python plaid_chase_link.py          # Chase
-python plaid_investments_link.py    # Fidelity
+git show 493d315:finances/scripts/plaid_chase_link.py > finances\scripts\plaid_chase_link.py
+git show 493d315:finances/scripts/plaid_investments_link.py > finances\scripts\plaid_investments_link.py
+git show 493d315:health/whoop/bootstrap.py > health\whoop\bootstrap.py
 ```
 
 ## Manual re-sync (rarely needed — GitHub Actions handles this daily)
@@ -37,8 +37,7 @@ All schedules in UTC.
 | `pull-investments.yml` | Weekdays 22:00 | Fidelity holdings via Plaid |
 | `whoop-daily-sync.yml` | 5x/day (02, 13, 16, 19, 22 UTC ≈ 9am/12pm/3pm/6pm/10pm ET) | WHOOP recovery, sleep, workouts |
 | `pull-body.yml` | Daily 14:00 | Renpho body composition |
-| `medical-ingest-labs.yml` | Weekly Mon 09:00 | Ingest lab PDFs from Drive |
-| `medical-clean-drive.yml` | Monthly 1st | Clean processed Drive files |
+| `medical-process-inbox.yml` | Daily 12:17 | Process new lab PDFs in Drive `Medical/IN`: file them, load `lab_results`, update the tracker |
 | `build-luna-v2.yml` | On push to `luna/app/` | Build & deploy the React app |
 
 ## Secrets
@@ -89,7 +88,7 @@ env:
 - **SPA fallback.** GitHub Pages serves `/404.html` from repo root for any missing URL under `/personal/`. It redirects Luna paths back into the app shell; other 404s (v1 typos) show a small "Back to hub" page.
 - **v1 is removed.** `V1/` was deleted in Oct 2026 (the code is still in git history, except the medical report pages, which were purged).
 - **Sign in.** Luna uses Supabase Auth (email one time code). Settings live in Supabase → Authentication: Site URL and redirect `https://fernandomartinez-de.github.io/personal/luna/**`, custom SMTP through Gmail, sign ups turned off. Only `fernandopv2655@gmail.com` is allowed (`luna/app/src/components/AuthGate.jsx` and the database policy both check it).
-- **Database lockdown.** `luna/app/supabase/security_2_owner_only_lockdown.sql` gives every table one `owner_only` policy. **A new table needs the same policy**, or Luna can't see it:
+- **Database lockdown.** Every table has one `owner_only` policy (applied Oct 2026). **A new table needs the same policy**, or Luna can't see it:
   `create policy owner_only on public.<table> for all to authenticated using ((select auth.jwt() ->> 'email') = 'fernandopv2655@gmail.com') with check ((select auth.jwt() ->> 'email') = 'fernandopv2655@gmail.com');`
 - **Vault redaction.** Never commit full ID, account, policy or member numbers, family phones or emails. Mask to the last 4 characters; the full values belong only in the private Drive vault.
 - **Build hygiene.** `build-luna-v2.yml` deletes `luna/assets/` before copying the new build, so old bundles never linger on the site.
