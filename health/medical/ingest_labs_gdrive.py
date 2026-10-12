@@ -237,6 +237,7 @@ _CELLS_PCT_RE = re.compile(r"^(neutr[oó]filos|linfocitos|monocitos|eosin[oó]fi
 
 def canonical_marker(m):
     m = re.sub(r"\s+", " ", str(m or "")).strip()[:100]
+    m = re.sub(r"\s*\((c[aá]lculo|calculado|calculated)\)", "", m, flags=re.I).strip()
     for pattern, name in _CANON_RULES[:18]:
         if re.search(pattern, m, re.I):
             return name or m
