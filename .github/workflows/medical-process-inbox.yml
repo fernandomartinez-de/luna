@@ -14,6 +14,10 @@ on:
         description: "Preview only (change nothing in Drive or Supabase)"
         type: boolean
         default: false
+      reload:
+        description: "Re-read these archived lab files and replace their results (comma separated file names, optional)"
+        type: string
+        default: ""
   schedule:
     - cron: "17 12 * * *"   # daily ~8 AM New York; cheap when IN is empty
 
@@ -49,4 +53,5 @@ jobs:
           SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY:              ${{ secrets.SUPABASE_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python medical_inbox.py ${{ inputs.dry_run && '--dry-run' || '' }}
+          RELOAD:                    ${{ inputs.reload }}
+        run: python medical_inbox.py ${{ inputs.dry_run && '--dry-run' || '' }} --reload "$RELOAD"

@@ -190,13 +190,105 @@ def extract_text_from_pdf(pdf_bytes):
         print(f"    pdfplumber error: {e}")
         return ""
 
+# One name per marker, so trends line up across labs and years. Same rules
+# as the 2026-10-12 rebuild of lab_results; first match wins.
+_CANON_RULES = [
+    (r"recept", None),  # TSH receptor antibodies etc. keep their own name
+    (r"per[oó]xidasa|tpo", "Anticuerpos anti-peroxidasa tiroidea (Anti-TPO)"),
+    (r"(?=.*tiroglobulin)(?=.*(anti|ac igg|anti-tg))", "Anticuerpos anti-tiroglobulina (Anti-TG)"),
+    (r"tiroglobulin", "Tiroglobulina"),
+    (r"tsh|estimulante de (la )?tiroides", "TSH"),
+    (r"captaci|^tu\b", "Captación de T3 (TU)"),
+    (r"(?=.*(t4|tiroxina))(?=.*libre)", "T4 Libre"),
+    (r"(?=.*(t4|tiroxina))(?=.*total)", "T4 Total"),
+    (r"(?=.*(t3|triyodo))(?=.*libre)", "T3 Libre"),
+    (r"(?=.*(t3|triyodo))(?=.*total)", "T3 Total"),
+    (r"^(vcm|volumen corpuscular)", "Volumen Corpuscular Medio"),
+    (r"^(chcm|concentraci)", "Concentración de Hemoglobina Corpuscular Media"),
+    (r"^(hcm|hemoglobina corpuscular)", "Hemoglobina Corpuscular Media"),
+    (r"^(ade|rdw|amplitud)", "Amplitud de la Distribución Eritrocitaria"),
+    (r"^(vpm|volumen plaquetario)", "Volumen Plaquetario Medio"),
+    (r"^leucocitos \(wbc\)$", "Leucocitos"),
+    (r"^eritrocitos \(rbc\)$", "Eritrocitos"),
+    (r"^plaquetas,? cuenta$", "Plaquetas"),
+    (r"^(ast|aspartato)", "AST (TGO)"),
+    (r"^(alt|alanino)", "ALT (TGP)"),
+    (r"^(ggt|gamma)", "GGT"),
+    (r"^globulina", "Globulinas"),
+    (r"^bilirrubina indirecta", "Bilirrubina indirecta"),
+    (r"^bilirrubina directa", "Bilirrubina directa"),
+    (r"^bilirrubina total", "Bilirrubina total"),
+    (r"^prote[ií]nas totales", "Proteínas totales"),
+    (r"^fosfatasa alcalina", "Fosfatasa alcalina"),
+    (r"^colesterol total", "Colesterol total"),
+    (r"^vldl", "Colesterol VLDL"),
+    (r"^[aá]cido [uú]rico", "Ácido úrico"),
+    (r"ldh|dhl|lactato deshidrogenasa|deshidrogenasa l", "LDH"),
+    (r"^(ck|creatincinasa|cpk|creatinfosfoquinasa)", "CPK"),
+    (r"^nitr[oó]geno ureico", "Nitrógeno ureico (BUN)"),
+    (r"^cloruro$", "Cloro"),
+    (r"^calcio total$", "Calcio"),
+    (r"^di[oó]xido de carbono", "CO2"),
+    (r"^fosfato$", "Fósforo"),
+]
+_CELLS_RE = re.compile(r"^(neutr[oó]filos|linfocitos|monocitos|eosin[oó]filos|bas[oó]filos)( #)? absolutos$", re.I)
+_CELLS_PCT_RE = re.compile(r"^(neutr[oó]filos|linfocitos|monocitos|eosin[oó]filos|bas[oó]filos)$", re.I)
+
+
+def canonical_marker(m):
+    m = re.sub(r"\s+", " ", str(m or "")).strip()[:100]
+    for pattern, name in _CANON_RULES[:18]:
+        if re.search(pattern, m, re.I):
+            return name or m
+    if _CELLS_RE.match(m):
+        return m.split(" ")[0].capitalize() + " Absolutos"
+    if _CELLS_PCT_RE.match(m):
+        return m + " %"
+    for pattern, name in _CANON_RULES[18:]:
+        if re.search(pattern, m, re.I):
+            return name
+    return m
+
+
+CHUNK_CHARS = 9000  # long reports are read in pieces; nothing is cut off
+
+
 def parse_labs_with_claude(text, client):
-    if len(text) > 15000:
-        text = text[:15000]
+    """Every result in the text, read in chunks of whole lines so long
+    multi-page reports are never truncated."""
+    rows, chunk = [], ""
+    for line in text.splitlines(keepends=True):
+        if chunk and len(chunk) + len(line) > CHUNK_CHARS:
+            rows.extend(_parse_lab_chunk(chunk, client))
+            chunk = ""
+        chunk += line
+    if chunk.strip():
+        rows.extend(_parse_lab_chunk(chunk, client))
+    return rows
+
+
+def _parse_lab_chunk(text, client):
     msg = client.messages.create(
         model=MODEL, max_tokens=8000,
         messages=[{"role": "user", "content": LAB_EXTRACT_PROMPT + text}]
     )
+    return _json_rows(msg)
+
+
+def parse_lab_image_with_claude(jpeg_bytes, client):
+    """Results from one scanned page."""
+    data = base64.standard_b64encode(jpeg_bytes).decode()
+    msg = client.messages.create(
+        model=MODEL, max_tokens=8000,
+        messages=[{"role": "user", "content": [
+            {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": data}},
+            {"type": "text", "text": LAB_EXTRACT_PROMPT + "(the lab report page is the image above)"},
+        ]}],
+    )
+    return _json_rows(msg)
+
+
+def _json_rows(msg):
     raw = _extract_text(msg).strip()
     if "```" in raw:
         for p in raw.split("```"):

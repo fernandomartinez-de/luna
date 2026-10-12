@@ -14,23 +14,30 @@ Medical inbox pipeline.
          reason written into the file's Drive description. Exact duplicates of a
          file already in the archive go there too, prefixed DUP_.
       4. Lab PDFs and InBody images that were filed get loaded into Supabase
-         (lab_results / inbody_results).
+         (lab_results / inbody_results). Every page is read and marker names
+         are standardized. A result already stored for that date (same marker,
+         same value) is never stored twice: a copy adding nothing new goes to
+         _REVISAR as DUP_, and a partial report fully contained in a fuller one
+         is replaced by it (and also goes to _REVISAR as DUP_).
     Then the inventory workbook  Medical/master_tracker.xlsx  is rebuilt from
     every file in the Medical tree.
 
 Safety
   - Nothing is ever deleted.
-  - Only files that start in IN are ever renamed or moved; the organized
-    archive is read-only to this script (apart from the inventory file).
+  - Only files that start in IN are ever renamed or moved, except duplicate
+    or partial lab copies, which move to _REVISAR as DUP_ (see step 4).
   - Supabase loading only ever touches files this pipeline filed, tracked on
     the Drive file itself (appProperties luna_filed / luna_ingested). Older
     archive files are never re-read, so renaming them can't cause duplicates.
-  - Ambiguous day/month dates are never guessed (see resolve_date in
-    clean_medical_drive.py); those files go to _REVISAR.
+  - Ambiguous day/month dates (both numbers 12 or less) are never guessed.
+    The order is taken from evidence on the same document: a second date, the
+    printed birth date, or any other slash date in its text. With no evidence
+    the file goes to _REVISAR.
 
 Usage
   python medical_inbox.py              # process IN, load data, rebuild inventory
   python medical_inbox.py --dry-run    # show the plan, change nothing (inventory is still rebuilt locally)
+  python medical_inbox.py --reload NAME[,NAME]   # re-read archived lab files, replace their results
 """
 import argparse
 import io
@@ -197,61 +204,100 @@ def supabase_client():
     return create_client(os.environ["SUPABASE_URL"], key)
 
 
+STIM_RE = re.compile(r"thyrogen|thryrogen|tirotropina alfa|rh-?tsh|estimulad", re.I)
+
+
+def extract_lab_rows(file_bytes, client):
+    """Every result in a lab PDF: text pages read in full (chunked, never cut
+    off), scanned pages read as images. Names standardized, repeats removed.
+    Returns (rows, full_text)."""
+    import pdfplumber
+    from pdf2image import convert_from_bytes
+    with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+        pages = [(p.extract_text() or "").strip() for p in pdf.pages]
+    text = "\n".join(t for t in pages if len(t) >= cmd.MIN_TEXT_LEN_FOR_TEXT_LAYER)
+    rows = ingest.parse_labs_with_claude(text, client) if text else []
+    scanned = [i for i, t in enumerate(pages) if len(t) < cmd.MIN_TEXT_LEN_FOR_TEXT_LAYER]
+    for i in scanned[:12]:
+        img = convert_from_bytes(file_bytes, dpi=150, first_page=i + 1, last_page=i + 1)[0]
+        rows.extend(ingest.parse_lab_image_with_claude(cmd._encode_jpeg_under_limit(img), client))
+    out, seen = [], set()
+    for r in rows:
+        k = row_key(r.get("marcador"), r.get("valor"))
+        if k and k not in seen:
+            seen.add(k)
+            out.append(dict(r, marcador=k[0], _raw=str(r.get("marcador", ""))[:100]))
+    return out, text
+
+
+def row_key(marker, value):
+    try:
+        m = ingest.canonical_marker(marker)
+        return (m, round(float(value), 3)) if m else None
+    except (TypeError, ValueError):
+        return None
+
+
 def load_into_supabase(service, sb, client, f, file_bytes):
-    """Load one filed lab PDF / InBody image. Returns (ok, message)."""
+    """Load one filed lab PDF / InBody image.
+    Returns (ok, message, info) where info may hold
+      duplicate_of: archivo whose results already cover this whole file
+      superseded:   [archivo, ...] partial copies this fuller file replaced"""
     name, mime = f["name"], f["mimeType"]
     fecha, año, proveedor, estimulada = ingest.parse_filename(name)
     if "_labs_" in name and mime == "application/pdf":
         if fecha is None:
-            return False, "filename date unparseable"
-        text = ingest.extract_text_from_pdf(io.BytesIO(file_bytes))
-        if not text:
-            return False, "no text layer in lab PDF (scanned?) — values not loaded"
-        rows = ingest.parse_labs_with_claude(text, client)
-        dup = already_loaded(sb, fecha, rows)
-        if dup:
-            return True, dup
-        n = ingest.insert_labs(sb, fecha, año, proveedor, name, rows, estimulada)
-        if rows and n == 0:
-            return False, f"{len(rows)} markers parsed but none inserted"
-        return True, f"{n} lab markers loaded"
+            return False, "filename date unparseable", {}
+        rows, text = extract_lab_rows(file_bytes, client)
+        if not rows:
+            return False, "no lab results found in the document", {}
+        estimulada = estimulada or bool(STIM_RE.search(text))
+        return load_lab_rows(sb, name, fecha, año, proveedor, estimulada, rows)
     if "_inbody_" in name and mime in ("image/jpeg", "image/png", "image/jpg"):
         data = ingest.parse_inbody_with_claude(io.BytesIO(file_bytes), "image/png" if mime == "image/png" else "image/jpeg", client)
         n = ingest.insert_inbody(sb, data, name, proveedor)
-        return (n > 0), ("InBody scan loaded" if n else "InBody scan not inserted (date missing?)")
-    return True, None  # not a loadable type (radiology, pathology, ...)
+        return (n > 0), ("InBody scan loaded" if n else "InBody scan not inserted (date missing?)"), {}
+    return True, None, {}  # not a loadable type (radiology, pathology, ...)
 
 
-def already_loaded(sb, fecha, rows, threshold=0.8):
-    """Guard against the same results arriving twice under a different file
-    (a rescan, a photo of the PDF, a re-download). If most of this document's
-    (marker, value) pairs are already stored for the same date, skip it and
-    say which file they came from. Returns a message, or None if it's new."""
-    if not rows:
-        return None
-    existing = sb.table("lab_results").select("archivo, marcador, valor").eq("fecha", fecha.isoformat()).execute().data or []
-    if not existing:
-        return None
-
-    def key(m, v):
-        try:
-            return (str(m).strip().lower(), round(float(v), 3))
-        except (TypeError, ValueError):
-            return None
-
+def load_lab_rows(sb, name, fecha, año, proveedor, estimulada, rows):
+    """Row level duplicate handling against everything stored for the date:
+    a result already stored (same marker, same value) is never stored again.
+    A file adding nothing new is a duplicate copy. An earlier file whose
+    results are all contained in this one was a partial copy; this fuller
+    file replaces it."""
+    existing = sb.table("lab_results").select("archivo, marcador, valor") \
+        .eq("fecha", fecha.isoformat()).neq("archivo", name).execute().data or []
     stored = defaultdict(set)
     for r in existing:
-        k = key(r["marcador"], r["valor"])
+        k = row_key(r["marcador"], r["valor"])
         if k:
             stored[r["archivo"]].add(k)
-    incoming = {k for r in rows if (k := key(r.get("marcador"), r.get("valor")))}
-    if not incoming:
-        return None
-    best = max(stored, key=lambda a: len(incoming & stored[a]), default=None)
-    overlap = len(incoming & stored[best]) if best else 0
-    if overlap / len(incoming) >= threshold:
-        return f"already in Supabase: {overlap} of {len(incoming)} results match {best}; not loaded again"
-    return None
+    incoming = {row_key(r["marcador"], r["valor"]) for r in rows}
+    if not incoming - set().union(*stored.values()):
+        best = max(stored, key=lambda a: len(incoming & stored[a]))
+        return True, f"same results as {best}; nothing new to load", {"duplicate_of": best}
+
+    superseded = sorted(a for a, keys in stored.items() if keys and keys <= incoming)
+    for a in superseded:
+        sb.table("lab_results").delete().eq("archivo", a).eq("fecha", fecha.isoformat()).execute()
+    kept = set().union(*(k for a, k in stored.items() if a not in superseded))
+
+    payload = [{
+        "fecha": fecha.isoformat(), "año": año, "archivo": name, "proveedor": proveedor,
+        "panel": ingest.normalize_panel(r["_raw"], r.get("panel")),
+        "marcador": r["marcador"], "valor": float(r["valor"]),
+        "unidad": r.get("unidad"), "ref_min": r.get("ref_min"), "ref_max": r.get("ref_max"),
+        "flag": r.get("flag", ""), "estimulada": estimulada, "conversion_aplicada": None,
+        "revision_requerida": False,
+    } for r in rows if row_key(r["marcador"], r["valor"]) not in kept]
+    sb.table("lab_results").insert(payload).execute()
+    msg = f"{len(payload)} lab results loaded"
+    if len(payload) < len(rows):
+        msg += f" ({len(rows) - len(payload)} already stored from another file)"
+    if superseded:
+        msg += f"; replaced partial copy {', '.join(superseded)}"
+    return True, msg, {"superseded": superseded}
 
 
 def mark(service, file_id, **props):
@@ -400,6 +446,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dry-run", action="store_true", help="plan only; nothing in Drive or Supabase changes")
     ap.add_argument("--inventory", default=os.path.join("tracker", "master_tracker.xlsx"))
+    ap.add_argument("--reload", default="", help="re-read these archived lab files (comma separated names) "
+                                                "and replace their results in Supabase")
     args = ap.parse_args()
     dry = args.dry_run
 
@@ -477,36 +525,67 @@ def main():
                                    body={"name": new, "appProperties": {"luna_filed": date.today().isoformat()},
                                          **({"description": f"Luna inbox: {d['note']}"} if d["note"] else {})}).execute()
         known_md5[f.get("md5Checksum")] = dest
-        filed = dict(f, name=new, appProperties={"luna_filed": "1"})
+        filed = dict(f, name=new, appProperties={"luna_filed": "1"}, _parent=target_folder)
         run_log.append({"file": f["name"], "result": dest, "detail": d["note"]})
         if needs_load(filed):
             to_load.append((filed, file_bytes))
 
     # Earlier filed files whose Supabase load failed get retried.
-    for f, p, _ in archive:
+    for f, p, pid in archive:
         props = f.get("appProperties") or {}
         if (props.get("luna_filed") and not props.get("luna_ingested") and needs_load(f)
                 and f["id"] not in SAME_REPORT):
-            to_load.append((f, None))
+            to_load.append((dict(f, _parent=pid), None))
+
+    # Explicit reloads go first, so copies in this run compare against the full set.
+    reload_names = {n.strip() for n in args.reload.split(",") if n.strip()}
+    reloads = [(dict(f, _parent=pid), None) for f, p, pid in archive if f["name"] in reload_names]
+    for n in reload_names - {f["name"] for f, _ in reloads}:
+        failures.append(f"reload: no archived file named {n}")
+    to_load = reloads + [x for x in to_load if x[0]["name"] not in reload_names]
+
+    by_name = {f["name"]: dict(f, _parent=pid) for f, p, pid in archive}
+    by_name.update({f["name"]: f for f, _ in to_load})
+
+    def retire_copy(f, reason):
+        """A duplicate or partial copy leaves the archive for _REVISAR as DUP_."""
+        new = unique_name(service, revisar_id, "DUP_" + f["name"], taken[revisar_id])
+        taken[revisar_id].append(new)
+        service.files().update(fileId=f["id"], addParents=revisar_id, removeParents=f["_parent"],
+                               body={"name": new, "description": f"Luna inbox {date.today()}: {reason}"}).execute()
+        print(f"  -> {REVISAR_NAME}/{new}  ({reason})")
+        run_log.append({"file": f["name"], "result": f"{REVISAR_NAME}/{new}", "detail": reason})
 
     if to_load:
         sb = None if dry else supabase_client()
         for f, file_bytes in to_load:
             if dry:
-                print(f"\nwould load into Supabase: {f['name']}")
+                print(f"\nwould {'re' if f['name'] in reload_names else ''}load into Supabase: {f['name']}")
                 continue
+            print(f"\nSupabase: {f['name']}")
+            info = {}
             try:
+                if f["name"] in reload_names:
+                    sb.table("lab_results").delete().eq("archivo", f["name"]).execute()
                 file_bytes = file_bytes or cmd.download_file(service, f["id"])
-                ok, msg = load_into_supabase(service, sb, client, f, file_bytes)
+                ok, msg, info = load_into_supabase(service, sb, client, f, file_bytes)
             except Exception as e:
                 ok, msg = False, f"load error: {e}"
-            print(f"\nSupabase: {f['name']}: {msg}")
+            print(f"  {msg}")
             if ok:
                 mark(service, f["id"], luna_ingested=date.today().isoformat())
             else:
                 failures.append(f"{f['name']}: {msg} (will retry next run)")
             if msg:
                 run_log.append({"file": f["name"], "result": "Supabase" if ok else "Supabase FAILED", "detail": msg})
+            try:
+                if info.get("duplicate_of"):
+                    retire_copy(f, f"same results as {info['duplicate_of']}")
+                for a in info.get("superseded", []):
+                    if a in by_name and by_name[a].get("_parent"):
+                        retire_copy(by_name[a], f"partial copy of {f['name']}, which has all its results and more")
+            except Exception as e:
+                failures.append(f"{f['name']}: could not move copy to {REVISAR_NAME}: {e}")
 
     os.makedirs(os.path.dirname(args.inventory) or ".", exist_ok=True)
     sb_inv = None
