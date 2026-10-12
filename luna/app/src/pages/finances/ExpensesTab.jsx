@@ -223,11 +223,13 @@ export default function ExpensesTab() {
         supabase.from('vw_fixed_costs_summary').select('*').order('avg_per_month', { ascending: false }),
         supabase.from('vw_discretionary_summary').select('*').order('month', { ascending: true }),
         supabase.from('vw_dashboard_summary').select('*').order('month', { ascending: true }),
-        supabase.from('expense_transactions').select('month, amount').eq('category', 'Payroll').order('month', { ascending: true }),
+        // Payroll category also catches SS&C expense reimbursements, so only
+        // count deposits that are actual paychecks.
+        supabase.from('expense_transactions').select('month, amount').eq('category', 'Payroll').ilike('description', '%PAYROLL%').order('month', { ascending: true }),
         supabase.from('expense_transactions').select('amount').eq('category', 'MTA').eq('month', lastMonth),
         supabase.from('expense_transactions').select('description, amount').eq('category', 'Subscriptions').eq('month', lastMonth),
         supabase.from('expense_transactions').select('amount, transaction_date').eq('category', 'Electricity').gte('transaction_date', new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString()),
-        supabase.from('expense_transactions').select('amount').eq('category', 'Payroll').order('transaction_date', { ascending: false }).limit(2)
+        supabase.from('expense_transactions').select('amount').eq('category', 'Payroll').ilike('description', '%PAYROLL%').order('transaction_date', { ascending: false }).limit(2)
       ])
       if (statsRes.error) throw statsRes.error
       if (fixedRes.error) throw fixedRes.error
