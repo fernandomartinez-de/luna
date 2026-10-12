@@ -35,29 +35,30 @@ PROPERTY_ADDRESS = "66-S-6th-St-Brooklyn-NY-11249"  # Zillow URL format
 ZILLOW_URL = f"https://www.zillow.com/homedetails/66-S-6th-St-4A-Brooklyn-NY-11249/444738887_zpid/"
 PROPERTY_ZPID = "444738887"  # Zillow Property ID (from URL)
 PROPERTY_NAME = "Condo"  # must match the name the Investments tab reads
-ASSET_TYPE = "Condo"
+ASSET_TYPE = "Real Estate"
 COST_BASIS = Decimal("895000.00")  # Original purchase price (April 2025)
 
-# Mortgage details for equity calculation
-INITIAL_MORTGAGE = Decimal("475000.00")  # Initial loan amount
-MONTHLY_PAYMENT_TO_PRINCIPAL = Decimal("798.00")  # Approximate principal per month (6.49% rate)
-MORTGAGE_START_DATE = date(2025, 4, 1)  # April 2025 closing
+# Mortgage details for equity calculation (from the Chase statement)
+INITIAL_MORTGAGE = Decimal("475000.00")  # Original principal
+ANNUAL_RATE = Decimal("0.0649")
+MONTHLY_PRINCIPAL_AND_INTEREST = Decimal("2999.20")
+FIRST_PAYMENT_DATE = date(2025, 7, 1)  # Payment #1; matches statement balance $468,296.23 after the Sep 2026 payment
 
 
-def get_current_mortgage_balance():
+def get_current_mortgage_balance(as_of=None):
     """
-    Calculate current mortgage balance.
-
-    Simple calculation: Initial - (months elapsed * monthly principal)
-    For more accuracy, integrate with amortization schedule or parse Chase statements.
+    Mortgage balance after this month's payment, from the amortization schedule.
     """
-    today = date.today()
-    months_elapsed = (today.year - MORTGAGE_START_DATE.year) * 12 + (today.month - MORTGAGE_START_DATE.month)
-
-    principal_paid = MONTHLY_PAYMENT_TO_PRINCIPAL * months_elapsed
-    current_balance = INITIAL_MORTGAGE - principal_paid
-
-    return max(current_balance, Decimal("0.00"))  # Don't go negative
+    as_of = as_of or date.today()
+    payments = (as_of.year - FIRST_PAYMENT_DATE.year) * 12 + (as_of.month - FIRST_PAYMENT_DATE.month) + 1
+    monthly_rate = ANNUAL_RATE / 12
+    balance = INITIAL_MORTGAGE
+    for _ in range(max(payments, 0)):
+        interest = (balance * monthly_rate).quantize(Decimal("0.01"))
+        balance -= MONTHLY_PRINCIPAL_AND_INTEREST - interest
+        if balance <= 0:
+            return Decimal("0.00")
+    return balance
 
 
 def fetch_zillow_via_api(zpid):
@@ -337,7 +338,7 @@ def main():
     print("\n[2/3] Calculating mortgage balance...")
     mortgage_balance = get_current_mortgage_balance()
     print(f"  Estimated balance: ${mortgage_balance:,.2f}")
-    print(f"  (Based on {MONTHLY_PAYMENT_TO_PRINCIPAL}/month since {MORTGAGE_START_DATE})")
+    print(f"  (Amortization: {INITIAL_MORTGAGE} at {ANNUAL_RATE}, payments since {FIRST_PAYMENT_DATE})")
 
     # Step 3: Update Supabase
     print("\n[3/3] Updating Supabase...")
