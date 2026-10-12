@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import MonthTransactionsModal from './MonthTransactionsModal.jsx'
+import AlertsCard from './AlertsCard.jsx'
 import { supabase } from '../../supabaseClient'
 import CodeSlots from '../../components/CodeSlots/CodeSlots.jsx'
 
@@ -359,6 +360,7 @@ export default function ExpensesTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <AlertsCard card={card} label={label} />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
         <div style={card}>
           <p style={label}>Net Remaining</p>

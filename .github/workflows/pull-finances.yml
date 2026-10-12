@@ -41,3 +41,18 @@ jobs:
           SUPABASE_KEY:       ${{ secrets.SUPABASE_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python finances/scripts/plaid_chase_sync.py
+
+      # Flags double charges, new or changed subscriptions, interest and fees,
+      # fixed cost increases and returned payments. New alerts are saved to
+      # finance_alerts (shown in Luna) and sent by push and email. Missing
+      # NTFY / Gmail secrets just skip that channel.
+      - name: Check for money alerts
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY:              ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NTFY_TOPIC:                ${{ secrets.NTFY_TOPIC }}
+          GMAIL_USER:                ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD:        ${{ secrets.GMAIL_APP_PASSWORD }}
+          ALERT_EMAIL_TO:            ${{ secrets.ALERT_EMAIL_TO }}
+        run: python finances/scripts/finance_alerts.py
