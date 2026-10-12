@@ -61,8 +61,10 @@ export default function HubPage() {
         supabase.from('real_estate_history').select('snapshot_date, asset_name, data_source, home_value').order('snapshot_date', { ascending: false }).limit(60),
         supabase.from('whoop_cycles').select('start_time, strain').order('start_time', { ascending: false }).limit(1),
         supabase.from('whoop_recovery').select('recovery_date, recovery_score').order('recovery_date', { ascending: false }).limit(1),
-        supabase.from('lab_results').select('fecha, valor, unidad, marcador').ilike('marcador', '%TSH%').order('fecha', { ascending: false }).limit(1),
-        supabase.from('lab_results').select('fecha, valor, unidad, marcador').or('marcador.ilike.%tiroglobulin%,marcador.ilike.%thyroglobulin%').order('fecha', { ascending: false }).limit(1)
+        // Marker names are standardized on load, so match them exactly: a
+        // pattern like %tiroglobulin% also catches the Anti-TG antibody.
+        supabase.from('lab_results').select('fecha, valor, unidad, marcador').eq('marcador', 'TSH').order('fecha', { ascending: false }).limit(1),
+        supabase.from('lab_results').select('fecha, valor, unidad, marcador').eq('marcador', 'Tiroglobulina').order('fecha', { ascending: false }).limit(1)
       ])
       if (cancelled) return
 

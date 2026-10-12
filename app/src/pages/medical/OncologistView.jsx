@@ -4,7 +4,7 @@ import RubberSegment from '../../components/RubberSegment/RubberSegment.jsx'
 import SquishSwitch from '../../components/SquishSwitch/SquishSwitch.jsx'
 
 const KEY_THYROID = [
-  { display: 'TSH', match: (m) => m.includes('tsh') },
+  { display: 'TSH', match: (m) => m.includes('tsh') && !m.includes('recept') },
   { display: 'T4 Libre', match: (m) => (m.includes('t4') || m.includes('tiroxina')) && (m.includes('libre') || m.includes('free')) },
   { display: 'T3 Libre', match: (m) => m.includes('t3') && (m.includes('libre') || m.includes('free')) },
   { display: 'Tiroglobulina', match: (m) => (m.includes('tiroglobulin') || m.includes('thyroglobulin')) && !m.includes('anti') && !m.includes('atg') && !m.includes('tgab') },
