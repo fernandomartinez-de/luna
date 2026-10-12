@@ -1,65 +1,60 @@
-# finances/
+# finances
 
-Every script that gets money data into Supabase. The Luna Expenses and Investments tabs, and the archived v1 finances dashboard, all read from what these scripts write.
+Scripts that pull money data into the database. They feed the **Finances** tabs in Luna.
 
-## Flow
+## What runs
 
-[![Finance data flow](assets/finance-flow.png)](assets/finance-flow.html)
+| Script | What it does | When | Writes to |
+|--------|--------------|------|-----------|
+| `scripts/plaid_chase_sync.py` | Pulls new Chase transactions through Plaid. Picks up where the last run stopped. | Daily, Pull Finances workflow | `expense_transactions`, `plaid_accounts`, `plaid_sync_state` |
+| `scripts/finance_alerts.py` | Looks for double charges, new or changed subscriptions, fees, interest, price increases and returned payments. Sends new ones by push and email. | Daily, right after the Chase sync | `finance_alerts` |
+| `scripts/plaid_investments_sync.py` | Pulls Fidelity retirement and brokerage holdings through Plaid. Leaves stock and crypto rows alone. | Weekdays, Pull Investments workflow | `stocks_crypto_history` |
+| `scripts/fetch_zillow_property_value.py` | Gets the Zillow estimate for the condo and works out mortgage balance and equity. | By hand, monthly | `real_estate_history` |
 
-*Click the image for the interactive version.*
+All of them are safe to rerun; they update existing rows instead of adding duplicates.
 
-## Files
+## Home value
+
+The Investments tab shows a live Zillow value but doesn't save it. To keep a monthly history, save a snapshot once a month.
+
+**Zillow** (from your computer, in the repo folder):
 
 ```
-finances/
-├── README.md
-├── .env.example                          # Template for local .env (never committed)
-├── requirements.txt                      # Python deps: plaid-python, supabase, python-dotenv
-├── scripts/
-│   ├── plaid_chase_sync.py               # DAILY: pull Chase transactions -> expense_transactions
-│   ├── plaid_investments_sync.py         # WEEKDAYS: pull Fidelity holdings -> stocks_crypto_history
-│   └── fetch_zillow_property_value.py    # MANUAL FALLBACK: pull Zillow Zestimate -> real_estate_history
-└── assets/
-    └── finance-flow.{json, html, png}    # Diagram source, viewer, and preview image
+pip install -r finances/requirements.txt
+set SUPABASE_URL=https://uuvsvtpfcexhqojlrsxy.supabase.co
+set SUPABASE_SERVICE_ROLE_KEY=<service role key>
+set ZILLOW_API_KEY=<RapidAPI key>
+python finances/scripts/fetch_zillow_property_value.py
 ```
 
-## What each script does
+(In PowerShell use `$env:SUPABASE_URL="..."` instead of `set`.)
 
-| Script | When it runs | What it writes |
-|--------|--------------|----------------|
-| `plaid_chase_sync.py` | GitHub Actions daily 13:00 UTC (`pull-finances.yml`) | `expense_transactions`, `plaid_sync_state`; reads `plaid_accounts` + `category_mapping` |
-| `plaid_investments_sync.py` | GitHub Actions weekdays 22:00 UTC (`pull-investments.yml`) | `stocks_crypto_history` (Retirement + Brokerage rows only — Stocks/Crypto rows are untouched) |
-| `fetch_zillow_property_value.py` | Manual, monthly | `real_estate_history` (Zillow row). Luna's Refresh Prices button only shows live prices; this script is what saves the monthly Zillow value. Needs `SUPABASE_SERVICE_ROLE_KEY` set locally |
-
-## Naming convention
-
-- **`plaid_chase_*.py`** uses the Plaid *Transactions* API (for the bank).
-- **`plaid_investments_*.py`** uses the Plaid *Investments* API (for Fidelity holdings).
-- They aren't parallel-named on purpose — they name the API product being called, which matters when reading Plaid's docs.
-
-## Reruns and backfills
-
-Both syncs are idempotent — `.upsert()` keyed on primary key. Rerunning at any time is safe:
-
-```powershell
-python finances\scripts\plaid_chase_sync.py         # from repo root, with .env loaded
-python finances\scripts\plaid_investments_sync.py
-```
-
-Both prefer `SUPABASE_SERVICE_ROLE_KEY` (bypasses RLS) when present, falling back to `SUPABASE_KEY` (anon). GitHub Actions provides service_role; local runs use whichever is in your `.env`.
-
-## Redfin
-
-Redfin doesn't have a fetchable API from the browser (CORS), and there's no first-party script here. To add a monthly Redfin datapoint, run this in the Supabase SQL editor:
+**Redfin** has no API, so copy the estimate from Redfin and run this in the Supabase SQL editor, filling in the three numbers:
 
 ```sql
-insert into real_estate_history (snapshot_date, home_value, mortgage_balance, data_source)
-values (current_date, <redfin_estimate>, <mortgage_balance>, 'Redfin');
+insert into real_estate_history
+  (snapshot_date, asset_name, home_value, mortgage_balance, net_equity, cost_basis, data_source)
+select current_date, 'Condo', v.value, v.mortgage, v.value - v.mortgage, v.purchase, 'Redfin'
+from (values (<redfin estimate>, <current mortgage balance>, <purchase price>)) as v(value, mortgage, purchase);
 ```
 
-Both the Zillow row (from the automated fetcher) and this Redfin row live in the same table; Luna's Investments tab averages them for display.
+The Investments tab averages the latest Zillow and Redfin values.
 
-## See also
+## Running locally
 
-- [../docs/tables.md](../docs/tables.md) — full Supabase schema for the finance tables
-- [../docs/maintainers.md](../docs/maintainers.md) — GitHub Actions + secrets + RLS
+Copy `.env.example` to `.env` and fill it in, then run any script from the repo root:
+
+```
+pip install -r finances/requirements.txt
+python finances/scripts/plaid_chase_sync.py
+```
+
+Scripts must use `SUPABASE_SERVICE_ROLE_KEY`; the public key can't write to the database.
+
+## Naming
+
+`plaid_chase_*` uses Plaid's **Transactions** product and `plaid_investments_*` uses Plaid's **Investments** product. The names match Plaid's docs, which helps when looking things up.
+
+## Reconnecting a bank
+
+Plaid connections occasionally expire. The original link scripts can be restored from history; see [docs/setup.md](../docs/setup.md#part-2-connect-data-sources).

@@ -34,7 +34,7 @@ except ImportError as e:
 PROPERTY_ADDRESS = "66-S-6th-St-Brooklyn-NY-11249"  # Zillow URL format
 ZILLOW_URL = f"https://www.zillow.com/homedetails/66-S-6th-St-4A-Brooklyn-NY-11249/444738887_zpid/"
 PROPERTY_ZPID = "444738887"  # Zillow Property ID (from URL)
-PROPERTY_NAME = "66 S 6th St, Unit 4A, Brooklyn, NY"
+PROPERTY_NAME = "Condo"  # must match the name the Investments tab reads
 ASSET_TYPE = "Condo"
 COST_BASIS = Decimal("895000.00")  # Original purchase price (April 2025)
 

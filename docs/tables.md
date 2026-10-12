@@ -1,81 +1,108 @@
-# Supabase tables
+# Database reference
 
-Everything lives in one Supabase project (**`uuvsvtpfcexhqojlrsxy`**, "Personal"). Grouped by domain. Every row is written either by one of the workflows in [maintainers.md](maintainers.md#workflows) or by the Luna app itself.
+Everything lives in one Supabase project (`uuvsvtpfcexhqojlrsxy`). The full definition of every table, view and function is in [`supabase/schema.sql`](../supabase/schema.sql); this page explains what each one is for.
+
+**Who writes:** either a scheduled workflow (using the service key) or me through the Luna app.
+**Who reads:** Luna, after I sign in.
+
+---
 
 ## Finance
 
-| Table | Purpose | Written by | Read by |
-|-------|---------|------------|---------|
-| `expense_transactions` | Categorized Chase transactions (checking + 2 credit cards) | `pull-finances.yml` (`plaid_chase_sync.py`); manual backfills | v1 finances, v2 Luna Expenses, `vw_dashboard_summary` |
-| `plaid_accounts` | Map of Plaid account IDs to masked account + source label | One-time Plaid link (script removed; see maintainers.md) | `plaid_chase_sync.py` |
-| `plaid_sync_state` | Plaid `/transactions/sync` cursor per item | `plaid_chase_sync.py` (every run) | `plaid_chase_sync.py` |
-| `category_mapping` | Merchant pattern → category rules | Manual SQL | `plaid_chase_sync.py`, `vw_category_mapping` |
-| `stocks_crypto_history` | Daily snapshot of stocks, crypto, retirement, brokerage holdings | `pull-investments.yml`; v2 Luna Refresh Prices (Finnhub + CoinGecko) | v1 finances, v2 Luna Investments |
-| `real_estate_history` | Property value + mortgage balance snapshots (Zillow + Redfin) | Manual `fetch_zillow_property_value.py`; v2 Luna Refresh Prices (Zillow) | v1 finances, v2 Luna Investments |
+| Table | What's in it | Written by |
+|-------|--------------|------------|
+| `expense_transactions` | Every Chase transaction with its category | Pull Finances (daily); category edits from the app |
+| `category_mapping` | Rules: "description contains X → category Y" | By hand, or "Remember this" in the app |
+| `finance_alerts` | Money alerts: double charges, new subscriptions, fees, price increases | Pull Finances (after each sync) |
+| `finance_alert_mutes` | Alert types I've muted for a merchant | The app (dismiss and mute) |
+| `plaid_accounts` | Plaid account ids and their masked names | Pull Finances |
+| `plaid_sync_state` | Where the last Plaid sync stopped | Pull Finances |
+| `stocks_crypto_history` | Daily holdings snapshots: retirement, brokerage, stocks, crypto | Pull Investments (weekdays) |
+| `real_estate_history` | Home value and mortgage balance snapshots | By hand, monthly (see [finances/README.md](../finances/README.md#home-value)) |
 
-## Health — WHOOP + Body
+New transactions are categorized automatically by a database trigger that applies the rules in `category_mapping`. A category set by hand is protected from being overwritten.
 
-| Table | Purpose | Written by | Read by |
-|-------|---------|------------|---------|
-| `whoop_recovery` | Daily recovery score, HRV, RHR | `whoop-daily-sync.yml` | v2 Luna, medical dashboards |
-| `whoop_cycles` | Daily physiological cycle (strain, calories, sleep coefficient) | `whoop-daily-sync.yml` | v2 Luna, medical dashboards |
-| `whoop_sleep` | Sleep sessions (duration, efficiency, stages) | `whoop-daily-sync.yml` | medical dashboards |
-| `whoop_workouts` | WHOOP-tagged workouts | `whoop-daily-sync.yml` | v2 Luna Workouts, medical dashboards |
-| `whoop_body` | Height, weight, max HR, VO2 max snapshot | `whoop-daily-sync.yml` | v2 Luna, medical dashboards |
-| `body_composition` | Renpho scale readings | `pull-body.yml` (`renpho_pull.py`) | v2 Luna (Hub, Weight, Nutritionist) |
+### Spending views
+
+These summarize `expense_transactions` for the Expenses tab. They follow the same sign in rule as the tables.
+
+| View | Shows |
+|------|-------|
+| `vw_category_groups` | Each category labeled Fixed Costs, Discretionary or Excluded (transfers, payroll, card payments) |
+| `vw_dashboard_summary` | Monthly total per category (fixed + discretionary) |
+| `vw_discretionary_summary` | Monthly total per discretionary category |
+| `vw_fixed_costs_summary` | Latest amount for each fixed cost (mortgage, HOA, utilities, insurance) |
+| `vw_category_mapping` | The rules grouped by category |
+
+---
+
+## Health
+
+| Table | What's in it | Written by |
+|-------|--------------|------------|
+| `whoop_recovery` | Daily recovery score, HRV, resting heart rate | Whoop Sync |
+| `whoop_cycles` | Daily strain, calories, heart rate | Whoop Sync |
+| `whoop_sleep` | Sleep sessions: duration, efficiency, stages | Whoop Sync |
+| `whoop_workouts` | Workouts WHOOP detected | Whoop Sync |
+| `whoop_body` | Height, weight, max heart rate | Whoop Sync |
+| `body_composition` | Scale readings: weight, body fat, muscle, water | Pull Body Composition (daily) |
 
 ## Medical
 
-| Table | Purpose | Written by | Read by |
-|-------|---------|------------|---------|
-| `lab_results` | Lab values from PDFs, 11 canonical panels | `medical-ingest-labs.yml` (LLM extraction) | v2 Luna Oncologist/Nutritionist |
-| `inbody_results` | InBody bioimpedance scan snapshots | `medical-ingest-labs.yml` | v2 Luna Nutritionist |
+Column names are in Spanish to match the lab reports (`fecha` = date, `marcador` = marker, `valor` = value).
+
+| Table | What's in it | Written by |
+|-------|--------------|------------|
+| `lab_results` | One row per lab marker per report, with reference range and flag | Medical - Process Inbox |
+| `inbody_results` | InBody body scan results | Medical - Process Inbox |
 
 ## Nutrition
 
-| Table | Purpose | Written by | Read by |
-|-------|---------|------------|---------|
-| `nutrition_log` | Logged food entries | v2 Luna Food page (manual) | v2 Luna Food + Nutritionist |
-| `meal_templates` | Reusable meal blueprints | Manual seed | v2 Luna Food picker |
-| `meal_plan` | Weekly meal plan | Manual | v2 Luna |
+| Table | What's in it | Written by |
+|-------|--------------|------------|
+| `nutrition_log` | Food I've logged | The app (Food page) |
+| `meal_templates` | Reusable meals to log quickly | By hand |
+| `meal_plan` | Planned meals by date | By hand |
 
 ## Training
 
-| Table | Purpose | Written by | Read by |
-|-------|---------|------------|---------|
-| `exercises` | Master exercise catalog | Manual seed / imports | v2 Luna Exercises + Workouts |
-| `workouts` | Saved workout templates | v2 Luna Workouts (Save Workout) | v2 Luna |
-| `workout_exercises` | Ordered exercises inside a saved workout | v2 Luna | v2 Luna |
-| `completed_workouts` | Logged workout sessions | v2 Luna (Assign to WHOOP session) | v2 Luna Home |
-| `completed_workout_exercises` | Per-exercise records | v2 Luna | v2 Luna |
-| `strength_sessions` / `strength_exercises` / `strength_sets` / `strength_ingest_log` | Legacy strength-training log | External import | Legacy build_overload.py (v1 archive) |
-| `training_plan` | Weekly training-day plan | Manual seed | v2 Luna Workouts |
-| `running_log` | Manual run log (date + distance_km) | Manual | v2 Luna Workouts |
+| Table | What's in it | Written by |
+|-------|--------------|------------|
+| `exercises` | Exercise library (about 870, with muscles, equipment, instructions, images) | Imported once |
+| `workouts` | Saved workout templates | The app |
+| `workout_exercises` | The exercises inside each template | The app |
+| `completed_workouts` | Workouts I've done, optionally linked to a WHOOP workout | The app |
+| `completed_workout_exercises` | Sets and reps for each completed workout | The app |
+| `training_plan` | What to train each day of the week | By hand |
+| `running_log` | Runs: date and distance | By hand |
+| `strength_sessions`, `strength_exercises`, `strength_sets`, `strength_ingest_log` | Old strength log, kept for history | Nothing (legacy) |
 
 ## Config
 
-| Table | Purpose | Written by | Read by |
-|-------|---------|------------|---------|
-| `app_config` | Generic key/value app config | Manual | Any script/app that needs runtime config |
+| Table | What's in it |
+|-------|--------------|
+| `app_config` | Key and value settings |
 
-## Views (read-only)
+---
 
-| View | Aggregates | Consumed by |
-|------|------------|-------------|
-| `vw_category_groups` | Category grouping hierarchy | Finance dashboards |
-| `vw_category_mapping` | Read-only projection of `category_mapping` | Dashboards, `plaid_chase_sync.py` |
-| `vw_dashboard_summary` | Monthly totals per category | v1 finances breakdown, v2 Luna Expenses |
-| `vw_discretionary_summary` | Monthly discretionary spend by category | v1 finances, v2 Luna Expenses |
-| `vw_fixed_costs_summary` | Monthly fixed-cost baseline (12-month averages) | v1 finances, v2 Luna Expenses |
+## Functions the app calls
 
-## Row-level security
+| Function | What it does |
+|----------|--------------|
+| `recategorize_transaction` | Changes a transaction's category and optionally saves a rule |
+| `dismiss_finance_alert` | Dismisses an alert, optionally muting that alert type for the merchant |
+| `get_dashboard_stats` | Average monthly money left after fixed costs, and average discretionary spending |
 
-Every table has RLS on with a single `owner_only` policy (applied Oct 2026). Three roles matter:
+---
 
-- **`authenticated`** (my signed in Luna session) — full read and write on every table, but only when the session email is `fernandopv2655@gmail.com`.
-- **`anon`** (the public key in the app bundle) — no table access at all. Views run as `security_invoker`, so they follow the same rule.
-- **`service_role`** — used by every backend workflow. Bypasses RLS entirely. Never sent to the browser. Stored as GitHub secret `SUPABASE_SERVICE_ROLE_KEY`.
+## Security
 
-**Adding a table:** enable RLS and add the same `owner_only` policy (the statement is in [maintainers.md](maintainers.md)), or Luna will get empty results.
+Every table has one rule, `owner_only`: only a signed in session with my email can read or write it.
 
-If a new backend script gets "new row violates row-level security policy" it's missing the service_role key. See [maintainers.md](maintainers.md#secrets).
+| Who | Can do |
+|-----|--------|
+| My signed in Luna session | Read and write everything |
+| The public key in the app, on its own | Nothing |
+| The sync workflows (service key) | Everything; the service key skips the rules, which is why it stays in GitHub Secrets |
+
+A new table must get the same rule or Luna will see it as empty. The exact SQL is in [operations.md](operations.md#add-a-new-table).
