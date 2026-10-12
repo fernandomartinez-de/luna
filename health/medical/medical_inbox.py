@@ -246,11 +246,32 @@ def mark(service, file_id, **props):
 
 
 # ── Inventory workbook ───────────────────────────────────────────────────────
-def build_inventory(service, run_log, out_path):
+def supabase_counts(sb):
+    """{archivo: rows} for lab_results and inbody_results, or None if unavailable."""
+    if sb is None:
+        return None
+    counts = Counter()
+    for table in ("lab_results", "inbody_results"):
+        start = 0
+        while True:
+            data = sb.table(table).select("archivo").range(start, start + 999).execute().data or []
+            counts.update(r["archivo"] for r in data if r.get("archivo"))
+            if len(data) < 1000:
+                break
+            start += 1000
+    return counts
+
+
+def build_inventory(service, run_log, out_path, sb=None):
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill
     from openpyxl.utils import get_column_letter
 
+    try:
+        in_db = supabase_counts(sb)
+    except Exception as e:
+        print(f"Supabase check skipped: {e}")
+        in_db = None
     rows, revisar, inbox = [], [], []
     for f, path, _ in walk(service, MEDICAL_ID, []):
         if not path and f["name"] == TRACKER_NAME:
@@ -263,7 +284,8 @@ def build_inventory(service, run_log, out_path):
             "provider": m.group(3) if m else "", "type": m.group(4) if m else "",
             "size_kb": round(int(f.get("size") or 0) / 1024, 1),
             "added": (f.get("createdTime") or "")[:10],
-            "loaded": "yes" if props.get("luna_ingested") else ("pending" if props.get("luna_filed") and needs_load(f) else ""),
+            "loaded": (("" if not needs_load(f) else f"{in_db[f['name']]} results" if in_db.get(f["name"]) else "MISSING")
+                       if in_db is not None else ("yes" if props.get("luna_ingested") else "")),
             "notes": f.get("description") or "",
             "link": f"https://drive.google.com/file/d/{f['id']}/view",
         }
@@ -276,7 +298,7 @@ def build_inventory(service, run_log, out_path):
 
     cols = [("File", "name"), ("Date", "date"), ("Category", "category"), ("Provider", "provider"),
             ("Type", "type"), ("Folder", "folder"), ("Size KB", "size_kb"), ("Added", "added"),
-            ("Loaded by inbox", "loaded"), ("Notes", "notes"), ("Link", "link")]
+            ("In Supabase", "loaded"), ("Notes", "notes"), ("Link", "link")]
     head_fill, head_font = PatternFill("solid", start_color="1F2937"), Font(color="FFFFFF", bold=True)
 
     def sheet(wb, title, recs):
@@ -302,6 +324,11 @@ def build_inventory(service, run_log, out_path):
     s.append(["Files in archive", len(rows)])
     s.append(["Waiting in _REVISAR", len(revisar)])
     s.append(["Still in IN", len(inbox)])
+    if in_db is not None:
+        missing = [r["name"] for r in rows if r["loaded"] == "MISSING"]
+        s.append(["Lab/InBody files missing from Supabase", len(missing)])
+        for n in missing:
+            s.append(["", n])
     s.append([])
     by_year_cat = defaultdict(Counter)
     for r in rows:
@@ -449,7 +476,12 @@ def main():
                 run_log.append({"file": f["name"], "result": "Supabase" if ok else "Supabase FAILED", "detail": msg})
 
     os.makedirs(os.path.dirname(args.inventory) or ".", exist_ok=True)
-    n_archive, n_revisar, n_in = build_inventory(service, run_log, args.inventory)
+    sb_inv = None
+    try:
+        sb_inv = supabase_client()
+    except Exception as e:
+        print(f"No Supabase for inventory check: {e}")
+    n_archive, n_revisar, n_in = build_inventory(service, run_log, args.inventory, sb_inv)
     print(f"\nInventory: {n_archive} archived, {n_revisar} in {REVISAR_NAME}, {n_in} left in {IN_NAME}")
     if not dry:
         cmd.upload_tracker_to_drive(service, args.inventory, MEDICAL_ID)
