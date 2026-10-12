@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient.js'
-import CodeSlots from './CodeSlots/CodeSlots.jsx'
 
 // Only this account may use Luna. The database enforces the same rule,
 // so this check is a convenience, not the security boundary.
@@ -91,7 +90,7 @@ export default function AuthGate({ children }) {
         <div style={sub}>
           {step === 'email'
             ? 'We will email you a sign in link and code. You only need to do this once per device.'
-            : 'Check your email. Tap the link, or enter the 6 digit code here.'}
+            : 'Check your email and paste or type the code here.'}
         </div>
       </div>
 
@@ -104,23 +103,26 @@ export default function AuthGate({ children }) {
         </form>
       ) : (
         <>
-          <CodeSlots
-            length={6}
-            value={code}
-            onChange={setCode}
-            onComplete={verify}
-            status={status === 'danger' ? 'danger' : 'idle'}
-            autoFocus={true}
-            slotSize={44}
-            gap={8}
-            radius={10}
-            accentColor="#38d8fb"
-            slotColor="rgba(255,255,255,0.06)"
-            digitColor="#f1f5f9"
-            inkColor="#f1f5f9"
-            dangerColor="#ef4444"
-            ariaLabel="Email sign in code"
-          />
+          <form
+            onSubmit={(e) => { e.preventDefault(); const t = code.replace(/\D/g, ''); if (t.length >= 6) verify(t) }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}
+          >
+            <input
+              style={{ ...input, textAlign: 'center', letterSpacing: '0.2em', fontSize: 20,
+                       borderColor: status === 'danger' ? '#ef4444' : 'rgba(255,255,255,0.12)' }}
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              autoFocus
+              placeholder="Code from email"
+              aria-label="Email sign in code"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/[^\d ]/g, '').slice(0, 14))}
+            />
+            <button style={button} type="submit" disabled={status === 'busy' || code.replace(/\D/g, '').length < 6}>
+              {status === 'busy' ? 'Checking…' : 'Sign in'}
+            </button>
+          </form>
           <button style={link} type="button" onClick={() => { setStep('email'); setCode(''); setMessage('') }}>
             Send a new code
           </button>
