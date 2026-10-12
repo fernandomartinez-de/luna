@@ -246,6 +246,24 @@ def mark(service, file_id, **props):
 
 
 # ── Inventory workbook ───────────────────────────────────────────────────────
+# Files that are another copy of a report already loaded (same results, so
+# loading them again would double count). Keyed by Drive file id.
+SAME_REPORT = {
+    "1q6YfszsnBRSFzts8znV0Pk7NgcllqlyB": "2026-03-05_labs_hospital-angeles-lomas_general.pdf",  # scanned copy, annotated "Estudios con Thyrogen"
+}
+
+
+def loaded_label(f, in_db):
+    if not needs_load(f):
+        return ""
+    if in_db.get(f["name"]):
+        return f"{in_db[f['name']]} results"
+    twin = SAME_REPORT.get(f["id"])
+    if twin and in_db.get(twin):
+        return f"same report as {twin}"
+    return "MISSING"
+
+
 def supabase_counts(sb):
     """{archivo: rows} for lab_results and inbody_results, or None if unavailable."""
     if sb is None:
@@ -284,8 +302,8 @@ def build_inventory(service, run_log, out_path, sb=None):
             "provider": m.group(3) if m else "", "type": m.group(4) if m else "",
             "size_kb": round(int(f.get("size") or 0) / 1024, 1),
             "added": (f.get("createdTime") or "")[:10],
-            "loaded": (("" if not needs_load(f) else f"{in_db[f['name']]} results" if in_db.get(f["name"]) else "MISSING")
-                       if in_db is not None else ("yes" if props.get("luna_ingested") else "")),
+            "loaded": (loaded_label(f, in_db) if in_db is not None
+                       else ("yes" if props.get("luna_ingested") or f["id"] in SAME_REPORT else "")),
             "notes": f.get("description") or "",
             "link": f"https://drive.google.com/file/d/{f['id']}/view",
         }
@@ -453,7 +471,8 @@ def main():
     # Earlier filed files whose Supabase load failed get retried.
     for f, p, _ in archive:
         props = f.get("appProperties") or {}
-        if props.get("luna_filed") and not props.get("luna_ingested") and needs_load(f):
+        if (props.get("luna_filed") and not props.get("luna_ingested") and needs_load(f)
+                and f["id"] not in SAME_REPORT):
             to_load.append((f, None))
 
     if to_load:
